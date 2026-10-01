@@ -1,0 +1,70 @@
+{
+  "timestamp": 1727000123.42,
+  "nodes": [
+    {
+      "id": "chair_01",
+      "names": [{"text": "chair", "score": 0.90}],
+      "pose_map": [1.80, 0.90, 0.46],
+      "size": [0.5, 0.5, 0.9],
+      "state": "free",
+      "confidence": 0.88
+    },
+    {
+      "id": "chair_02",
+      "names": [{"text": "chair", "score": 0.91}],
+      "pose_map": [0.60, 1.10, 0.46],
+      "size": [0.5, 0.5, 0.9],
+      "state": "occupied",
+      "confidence": 0.85
+    },
+    {
+      "id": "chair_03",
+      "names": [{"text": "chair", "score": 0.93}],
+      "pose_map": [2.31, 1.47, 0.46],
+      "size": [0.52, 0.55, 0.92],
+      "state": "free",
+      "confidence": 0.91
+    },
+    {
+      "id": "mug_01",
+      "names": [{"text": "mug", "score": 0.89}, {"text": "cup", "score": 0.74}],
+      "pose_map": [0.82, 0.31, 0.75],
+      "size": [0.08, 0.08, 0.1],
+      "state": "on_desk",
+      "confidence": 0.86
+    },
+    {
+      "id": "laptop_01",
+      "names": [{"text": "laptop", "score": 0.95}],
+      "pose_map": [0.50, 0.20, 0.76],
+      "size": [0.3, 0.2, 0.02],
+      "state": "on_desk",
+      "confidence": 0.94
+    },
+    {
+      "id": "obj_27",
+      "names": [
+        {"text": "portable lidar scanner", "score": 0.78},
+        {"text": "3D scanner", "score": 0.74}
+      ],
+      "pose_map": [3.02, 1.11, 0.84],
+      "size": [0.15, 0.08, 0.08],
+      "state": "on_table",
+      "confidence": 0.82
+    },
+    {
+      "id": "desk_01",
+      "names": [{"text": "desk", "score": 0.97}],
+      "pose_map": [1.0, 0.7, 0.0],
+      "size": [1.6, 0.8, 0.75],
+      "state": "static",
+      "confidence": 0.98
+    }
+  ],
+  "edges": [
+    {"source": "mug_01", "predicate": "on", "target": "desk_01", "evidence": {"vertical_gap_m": 0.018, "xy_overlap": 0.71}, "confidence": 0.89},
+    {"source": "laptop_01", "predicate": "on", "target": "desk_01", "evidence": {"vertical_gap_m": 0.01, "xy_overlap": 0.80}, "confidence": 0.93},
+    {"source": "mug_01", "predicate": "near", "target": "laptop_01", "evidence": {"distance_m": 0.38}, "confidence": 0.90},
+    {"source": "obj_27", "predicate": "on", "target": "desk_01", "evidence": {"vertical_gap_m": 0.02, "xy_overlap": 0.60}, "confidence": 0.80}
+  ]
+}
