@@ -19,7 +19,7 @@ positions in the Scene Graph — so the final answer is backed by geometry, not 
 ## Setup
 ```bash
 pip install -r requirements.txt
-ollama pull qwen2.5-coder
+ollama pull qwen3:8b
 ```
 
 ## Run

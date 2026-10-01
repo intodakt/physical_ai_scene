@@ -7,18 +7,21 @@ the model runs on your own machine.
 
 Setup (one time, in your terminal):
     pip install ollama
-    ollama pull qwen2.5-coder
+    ollama pull qwen3:8b
 
 Run:
     python parser.py "Which free chair is closest to the lidar scanner?"
 """
 
 import json
+import os
+import re
 import sys
 
 import ollama
 
-MODEL_NAME = "qwen2.5-coder"
+# Change the model without editing code:  S5_MODEL=llama3.1:8b python main.py "..."
+MODEL_NAME = os.environ.get("S5_MODEL", "qwen3:8b")
 
 SYSTEM_PROMPT = """You are a spatial query parser for a robot's scene understanding system.
 Convert the user's question into ONLY this exact JSON format, nothing else, no explanation:
@@ -43,20 +46,28 @@ Rules:
 """
 
 
-def parse_query(question: str) -> dict:
-    response = ollama.chat(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": question},
-        ],
-    )
-    raw_text = response["message"]["content"].strip()
-
-    # Local LLMs sometimes wrap JSON in ```json fences - strip those if present.
+def _clean_llm_text(raw_text: str) -> str:
+    """Remove <think>...</think> blocks and ```json fences some models add."""
+    raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
     if raw_text.startswith("```"):
         raw_text = raw_text.strip("`")
         raw_text = raw_text.replace("json", "", 1).strip()
+    return raw_text
+
+
+def parse_query(question: str, model: str = None) -> dict:
+    model = model or MODEL_NAME
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": question},
+    ]
+    try:
+        # format="json" forces valid JSON; think=False turns off qwen3's long thinking.
+        response = ollama.chat(model=model, messages=messages, format="json", think=False)
+    except TypeError:
+        # Older ollama python package without the `think` option.
+        response = ollama.chat(model=model, messages=messages, format="json")
+    raw_text = _clean_llm_text(response["message"]["content"])
 
     try:
         return json.loads(raw_text)
