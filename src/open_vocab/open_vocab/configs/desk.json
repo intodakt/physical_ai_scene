@@ -1,9 +1,0 @@
-{
-  "detector": "yolov8s-worldv2.pt",
-  "segmenter": "sam2_t.pt",
-  "prompts": ["laptop", "coffee mug", "keyboard", "mouse", "book", "bottle"],
-  "confidence": 0.25,
-  "iou": 0.5,
-  "image_size": 640,
-  "max_detections": 30
-}
