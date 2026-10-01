@@ -1,0 +1,12 @@
+{
+  "recall": 1.0,
+  "mean_box_center_error_m": 0.0067,
+  "mean_centroid_error_m": 0.0296,
+  "timings_ms": {
+    "depth_cleaning": 3.45,
+    "support_plane": 6.62,
+    "objects": 1354.0,
+    "total": 1364.07
+  },
+  "n_objects": 5
+}

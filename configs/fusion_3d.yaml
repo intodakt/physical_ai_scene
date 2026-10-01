@@ -1,0 +1,31 @@
+# S2 — 3D preprocessing / fusion configuration.
+# All paths are relative to the repository root.
+
+depth:
+  min_m: 0.15          # RealSense D435 min range ~0.1-0.2 m
+  max_m: 2.0           # ignore far background (floor, walls)
+
+support_plane:
+  enabled: true        # RANSAC the desk and drop its points from object masks
+  ransac_threshold_m: 0.006
+  margin_m: 0.008      # object points must be > this above the desk
+
+cleaning:
+  voxel_size_m: 0.003
+  outlier_nb_neighbors: 20
+  outlier_std_ratio: 2.0
+  keep_largest_cluster: true
+  cluster_eps_m: 0.02
+  cluster_min_points: 10
+  min_points: 30       # fewer points -> object rejected (no NaN geometry)
+
+fusion:
+  mode: adaptive       # adaptive | fixed
+  weight_floor: 0.05
+
+# Fallback map -> camera_link static TF (S1, Phase 2). A frame's
+# frame_meta.json "T_map_camera" overrides this. Set to null to stay in the
+# camera frame only.
+tf_map_camera_link:
+  xyz: [0.0, 0.0, 0.8]
+  rpy: [0.0, 0.5, 0.0]   # roll, pitch, yaw (rad)
