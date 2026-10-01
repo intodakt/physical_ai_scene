@@ -2,6 +2,8 @@
 
     python -m src.fusion_3d.run_pipeline --frame data/mock/frame_000
     python -m src.fusion_3d.run_pipeline --frame data/mock/frame_000 --show   # Open3D window
+    python -m src.fusion_3d.run_pipeline --frame <S1 frame dir> \
+        --observations output/s3_semantic/<run>/frame_000000/observation.json
 
 Writes ``outputs/fusion_3d/<frame>_objects.json`` (ObjectInstance3D list for
 S4/S6) and ``<frame>_points.npz`` (point subset per object).
@@ -16,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from ..preprocessing.depth_cleaning import clean_depth, depth_to_meters
-from ..preprocessing.frame_loader import load_frame, load_semantic_observations
+from ..preprocessing.frame_loader import find_observation_file, load_frame, load_semantic_observations
 from .evaluate import evaluate_against_ground_truth
 from .pipeline import load_config, process_frame
 
@@ -25,8 +27,10 @@ def run(frame_dir, out_dir="outputs/fusion_3d", config=None, mode=None, observat
     frame_dir = Path(frame_dir)
     cfg = load_config(config)
     frame = load_frame(frame_dir)
-    obs = load_semantic_observations(observations or frame_dir / "semantic_observations.json")
+    skipped: list = []
+    obs = load_semantic_observations(observations or find_observation_file(frame_dir), skipped)
     result = process_frame(frame, obs, cfg, fusion_mode=mode)
+    result.rejected = skipped + result.rejected
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -54,12 +58,14 @@ def main():
     ap = argparse.ArgumentParser(description="S2 2D->3D projection and fusion")
     ap.add_argument("--frame", default="data/mock/frame_000", help="frame directory (relative path)")
     ap.add_argument("--out", default="outputs/fusion_3d")
+    ap.add_argument("--observations", default=None,
+                    help="S3 observation.json (default: <frame>/observation.json)")
     ap.add_argument("--config", default=None)
     ap.add_argument("--mode", choices=["adaptive", "fixed"], default=None)
     ap.add_argument("--show", action="store_true", help="open the Open3D visualizer")
     args = ap.parse_args()
 
-    frame, obs, result, payload, json_path = run(args.frame, args.out, args.config, args.mode)
+    frame, obs, result, payload, json_path = run(args.frame, args.out, args.config, args.mode, args.observations)
     print(f"{len(result.objects)} objects, {len(result.rejected)} rejected, "
           f"{result.timings_ms['total']:.1f} ms  ->  {json_path}")
     for o in result.objects:

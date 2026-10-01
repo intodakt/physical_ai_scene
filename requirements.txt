@@ -5,3 +5,4 @@ pyyaml>=6.0
 pillow>=10.0
 matplotlib>=3.7   # reports / screenshots only
 pytest>=7.0
+opencv-python-headless>=4.8   # only for the S3 contract compatibility test

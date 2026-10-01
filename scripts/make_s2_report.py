@@ -9,6 +9,7 @@ and renders every intermediate step.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -170,8 +171,6 @@ def main():
         if isinstance(v, dict):
             return {k: rnd(x) for k, x in v.items()}
         return v
-    import re
-
     js = json.dumps({k: rnd(mug[k]) for k in keys}, indent=2)
     # keep short lists of numbers/strings on one line
     js = re.sub(r"\[\s*([^\[\]{}]*?)\s*\]", lambda m: "[" + re.sub(r"\s*\n\s*", " ", m.group(1)) + "]", js)
@@ -190,6 +189,10 @@ def main():
                        cwd=ROOT, capture_output=True, text=True).stdout.splitlines()
     t = [line.replace(str(ROOT), ".") for line in t if line.strip() and not line.startswith(("platform", "cachedir", "rootdir", "configfile", "plugins"))]
     terminal(["$ pytest -v tests/"] + t, "06_unit_tests_passed.png", "pytest", width=12)
+    m = re.search(r"(\d+) passed", "\n".join(t))
+    f = re.search(r"(\d+) failed", "\n".join(t))
+    n_pass = int(m.group(1)) if m else 0
+    tests_line = f"{n_pass} / {n_pass + (int(f.group(1)) if f else 0)}"
 
     # 07 — metrics: localisation error + depth confidence / weights ---------------
     ev = payload["evaluation"]["per_object"]
@@ -240,6 +243,7 @@ def main():
         "mean_centroid_error_m": payload["evaluation"]["mean_centroid_error_m"],
         "timings_ms": payload["timings_ms"],
         "n_objects": len(result.objects),
+        "tests": tests_line,
     }
     (OUT / "summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary))

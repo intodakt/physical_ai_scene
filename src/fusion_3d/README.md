@@ -10,7 +10,7 @@ pip install -r requirements.txt
 python -m src.preprocessing.mock_data --out data/mock/frame_000   # mock S1+S3 frame
 python -m src.fusion_3d.run_pipeline --frame data/mock/frame_000  # -> outputs/fusion_3d/
 python -m src.fusion_3d.run_pipeline --frame data/mock/frame_000 --show   # Open3D window
-pytest -v                                                          # 17 tests
+pytest -v                                                          # 20 tests
 python scripts/make_s2_report.py && python scripts/make_s2_slide.py  # figures in docs/s2/
 ```
 
@@ -21,10 +21,10 @@ All paths are relative to the repo root.
 | From | File in the frame dir | Notes |
 |---|---|---|
 | S1 | `rgb.png` | aligned colour |
-| S1 | `depth.png` (uint16 mm) or `depth.npy` (float m) | **must be aligned to colour** (`align_depth.enable:=true`) |
+| S1 | `depth.png` (uint16 mm) or `depth.npy` (float m) | **must be aligned to colour** (RealSense `align_depth.enable:=true`; ZED Mini depth is already registered to the left image) |
 | S1 | `camera_intrinsics.yaml` | flat `fx/fy/cx/cy/width/height` or ROS `camera_info` dump (`k:`) |
 | S1 | `frame_meta.json` (optional) | `timestamp`, `T_map_camera` (4x4 optical→map). Fallback: `tf_map_camera_link` in `configs/fusion_3d.yaml` |
-| S3 | `semantic_observations.json` | `{"observations": [{bbox, mask, labels, score, ...}]}`; `mask` = RLE `{size, counts}`, or a `.npy`/`.png` path |
+| S3 | `observation.json` + `masks/*.png` | S3's `s3-semantic-draft-0.1` contract (`src/open_vocab/open_vocab/contract.py`): `detections[]` with `detection_id`, `bbox` (xyxy px), `labels`, `detector_score`, `mask` (relative PNG 0/255), `mask_status`. Detections with `mask_status != "ok"` are skipped and listed under `rejected`. Pass a path from an S3 run with `--observations output/s3_semantic/<run>/frame_000000/observation.json` |
 
 ## Pipeline (`src/fusion_3d/pipeline.py`)
 
@@ -57,7 +57,8 @@ All paths are relative to the repo root.
 
 ## Mock data
 
-`src/preprocessing/mock_data.py` ray-casts a desk scene (laptop, mug, book,
+`src/preprocessing/mock_data.py` writes S3's exact output layout (validated by
+S3's own `contract.load_observation` in `tests/test_s2_s3_interface.py`) and ray-casts a desk scene (laptop, mug, book,
 multimeter, glass) with a D435-like camera 0.6 m up, pitched 45°, and adds
 range-dependent noise, dropouts, flying pixels, a transparent glass (85 % depth
 missing) and 2 px dilated masks. `ground_truth.json` lets us measure error.

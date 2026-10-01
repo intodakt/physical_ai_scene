@@ -14,6 +14,7 @@ and `python scripts/make_s2_slide.py`. Input is the **mock** S1/S3 frame
 | Noise removal (`remove_statistical_outlier`) | ✅ | screenshot 02 (6168 → 2557 pts) |
 | depth_confidence (valid depth ratio) | ✅ | screenshot 07 (glass 0.23) |
 | Fixed + adaptive fusion weights | ✅ | screenshot 07 |
+| Read S3's real `observation.json` (draft 0.1) | ✅ | `tests/test_s2_s3_interface.py`; mock passes S3's validator |
 | Run on S1 Static Baseline bag | ⏳ waiting for S1 | — |
 
 ## Screenshots
@@ -23,7 +24,7 @@ and `python scripts/make_s2_slide.py`. Input is the **mock** S1/S3 frame
 3. `screenshots/03_scene_3d_bounding_boxes.png` — all objects with 3D boxes (map frame)
 4. `screenshots/04_objectinstance3d_json.png` — JSON handed to S4/S6
 5. `screenshots/05_pipeline_run_terminal.png` — CLI run
-6. `screenshots/06_unit_tests_passed.png` — 17/17 tests pass
+6. `screenshots/06_unit_tests_passed.png` — all tests pass
 7. `screenshots/07_metrics.png` — localisation error, depth confidence, fixed vs adaptive weights
 
 Slide: `slide_06_S2.png` (1920×1080, upload to Canva as an image, or rebuild it with the text below).
@@ -40,5 +41,6 @@ Slide: `slide_06_S2.png` (1920×1080, upload to Canva as an image, or rebuild it
 > uzatiladi. Har bir obyekt uchun depth_confidence hisoblanadi: masalan shisha
 > stakanda depth sensor ishlamaydi, ishonchlilik 0.23 ga tushadi va adaptive
 > fusion depth vaznini avtomatik kamaytiradi. Mock sahnada 5 ta obyektning
-> hammasi topildi, 3D box markazining o'rtacha xatosi 0.7 sm, 17 ta test o'tdi.
+> hammasi topildi, 3D box markazining o'rtacha xatosi 0.7 sm, 20 ta test o'tdi.
+> Mening kodim S3 ning haqiqiy observation.json formatini to'g'ridan-to'g'ri o'qiydi.
 > Keyingi qadam — S1 ning haqiqiy Static Baseline bag'ida ishga tushirish.

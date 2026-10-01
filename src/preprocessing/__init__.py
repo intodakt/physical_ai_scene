@@ -6,6 +6,7 @@ from .mask_utils import rle_decode, rle_encode
 from .frame_loader import (
     SemanticObservation,
     SynchronizedFrame,
+    find_observation_file,
     load_frame,
     load_semantic_observations,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "rle_encode",
     "SemanticObservation",
     "SynchronizedFrame",
+    "find_observation_file",
     "load_frame",
     "load_semantic_observations",
 ]

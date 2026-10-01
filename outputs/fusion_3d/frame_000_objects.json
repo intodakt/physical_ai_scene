@@ -20,7 +20,7 @@
       "persistent_id": null,
       "timestamp": 1758355200.0,
       "frame_id": "camera_color_optical_frame",
-      "source_observation_id": "det_0",
+      "source_observation_id": "det_0000",
       "label_candidates": [
         "laptop",
         "notebook computer"
@@ -30,8 +30,8 @@
       "bbox_2d": [
         82.0,
         21.0,
-        327.0,
-        256.0
+        328.0,
+        257.0
       ],
       "centroid_map": [
         0.7601274553605613,
@@ -129,7 +129,7 @@
       "persistent_id": null,
       "timestamp": 1758355200.0,
       "frame_id": "camera_color_optical_frame",
-      "source_observation_id": "det_1",
+      "source_observation_id": "det_0001",
       "label_candidates": [
         "mug",
         "cup",
@@ -140,8 +140,8 @@
       "bbox_2d": [
         365.0,
         185.0,
-        435.0,
-        283.0
+        436.0,
+        284.0
       ],
       "centroid_map": [
         0.5408669546311805,
@@ -239,7 +239,7 @@
       "persistent_id": null,
       "timestamp": 1758355200.0,
       "frame_id": "camera_color_optical_frame",
-      "source_observation_id": "det_2",
+      "source_observation_id": "det_0002",
       "label_candidates": [
         "book",
         "notebook"
@@ -249,8 +249,8 @@
       "bbox_2d": [
         406.0,
         132.0,
-        594.0,
-        244.0
+        595.0,
+        245.0
       ],
       "centroid_map": [
         0.6860162559259856,
@@ -348,7 +348,7 @@
       "persistent_id": null,
       "timestamp": 1758355200.0,
       "frame_id": "camera_color_optical_frame",
-      "source_observation_id": "det_3",
+      "source_observation_id": "det_0003",
       "label_candidates": [
         "multimeter",
         "remote control"
@@ -358,8 +358,8 @@
       "bbox_2d": [
         171.0,
         241.0,
-        295.0,
-        373.0
+        296.0,
+        374.0
       ],
       "centroid_map": [
         0.45725586311356364,
@@ -457,7 +457,7 @@
       "persistent_id": null,
       "timestamp": 1758355200.0,
       "frame_id": "camera_color_optical_frame",
-      "source_observation_id": "det_4",
+      "source_observation_id": "det_0004",
       "label_candidates": [
         "glass",
         "cup"
@@ -467,8 +467,8 @@
       "bbox_2d": [
         6.0,
         146.0,
-        85.0,
-        247.0
+        86.0,
+        248.0
       ],
       "centroid_map": [
         0.6024844559555251,
@@ -584,10 +584,10 @@
     ]
   ],
   "timings_ms": {
-    "depth_cleaning": 3.48,
-    "support_plane": 6.07,
-    "objects": 1117.42,
-    "total": 1126.97
+    "depth_cleaning": 21.49,
+    "support_plane": 9.71,
+    "objects": 1255.85,
+    "total": 1287.05
   },
   "evaluation": {
     "per_object": [

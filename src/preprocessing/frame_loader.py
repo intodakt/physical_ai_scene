@@ -7,7 +7,8 @@ Offline frame directory layout (what S1's bag-export script writes)::
         depth.png | depth.npy        # aligned depth (uint16 mm or float metres)
         camera_intrinsics.yaml       # see intrinsics.py
         frame_meta.json   (optional) # timestamp, frame_id, T_map_camera
-        semantic_observations.json   # S3 output for this frame
+        observation.json             # S3 output for this frame (s3-semantic-draft-0.1)
+        masks/det_0000.png ...       # S3 masks, uint8 0/255, paths relative to the JSON
 
 All paths are resolved relative to the given directory — never absolute.
 """
@@ -96,32 +97,63 @@ def _decode_mask(entry, base_dir: Path) -> np.ndarray:
     if isinstance(entry, dict):
         return rle_decode(entry)
     if isinstance(entry, str):
-        p = base_dir / entry
+        p = Path(entry)
+        if p.is_absolute() or ".." in p.parts:
+            raise ValueError(f"mask path must be relative to the observation JSON: {entry}")
+        p = base_dir / p
         if p.suffix == ".npy":
             return np.load(p).astype(bool)
         return np.array(Image.open(p).convert("L")) > 127
     return np.asarray(entry, dtype=bool)
 
 
-def load_semantic_observations(path: str | Path) -> list[SemanticObservation]:
-    """Parse S3's per-frame JSON (list, or dict with an ``observations`` key)."""
+def find_observation_file(frame_dir: str | Path) -> Path:
+    """S3's ``observation.json`` (preferred) or the legacy ``semantic_observations.json``."""
+    frame_dir = Path(frame_dir)
+    for name in ("observation.json", "semantic_observations.json"):
+        if (frame_dir / name).exists():
+            return frame_dir / name
+    raise FileNotFoundError(f"No observation.json in {frame_dir}")
+
+
+def load_semantic_observations(path: str | Path, skipped: list | None = None) -> list[SemanticObservation]:
+    """Parse S3's per-frame JSON.
+
+    Supports S3's ``s3-semantic-draft-0.1`` contract (``detections`` with
+    ``detection_id``, ``detector_score``, ``mask_status`` and PNG mask paths)
+    and the older list / ``observations`` layout with RLE masks. Detections
+    whose ``mask_status`` is not ``ok`` are skipped and appended to ``skipped``.
+    """
     path = Path(path)
     data = json.loads(path.read_text(encoding="utf-8"))
-    entries = data["observations"] if isinstance(data, dict) else data
-    frame_ts = data.get("timestamp", 0.0) if isinstance(data, dict) else 0.0
+    if isinstance(data, dict):
+        entries = data.get("detections", data.get("observations", []))
+        frame_ts = data.get("timestamp") or 0.0
+        size = data.get("image_size")
+    else:
+        entries, frame_ts, size = data, 0.0, None
     obs = []
     for i, e in enumerate(entries):
+        oid = str(e.get("detection_id", e.get("id", i)))
         labels = e.get("labels") or [e.get("label", "unknown")]
+        if e.get("mask_status", "ok") != "ok" or e.get("mask") is None:
+            if skipped is not None:
+                skipped.append({"detection_id": oid, "semantic_label": labels[0],
+                                "reason": f"S3 mask_status={e.get('mask_status')}"})
+            continue
+        mask = _decode_mask(e["mask"], path.parent)
+        if size and mask.shape != (size["height"], size["width"]):
+            raise ValueError(f"mask {oid} is {mask.shape}, image_size is {size}")
         obs.append(
             SemanticObservation(
                 bbox=[float(v) for v in e["bbox"]],
-                mask=_decode_mask(e["mask"], path.parent),
+                mask=mask,
                 labels=list(labels),
-                score=float(e.get("score", e.get("detector_score", 1.0))),
+                score=float(e.get("detector_score", e.get("score", 1.0))),
                 label_scores=list(e.get("label_scores", [])),
                 embedding=e.get("embedding"),
-                timestamp=float(e.get("timestamp", frame_ts)),
-                observation_id=str(e.get("id", i)),
+                timestamp=float(e.get("timestamp") or frame_ts),
+                observation_id=oid,
             )
         )
     return obs

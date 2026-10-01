@@ -41,7 +41,7 @@ def main():
 
     # Left: pipeline steps
     steps = [
-        ("IN", "S1: RGB + aligned depth + intrinsics.yaml\nS3: SemanticObservation (bbox, SAM mask, labels)"),
+        ("IN", "S1: RGB + aligned depth + intrinsics.yaml\nS3: observation.json (bbox, SAM mask PNG, labels)"),
         ("1", "Clean depth (range clip, holes) + RANSAC desk plane"),
         ("2", "Mask filter → deproject  X=(u−cx)Z/fx,  Y=(v−cy)Z/fy"),
         ("3", "Voxel 3 mm → statistical outlier removal → DBSCAN"),
@@ -75,7 +75,7 @@ def main():
         (f"{int(round(s['recall'] * s['n_objects']))}/{s['n_objects']}", "objects localized in 3D", ACCENT),
         (f"{s['mean_box_center_error_m'] * 100:.1f} cm", "mean 3D box-centre error\nvs ground truth", ACCENT),
         (f"{glass['depth_confidence']:.2f} → {glass['fusion_weights']['depth']:.2f}", "glass: depth_confidence →\ndepth weight (adaptive fusion)", ACCENT2),
-        ("17 / 17", "unit + end-to-end tests pass", ACCENT3),
+        (s["tests"], "unit, S3-interface and\nend-to-end tests pass", ACCENT3),
     ]
     for i, (big, small, col) in enumerate(stats):
         y = 0.70 - i * 0.165
