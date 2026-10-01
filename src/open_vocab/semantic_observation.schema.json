@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S3 SemanticObservation draft 0.1",
+  "description": "Proposed S3 to S2 interface; not yet approved by the team. Geometric and file checks are in contract.py.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "interface_status",
+    "frame_id",
+    "timestamp",
+    "image_size",
+    "bbox_format",
+    "mask_format",
+    "path_base",
+    "detections"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "s3-semantic-draft-0.1"
+    },
+    "interface_status": {
+      "const": "draft_not_team_approved"
+    },
+    "frame_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Source timestamp in seconds, null if unknown"
+    },
+    "image_size": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "bbox_format": {
+      "const": "xyxy_original_image_pixels"
+    },
+    "mask_format": {
+      "const": "png_uint8_0_255"
+    },
+    "path_base": {
+      "const": "observation_json_directory"
+    },
+    "source_image": {
+      "type": "string"
+    },
+    "prompts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "detections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "detection_id",
+          "bbox",
+          "labels",
+          "detector_score",
+          "mask",
+          "mask_status"
+        ],
+        "properties": {
+          "detection_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bbox": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "labels": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "detector_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "mask": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mask_status": {
+            "enum": [
+              "ok",
+              "empty",
+              "missing"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "mask_status": {
+                  "const": "ok"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "mask": {
+                  "type": "string",
+                  "pattern": "^masks/[a-zA-Z0-9_-]+\\.png$"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "mask": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "input_profile": {
+      "description": "Declared input convention; image content and rectification are not verified.",
+      "type": "object",
+      "required": [
+        "camera",
+        "view",
+        "width",
+        "height",
+        "fps"
+      ],
+      "properties": {
+        "camera": {
+          "type": "string",
+          "minLength": 1
+        },
+        "view": {
+          "type": "string",
+          "minLength": 1
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    }
+  }
+}
