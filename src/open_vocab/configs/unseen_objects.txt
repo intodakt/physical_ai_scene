@@ -1,0 +1,8 @@
+# Proposed held-out categories; S2/S7 must confirm availability before freezing.
+# Do not use their evaluation images to tune prompts or thresholds.
+# Unseen means held out from this project's development, not model pretraining.
+soldering iron
+digital multimeter
+vernier caliper
+hot glue gun
+portable lidar scanner
