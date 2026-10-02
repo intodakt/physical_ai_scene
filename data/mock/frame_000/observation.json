@@ -1,0 +1,131 @@
+{
+  "schema_version": "s3-semantic-draft-0.1",
+  "interface_status": "draft_not_team_approved",
+  "frame_id": "frame_000",
+  "timestamp": 1758355200.0,
+  "image_size": {
+    "width": 640,
+    "height": 480
+  },
+  "bbox_format": "xyxy_original_image_pixels",
+  "mask_format": "png_uint8_0_255",
+  "path_base": "observation_json_directory",
+  "source_image": "rgb.png",
+  "prompts": [
+    "book",
+    "coffee mug",
+    "cup",
+    "glass",
+    "laptop",
+    "mug",
+    "multimeter",
+    "notebook",
+    "notebook computer",
+    "remote control"
+  ],
+  "detections": [
+    {
+      "detection_id": "det_0000",
+      "bbox": [
+        82.0,
+        21.0,
+        328.0,
+        257.0
+      ],
+      "labels": [
+        "laptop",
+        "notebook computer"
+      ],
+      "detector_score": 0.93,
+      "label_scores": [
+        0.93,
+        0.512
+      ],
+      "mask": "masks/det_0000.png",
+      "mask_status": "ok"
+    },
+    {
+      "detection_id": "det_0001",
+      "bbox": [
+        365.0,
+        185.0,
+        436.0,
+        284.0
+      ],
+      "labels": [
+        "mug",
+        "cup",
+        "coffee mug"
+      ],
+      "detector_score": 0.88,
+      "label_scores": [
+        0.88,
+        0.484,
+        0.266
+      ],
+      "mask": "masks/det_0001.png",
+      "mask_status": "ok"
+    },
+    {
+      "detection_id": "det_0002",
+      "bbox": [
+        406.0,
+        132.0,
+        595.0,
+        245.0
+      ],
+      "labels": [
+        "book",
+        "notebook"
+      ],
+      "detector_score": 0.81,
+      "label_scores": [
+        0.81,
+        0.446
+      ],
+      "mask": "masks/det_0002.png",
+      "mask_status": "ok"
+    },
+    {
+      "detection_id": "det_0003",
+      "bbox": [
+        171.0,
+        241.0,
+        296.0,
+        374.0
+      ],
+      "labels": [
+        "multimeter",
+        "remote control"
+      ],
+      "detector_score": 0.62,
+      "label_scores": [
+        0.62,
+        0.341
+      ],
+      "mask": "masks/det_0003.png",
+      "mask_status": "ok"
+    },
+    {
+      "detection_id": "det_0004",
+      "bbox": [
+        6.0,
+        146.0,
+        86.0,
+        248.0
+      ],
+      "labels": [
+        "glass",
+        "cup"
+      ],
+      "detector_score": 0.71,
+      "label_scores": [
+        0.71,
+        0.391
+      ],
+      "mask": "masks/det_0004.png",
+      "mask_status": "ok"
+    }
+  ],
+  "note": "MOCK S3 output (stand-in for YOLO-World + SAM)"
+}
