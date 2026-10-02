@@ -1,8 +1,26 @@
-# S2 (3D preprocessing / fusion). S7 merges this into the team-wide file.
-numpy>=1.24
-open3d>=0.18
+# Team-wide Unified Dependencies (Maintained by S7: Mirzokhidbek)
+# Physical AI Scene Understanding System
+
+# Core Math & 3D
+numpy>=1.24.0
+open3d>=0.20.0
+scipy>=1.10.0
+
+# 2D Perception & Object Detection
+pillow>=10.0.0
+ultralytics>=8.0.0
+opencv-python-headless>=4.8.0
+
+# Graph & Reasoning
+networkx>=3.0
 pyyaml>=6.0
-pillow>=10.0
-matplotlib>=3.7   # reports / screenshots only
-pytest>=7.0
-opencv-python-headless>=4.8   # only for the S3 contract compatibility test
+ollama>=0.4.0
+
+# S7 Dashboard & Visualization
+streamlit>=1.30.0
+plotly>=5.18.0
+pyvis>=0.3.2
+matplotlib>=3.7.0
+
+# Testing & Quality Assurance
+pytest>=7.0.0
