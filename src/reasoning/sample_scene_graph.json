@@ -1,0 +1,637 @@
+{
+  "schema_version": "0.1",
+  "sample": true,
+  "session_id": "20260920_desk_S3_run01",
+  "frame": "map",
+  "units": "meters",
+  "size_order": "[width_x, depth_y, height_z]",
+  "timestamp": 1727000123.42,
+  "nodes": [
+    {
+      "id": "desk_01",
+      "persistent_object_id": "desk_01",
+      "names": [
+        {
+          "text": "desk",
+          "score": 0.97
+        },
+        {
+          "text": "table",
+          "score": 0.88
+        }
+      ],
+      "pose_map": [
+        1.0,
+        0.7,
+        0.375
+      ],
+      "size": [
+        1.6,
+        0.8,
+        0.75
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.98,
+      "depth_confidence": 0.99
+    },
+    {
+      "id": "laptop_01",
+      "persistent_object_id": "laptop_01",
+      "names": [
+        {
+          "text": "laptop",
+          "score": 0.95
+        },
+        {
+          "text": "notebook computer",
+          "score": 0.71
+        }
+      ],
+      "pose_map": [
+        0.55,
+        0.55,
+        0.771
+      ],
+      "size": [
+        0.33,
+        0.23,
+        0.03
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.94,
+      "depth_confidence": 0.88
+    },
+    {
+      "id": "mug_01",
+      "persistent_object_id": "mug_01",
+      "names": [
+        {
+          "text": "mug",
+          "score": 0.89
+        },
+        {
+          "text": "cup",
+          "score": 0.74
+        }
+      ],
+      "pose_map": [
+        0.8,
+        0.55,
+        0.812
+      ],
+      "size": [
+        0.08,
+        0.08,
+        0.1
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.86,
+      "depth_confidence": 0.62,
+      "history": [
+        {
+          "timestamp": 1727000040.0,
+          "pose_map": [
+            0.3,
+            0.55,
+            0.8
+          ],
+          "note": "left of laptop before being moved"
+        }
+      ]
+    },
+    {
+      "id": "book_01",
+      "persistent_object_id": "book_01",
+      "names": [
+        {
+          "text": "book",
+          "score": 0.91
+        }
+      ],
+      "pose_map": [
+        1.45,
+        0.45,
+        0.769
+      ],
+      "size": [
+        0.22,
+        0.15,
+        0.03
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.9,
+      "depth_confidence": 0.93
+    },
+    {
+      "id": "apple_01",
+      "persistent_object_id": "apple_01",
+      "names": [
+        {
+          "text": "apple",
+          "score": 0.88
+        },
+        {
+          "text": "red fruit",
+          "score": 0.52
+        }
+      ],
+      "pose_map": [
+        1.3,
+        0.85,
+        0.799
+      ],
+      "size": [
+        0.08,
+        0.08,
+        0.08
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.85,
+      "depth_confidence": 0.8
+    },
+    {
+      "id": "pen_01",
+      "persistent_object_id": "pen_01",
+      "names": [
+        {
+          "text": "pen",
+          "score": 0.72
+        }
+      ],
+      "pose_map": [
+        0.75,
+        0.9,
+        0.772
+      ],
+      "size": [
+        0.15,
+        0.015,
+        0.015
+      ],
+      "state": "occluded",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000108.1,
+      "confidence": 0.55,
+      "depth_confidence": 0.35
+    },
+    {
+      "id": "soldering_iron_01",
+      "persistent_object_id": "soldering_iron_01",
+      "names": [
+        {
+          "text": "soldering iron",
+          "score": 0.76
+        },
+        {
+          "text": "soldering tool",
+          "score": 0.61
+        }
+      ],
+      "pose_map": [
+        1.6,
+        0.7,
+        0.773
+      ],
+      "size": [
+        0.25,
+        0.03,
+        0.03
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.78,
+      "depth_confidence": 0.66
+    },
+    {
+      "id": "obj_27",
+      "persistent_object_id": "obj_27",
+      "names": [
+        {
+          "text": "portable lidar scanner",
+          "score": 0.78
+        },
+        {
+          "text": "3D scanner",
+          "score": 0.74
+        }
+      ],
+      "pose_map": [
+        1.55,
+        0.4,
+        0.808
+      ],
+      "size": [
+        0.15,
+        0.08,
+        0.08
+      ],
+      "state": "static",
+      "first_seen": 1727000090.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.82,
+      "depth_confidence": 0.85,
+      "history": [
+        {
+          "timestamp": 1727000090.0,
+          "pose_map": [
+            0.45,
+            -0.05,
+            1.1
+          ],
+          "note": "carried by person_01"
+        }
+      ]
+    },
+    {
+      "id": "multimeter_01",
+      "persistent_object_id": "multimeter_01",
+      "names": [
+        {
+          "text": "multimeter",
+          "score": 0.69
+        },
+        {
+          "text": "electronic meter",
+          "score": 0.55
+        }
+      ],
+      "pose_map": [
+        0.3,
+        0.85,
+        0.775
+      ],
+      "size": [
+        0.14,
+        0.07,
+        0.04
+      ],
+      "state": "static",
+      "first_seen": 1727000050.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.74,
+      "depth_confidence": 0.81
+    },
+    {
+      "id": "chair_01",
+      "persistent_object_id": "chair_01",
+      "names": [
+        {
+          "text": "chair",
+          "score": 0.9
+        }
+      ],
+      "pose_map": [
+        1.0,
+        -0.2,
+        0.45
+      ],
+      "size": [
+        0.5,
+        0.5,
+        0.9
+      ],
+      "state": "free",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.88,
+      "depth_confidence": 0.84
+    },
+    {
+      "id": "chair_02",
+      "persistent_object_id": "chair_02",
+      "names": [
+        {
+          "text": "chair",
+          "score": 0.91
+        }
+      ],
+      "pose_map": [
+        0.4,
+        -0.2,
+        0.45
+      ],
+      "size": [
+        0.5,
+        0.5,
+        0.9
+      ],
+      "state": "occupied",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.85,
+      "depth_confidence": 0.8
+    },
+    {
+      "id": "chair_03",
+      "persistent_object_id": "chair_03",
+      "names": [
+        {
+          "text": "chair",
+          "score": 0.93
+        }
+      ],
+      "pose_map": [
+        2.31,
+        1.47,
+        0.46
+      ],
+      "size": [
+        0.52,
+        0.55,
+        0.92
+      ],
+      "state": "free",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.91,
+      "depth_confidence": 0.87
+    },
+    {
+      "id": "chair_04",
+      "persistent_object_id": "chair_04",
+      "names": [
+        {
+          "text": "chair",
+          "score": 0.87
+        }
+      ],
+      "pose_map": [
+        2.0,
+        0.1,
+        0.45
+      ],
+      "size": [
+        0.5,
+        0.5,
+        0.9
+      ],
+      "state": "free",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.83,
+      "depth_confidence": 0.79
+    },
+    {
+      "id": "person_01",
+      "persistent_object_id": "person_01",
+      "names": [
+        {
+          "text": "person",
+          "score": 0.96
+        },
+        {
+          "text": "student",
+          "score": 0.8
+        }
+      ],
+      "pose_map": [
+        0.4,
+        -0.1,
+        0.85
+      ],
+      "size": [
+        0.5,
+        0.4,
+        1.1
+      ],
+      "state": "static",
+      "first_seen": 1727000000.0,
+      "last_seen": 1727000123.4,
+      "confidence": 0.95,
+      "depth_confidence": 0.9
+    }
+  ],
+  "edges": [
+    {
+      "source": "laptop_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.006,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.91,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "mug_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.012,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.83,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "book_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.004,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.87,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "apple_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.009,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.82,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "pen_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.015,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.53,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "soldering_iron_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.008,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.76,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "obj_27",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.018,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.8,
+      "start_time": 1727000090.0,
+      "end_time": null
+    },
+    {
+      "source": "multimeter_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.005,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.72,
+      "start_time": 1727000050.0,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "near",
+      "target": "mug_01",
+      "relation_type": "metric_spatial",
+      "evidence": {
+        "distance_m": 0.25,
+        "threshold_m": 0.3
+      },
+      "confidence": 0.83,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "left_of",
+      "target": "mug_01",
+      "relation_type": "directional",
+      "evidence": {
+        "x_diff_m": 0.25,
+        "margin_m": 0.05
+      },
+      "confidence": 0.83,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "book_01",
+      "predicate": "near",
+      "target": "soldering_iron_01",
+      "relation_type": "metric_spatial",
+      "evidence": {
+        "distance_m": 0.29,
+        "threshold_m": 0.3
+      },
+      "confidence": 0.76,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "book_01",
+      "predicate": "left_of",
+      "target": "soldering_iron_01",
+      "relation_type": "directional",
+      "evidence": {
+        "x_diff_m": 0.15,
+        "margin_m": 0.05
+      },
+      "confidence": 0.76,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "book_01",
+      "predicate": "near",
+      "target": "obj_27",
+      "relation_type": "metric_spatial",
+      "evidence": {
+        "distance_m": 0.12,
+        "threshold_m": 0.3
+      },
+      "confidence": 0.8,
+      "start_time": 1727000090.0,
+      "end_time": null
+    },
+    {
+      "source": "book_01",
+      "predicate": "left_of",
+      "target": "obj_27",
+      "relation_type": "directional",
+      "evidence": {
+        "x_diff_m": 0.1,
+        "margin_m": 0.05
+      },
+      "confidence": 0.8,
+      "start_time": 1727000090.0,
+      "end_time": null
+    },
+    {
+      "source": "chair_02",
+      "predicate": "occupied_by",
+      "target": "person_01",
+      "relation_type": "interaction",
+      "evidence": {
+        "xy_distance_m": 0.1
+      },
+      "confidence": 0.9,
+      "start_time": 1727000000.0,
+      "end_time": null
+    },
+    {
+      "source": "obj_27",
+      "predicate": "carried_by",
+      "target": "person_01",
+      "relation_type": "interaction",
+      "evidence": {
+        "mean_distance_m": 0.35,
+        "duration_s": 10.0
+      },
+      "confidence": 0.72,
+      "start_time": 1727000090.0,
+      "end_time": 1727000100.0
+    },
+    {
+      "source": "mug_01",
+      "predicate": "left_of",
+      "target": "laptop_01",
+      "relation_type": "directional",
+      "evidence": {
+        "x_diff_m": 0.25,
+        "margin_m": 0.05
+      },
+      "confidence": 0.8,
+      "start_time": 1727000000.0,
+      "end_time": 1727000100.0
+    }
+  ]
+}
