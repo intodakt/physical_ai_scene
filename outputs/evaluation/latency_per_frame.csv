@@ -1,0 +1,9 @@
+frame,objects,rejected,s1_load_ms,s3_perception_ms,s2_fusion_ms,s6_tracking_ms,s4_graph_ms,total_ms,persistent_ids
+frame_0000,5,0,18.84,4.87,1212.17,0.05,1.05,1236.99,book_01 glass_01 laptop_01 mug_01 multimeter_01
+frame_0001,5,0,12.62,4.27,666.46,0.07,0.65,684.06,book_01 glass_01 laptop_01 mug_01 multimeter_01
+frame_0002,5,0,13.13,5.02,724.64,0.03,0.49,743.31,book_01 glass_01 laptop_01 mug_01 multimeter_01
+frame_0003,5,0,15.98,6.13,671.31,0.04,0.39,693.86,book_01 glass_01 laptop_01 mug_01 multimeter_01
+frame_0004,4,0,13.22,3.49,615.05,0.03,0.38,632.17,glass_01 laptop_01 mug_01 multimeter_01
+frame_0005,4,0,12.68,3.44,581.81,0.04,0.31,598.28,glass_01 laptop_01 mug_01 multimeter_01
+frame_0006,5,0,13.2,4.91,753.15,0.05,0.49,771.79,book_01 glass_01 laptop_01 mug_01 multimeter_01
+frame_0007,5,0,15.86,4.68,678.29,0.04,0.4,699.27,book_01 glass_01 laptop_01 mug_01 multimeter_01

@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# G1 / S7 generated data (re-create with main_pipeline.py, tests/smoke_test.py, scripts/make_demo_sequence.py)
+data/demo/
+data/bags/
+data/frames/
+outputs/pipeline/
+outputs/smoke_test/
+outputs/evaluation/run/

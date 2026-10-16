@@ -1,0 +1,31 @@
+# G1 team-wide Python environment (S7 keeps this file; add your module's packages here in your PR).
+# Install:  pip install -r requirements.txt      (Python 3.10-3.12 recommended; 3.13 works for all but ultralytics on some OSes)
+# ROS 2 Humble + ZED ROS 2 wrapper are NOT pip packages: S1 installs them on the recording laptop only.
+# Everybody else reads S1's bags with `rosbags` (no ROS install needed).
+
+# --- core numerics / IO (all modules)
+numpy>=1.24
+pyyaml>=6.0
+pillow>=10.0
+opencv-python-headless>=4.8     # S3 masks/video, S2 contract test
+
+# --- S1 / S2: bags, 3D geometry
+rosbags>=0.10                   # read/write ROS 2 bags without ROS
+open3d>=0.18                    # S2 point clouds, OBBs, RANSAC, DBSCAN
+
+# --- S3: open-vocabulary perception (YOLO-World + SAM 2 / MobileSAM)
+ultralytics>=8.3                # pulls torch; only needed for `--s3 live`
+
+# --- S4: scene graph
+networkx>=3.2
+
+# --- S5: local LLM parser (needs the Ollama app + `ollama pull qwen2.5:3b`)
+ollama>=0.4
+
+# --- S7: dashboard, metrics, tests
+streamlit>=1.35
+plotly>=5.20
+pyvis>=0.3.2
+openpyxl>=3.1                   # experiment_matrix.xlsx
+matplotlib>=3.7                 # S2 reports / figures
+pytest>=7.0

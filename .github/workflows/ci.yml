@@ -1,0 +1,43 @@
+# S7 gatekeeper CI: every push / pull request must pass before it is merged into main.
+name: G1 integration
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  integration:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: System libraries for Open3D
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libgomp1
+      - name: Install (without ultralytics/torch - CI replays S3 output)
+        run: |
+          grep -v '^ultralytics' requirements.txt > requirements-ci.txt
+          pip install -r requirements-ci.txt
+      - name: Gatekeeper - absolute paths and JSON contracts
+        run: python tools/check_contracts.py
+      - name: Unit tests (S2, S4, S7)
+        run: python -m pytest -q
+      - name: S5 verifier tests
+        working-directory: src/reasoning
+        run: python test_verifier.py
+      - name: Smoke test - ROS 2 bag in, ActionGoal out
+        run: python tests/smoke_test.py
+      - name: Experiment matrix
+        run: python -m src.evaluation.metrics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s7-reports
+          path: |
+            outputs/smoke_test/smoke_report.json
+            outputs/evaluation/*.xlsx
+            outputs/evaluation/*.csv
+            outputs/evaluation/metrics.json

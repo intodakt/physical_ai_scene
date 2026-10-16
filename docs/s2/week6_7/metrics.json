@@ -1,0 +1,276 @@
+{
+  "cases": {
+    "holes85": {
+      "title": "RealSense \u00b7 glass with holes (85 % missing)",
+      "w5": {
+        "glass_error_cm": 0.71,
+        "glass_dims_whd_cm": [
+          7.3,
+          11.4,
+          7.0
+        ],
+        "mean_error_cm": 0.68,
+        "objects": 5
+      },
+      "w7": {
+        "glass_error_cm": 0.93,
+        "glass_dims_whd_cm": [
+          6.8,
+          11.4,
+          6.5
+        ],
+        "mean_error_cm": 0.74,
+        "objects": 5,
+        "status": "transparent_suspected",
+        "geometry_source": "depth",
+        "reliability": {
+          "valid_ratio": 0.2212,
+          "interior_valid_ratio": 0.1449,
+          "plane_leak_ratio": 0.0502,
+          "genuine_ratio": 0.1376,
+          "status": "transparent_suspected",
+          "reasons": [
+            "holes: 14% interior depth < 50%"
+          ]
+        },
+        "w_depth": 0.1241,
+        "true_dims_whd_cm": [
+          7.0,
+          12.0,
+          7.0
+        ]
+      }
+    },
+    "see85": {
+      "title": "ZED Mini \u00b7 see-through (85 % sees the desk)",
+      "w5": {
+        "glass_error_cm": 0.67,
+        "glass_dims_whd_cm": [
+          7.2,
+          11.5,
+          6.9
+        ],
+        "mean_error_cm": 0.64,
+        "objects": 5
+      },
+      "w7": {
+        "glass_error_cm": 0.75,
+        "glass_dims_whd_cm": [
+          7.0,
+          11.5,
+          6.5
+        ],
+        "mean_error_cm": 0.65,
+        "objects": 5,
+        "status": "transparent_suspected",
+        "geometry_source": "depth",
+        "reliability": {
+          "valid_ratio": 0.9977,
+          "interior_valid_ratio": 0.9989,
+          "plane_leak_ratio": 0.8239,
+          "genuine_ratio": 0.1759,
+          "status": "transparent_suspected",
+          "reasons": [
+            "see-through: 82% of interior depth lies on the desk plane"
+          ]
+        },
+        "w_depth": 0.1097,
+        "true_dims_whd_cm": [
+          7.0,
+          12.0,
+          7.0
+        ]
+      }
+    },
+    "see100": {
+      "title": "ZED Mini \u00b7 fully transparent (100 % sees the desk)",
+      "w5": {
+        "glass_error_cm": 5.17,
+        "glass_dims_whd_cm": [
+          4.4,
+          1.5,
+          2.1
+        ],
+        "mean_error_cm": 1.54,
+        "objects": 5
+      },
+      "w7": {
+        "glass_error_cm": 1.04,
+        "glass_dims_whd_cm": [
+          7.8,
+          10.3,
+          7.8
+        ],
+        "mean_error_cm": 0.71,
+        "objects": 5,
+        "status": "transparent_suspected",
+        "geometry_source": "mask_plane",
+        "reliability": {
+          "valid_ratio": 0.9988,
+          "interior_valid_ratio": 1.0,
+          "plane_leak_ratio": 0.9621,
+          "genuine_ratio": 0.0379,
+          "status": "transparent_suspected",
+          "reasons": [
+            "see-through: 96% of interior depth lies on the desk plane"
+          ]
+        },
+        "w_depth": 0.027,
+        "true_dims_whd_cm": [
+          7.0,
+          12.0,
+          7.0
+        ]
+      }
+    },
+    "holes100": {
+      "title": "ZED Mini \u00b7 no depth at all on the glass",
+      "w5": {
+        "glass_error_cm": 5.61,
+        "glass_dims_whd_cm": [
+          4.4,
+          1.4,
+          0.5
+        ],
+        "mean_error_cm": 1.63,
+        "objects": 5
+      },
+      "w7": {
+        "glass_error_cm": 1.04,
+        "glass_dims_whd_cm": [
+          7.8,
+          10.3,
+          7.8
+        ],
+        "mean_error_cm": 0.71,
+        "objects": 5,
+        "status": "no_depth",
+        "geometry_source": "mask_plane",
+        "reliability": {
+          "valid_ratio": 0.0846,
+          "interior_valid_ratio": 0.0,
+          "plane_leak_ratio": 0.0,
+          "genuine_ratio": 0.0,
+          "status": "no_depth",
+          "reasons": [
+            "only 0% of interior pixels have depth"
+          ]
+        },
+        "w_depth": 0.027,
+        "true_dims_whd_cm": [
+          7.0,
+          12.0,
+          7.0
+        ]
+      }
+    }
+  },
+  "generated": "2026-10-16",
+  "bag_round_trip": {
+    "frames_written": 5,
+    "synced": 5,
+    "dropped": 0,
+    "rgb_identical": true,
+    "seconds": 1.71,
+    "topics": [
+      "/zed/zed_node/rgb/image_rect_color",
+      "/zed/zed_node/depth/depth_registered",
+      "/zed/zed_node/rgb/camera_info"
+    ]
+  },
+  "static_sequence": {
+    "w7": {
+      "frames": 5,
+      "mean_ms_per_frame": 1477.5,
+      "objects_per_frame": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "stability": {
+        "book": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.68,
+          "jitter_max_mm": 1.18,
+          "depth_status": "ok"
+        },
+        "glass": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.03,
+          "jitter_max_mm": 0.05,
+          "depth_status": "transparent_suspected"
+        },
+        "laptop": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 1.11,
+          "jitter_max_mm": 1.57,
+          "depth_status": "ok"
+        },
+        "mug": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.5,
+          "jitter_max_mm": 0.89,
+          "depth_status": "ok"
+        },
+        "multimeter": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.36,
+          "jitter_max_mm": 0.54,
+          "depth_status": "ok"
+        }
+      },
+      "mean_box_center_error_m": 0.0072,
+      "temporal_median": {
+        "objects": 5,
+        "mean_box_center_error_m": 0.0062
+      }
+    },
+    "w5": {
+      "frames": 5,
+      "mean_ms_per_frame": 638.7,
+      "objects_per_frame": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "stability": {
+        "book": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.94,
+          "jitter_max_mm": 1.49,
+          "depth_status": "ok"
+        },
+        "glass": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 1.06,
+          "jitter_max_mm": 1.82,
+          "depth_status": "ok"
+        },
+        "laptop": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 1.21,
+          "jitter_max_mm": 1.52,
+          "depth_status": "ok"
+        },
+        "mug": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.49,
+          "jitter_max_mm": 0.71,
+          "depth_status": "ok"
+        },
+        "multimeter": {
+          "detection_rate": 1.0,
+          "jitter_rms_mm": 0.46,
+          "jitter_max_mm": 0.72,
+          "depth_status": "ok"
+        }
+      },
+      "mean_box_center_error_m": 0.0157
+    }
+  },
+  "tests": "34 passed, 1 skipped in 26.42s"
+}

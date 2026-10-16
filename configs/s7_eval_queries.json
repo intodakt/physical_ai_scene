@@ -1,0 +1,71 @@
+{
+  "description": "S7 evaluation set for the mock desk sequence (scripts/make_demo_sequence.py), asked on the scene graph after the last frame. expect_target: label of the object the verifier must return, or null when the system must refuse ('Cannot determine'). expect_validated: whether S6 must accept the path. llm_claim: what an unverified LLM answered when asked the same question directly; when it is wrong the verifier must override it (hallucination catch rate).",
+  "queries": [
+    {
+      "query": "Where is the mug?",
+      "expect_target": "mug",
+      "expect_validated": true,
+      "llm_claim": "mug"
+    },
+    {
+      "query": "Go to the mug",
+      "expect_target": "mug",
+      "expect_validated": true,
+      "llm_claim": "mug"
+    },
+    {
+      "query": "Go to the glass",
+      "expect_target": "glass",
+      "expect_validated": false,
+      "llm_claim": "glass"
+    },
+    {
+      "query": "What is closest to the laptop?",
+      "expect_target": "glass",
+      "expect_validated": false,
+      "llm_claim": "mug"
+    },
+    {
+      "query": "Which cup is closest to the book?",
+      "expect_target": "mug",
+      "expect_validated": true,
+      "llm_claim": "glass"
+    },
+    {
+      "query": "What is closest to the book?",
+      "expect_target": "mug",
+      "expect_validated": true,
+      "llm_claim": "desk"
+    },
+    {
+      "query": "Where is the multimeter?",
+      "expect_target": "multimeter",
+      "expect_validated": true,
+      "llm_claim": "multimeter"
+    },
+    {
+      "query": "Find the book that is not near the mug",
+      "expect_target": "book",
+      "expect_validated": true,
+      "llm_claim": "laptop"
+    },
+    {
+      "query": "Find a cup that is not near the laptop",
+      "expect_target": null,
+      "expect_validated": false,
+      "llm_claim": "mug"
+    },
+    {
+      "query": "Which chair is closest to the laptop?",
+      "expect_target": null,
+      "expect_validated": false,
+      "llm_claim": "chair"
+    },
+    {
+      "query": "Where is the red stapler?",
+      "expect_target": null,
+      "expect_validated": false,
+      "llm_claim": "stapler"
+    }
+  ]
+}

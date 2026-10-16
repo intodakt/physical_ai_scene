@@ -1,0 +1,12 @@
+query,expected,answer_id,verified,correct,llm_claim,llm_claim_wrong,hallucination_caught,validated,expect_validated,goal_reason,sim_success,sim_final_error_m,s5_ms,s6_ms,final_answer
+Where is the mug?,mug,mug_01,True,True,mug,False,False,True,True,path is clear,True,0.0,0.19,0.1,"The mug is mug_01 at x=0.52, y=-0.02, z=0.06 m, on desk_01."
+Go to the mug,mug,mug_01,True,True,mug,False,False,True,True,path is clear,True,0.0,0.1,0.1,"The mug is mug_01 at x=0.52, y=-0.02, z=0.06 m, on desk_01."
+Go to the glass,glass,glass_01,True,True,glass,False,False,False,False,path crosses exclusion zone of laptop_01,False,,0.11,0.08,"The glass is glass_01 at x=0.61, y=0.36, z=0.07 m, on desk_01."
+What is closest to the laptop?,glass,glass_01,True,True,mug,True,True,False,False,path crosses exclusion zone of laptop_01,False,,0.1,0.06,"The closest object to the laptop is glass_01, verified at 0.22 meters."
+Which cup is closest to the book?,mug,mug_01,True,True,glass,True,True,True,True,path is clear,True,0.0,0.14,0.08,"The closest cup to the book is mug_01, verified at 0.30 meters."
+What is closest to the book?,mug,mug_01,True,True,desk,True,True,True,True,path is clear,True,0.0,0.1,0.09,"The closest object to the book is mug_01, verified at 0.30 meters."
+Where is the multimeter?,multimeter,multimeter_01,True,True,multimeter,False,False,True,True,path is clear,True,0.0,0.1,0.09,"The multimeter is multimeter_01 at x=0.47, y=0.10, z=0.03 m, on desk_01."
+Find the book that is not near the mug,book,book_01,True,True,laptop,True,True,True,True,path is clear,True,0.0,0.18,0.13,book_01 is a book that is NOT near the mug.
+Find a cup that is not near the laptop,,,False,True,mug,True,True,False,False,S5 could not verify a target; no goal sent to the virtual agent,False,,0.11,0.02,Cannot determine: no object satisfies the constraint.
+Which chair is closest to the laptop?,,,False,True,chair,True,True,False,False,S5 could not verify a target; no goal sent to the virtual agent,False,,0.11,0.02,Cannot determine: no matching objects in the scene graph.
+Where is the red stapler?,,,False,True,stapler,True,True,False,False,S5 could not verify a target; no goal sent to the virtual agent,False,,0.07,0.02,Cannot determine: 'stapler' is not in the scene graph.

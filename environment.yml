@@ -1,0 +1,9 @@
+# Conda alternative to requirements.txt:  conda env create -f environment.yml && conda activate g1-scene
+name: g1-scene
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - -r requirements.txt
