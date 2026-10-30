@@ -35,3 +35,8 @@ streamlit run dashboard/app.py               # presentation dashboard
 python tools/check_contracts.py              # PR gatekeeper: absolute paths + JSON contracts
 python -m pytest -q
 ```
+
+## Contributing
+
+Work on a branch and open a pull request into `main`. Before asking for a merge, run
+`python tools/check_contracts.py` and `python -m pytest -q`.
