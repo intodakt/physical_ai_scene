@@ -7,7 +7,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from query_parser import _normalize
+from query_parser import _fix_go_to, _normalize
 from verifier import GraphError, filter_not_near, find_closest, find_nodes_by_name, has_edge, load_graph, locate
 
 HERE = Path(__file__).parent
@@ -161,6 +161,19 @@ def test_half_written_graph_file_is_retried():
     live.write_text('{"nodes": [')
     threading.Timer(0.15, lambda: live.write_text(json.dumps(s4_graph))).start()
     assert len(load_graph(live)["nodes"]) == len(s4_graph["nodes"])
+
+
+def test_go_to_command_makes_the_object_the_target():
+    wrong = {"target": "", "reference": "mug", "relations": ["closest_to"], "positive_constraints": [],
+             "negative_constraints": []}
+    fixed = _fix_go_to("Go to the mug", dict(wrong, relations=list(wrong["relations"])))
+    assert fixed["target"] == "mug" and fixed["reference"] == "" and fixed["relations"] == []
+    right = {"target": "mug", "reference": "", "relations": [], "positive_constraints": [], "negative_constraints": []}
+    assert _fix_go_to("Go to the mug", dict(right))["target"] == "mug"
+    closest = {"target": "", "reference": "laptop", "relations": ["closest_to"], "positive_constraints": [],
+               "negative_constraints": []}
+    assert _fix_go_to("What is closest to the laptop?", dict(closest))["reference"] == "laptop"
+    assert _fix_go_to("Go to the thing closest to the laptop", dict(closest))["reference"] == "laptop"
 
 
 if __name__ == "__main__":
