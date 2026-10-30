@@ -31,6 +31,7 @@ Rules:
   Words like "not", "no", "without", "far from" mean a negative constraint. NEVER write "not_near" in "relations".
 - Use an empty string "" when there is no target or no reference. Never write "...".
 - Adjectives such as "free" or "red" go in "positive_constraints".
+- Commands like "Go to the mug" or "Find the book" name the thing to reach: it is the "target", "reference" stays "".
 
 Examples:
 Q: Which chair is closest to the mug?
@@ -43,8 +44,17 @@ Q: Where is the red mug?
 A: {"intent":"find_object","target":"mug","reference":"","relations":[],"positive_constraints":["red"],"negative_constraints":[]}
 Q: What is closest to the laptop?
 A: {"intent":"find_object","target":"","reference":"laptop","relations":["closest_to"],"positive_constraints":[],"negative_constraints":[]}
+Q: Go to the mug
+A: {"intent":"find_object","target":"mug","reference":"","relations":[],"positive_constraints":[],"negative_constraints":[]}
+Q: Go to the book
+A: {"intent":"find_object","target":"book","reference":"","relations":[],"positive_constraints":[],"negative_constraints":[]}
 """
 
+_GO_TO = re.compile(
+    r"^\s*(?:please\s+)?(?:go|walk|move|navigate|head|come)\s+to\s+(?:the\s+|a\s+|an\s+)?(.+?)[?.!\s]*$"
+    r"|^\s*(?:take|bring)\s+me\s+to\s+(?:the\s+|a\s+|an\s+)?(.+?)[?.!\s]*$",
+    re.IGNORECASE,
+)
 _NEG_PATTERN = re.compile(r"(near|under|on|inside|above)\s+(?:the\s+|a\s+|an\s+)?(.+)", re.IGNORECASE)
 
 
@@ -109,6 +119,19 @@ def _normalize(parsed):
     return parsed
 
 
+def _fix_go_to(question, parsed):
+    """Small models read "Go to the mug" as "closest to the mug". The mug is the target, not the reference."""
+    m = _GO_TO.match(question)
+    if not m or parsed.get("target") or not parsed.get("reference") or parsed.get("negative_constraints"):
+        return parsed
+    obj = (m.group(1) or m.group(2)).lower()
+    if re.search(r"\b(closest|nearest|near|next|far|not)\b", obj):
+        return parsed
+    parsed["target"], parsed["reference"] = parsed["reference"], ""
+    parsed["relations"] = [r for r in parsed.get("relations", []) if "closest" not in str(r).lower()]
+    return parsed
+
+
 def _clean_llm_text(raw_text):
     raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
     if raw_text.startswith("```"):
@@ -141,7 +164,7 @@ def parse_query(question: str, model: Optional[str] = None) -> dict:
         return {"error": "LLM output is not valid JSON", "raw_output": raw_text}
     if not isinstance(parsed, dict):
         return {"error": "LLM output is not a JSON object", "raw_output": raw_text}
-    return _normalize(parsed)
+    return _fix_go_to(question, _normalize(parsed))
 
 
 if __name__ == "__main__":
