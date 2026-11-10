@@ -1,8 +1,8 @@
 # MedOne Clinic: 4-Day Build Plan
 
-> A clinic website with appointment booking, online (video) consultations and a RAG-based AI assistant.
+> A clinic website with appointment booking, online (video) consultations, a RAG-based AI assistant and role-based portals.
+> **Design:** follows the look and structure of [campusly.uz](https://campusly.uz/) (a school portfolio project), adapted to a clinic.
 > **Website languages:** English and Uzbek.
-> **Reference site:** [campusly.uz](https://campusly.uz/), a school portfolio project. We reuse its **structure and UX patterns**, adapted to a clinic, with our own brand and design.
 > **Timeline:** 4 days, 10–12 hours per day. At this pace most of the code is written with an AI coding assistant while you review and test everything.
 
 ---
@@ -10,468 +10,567 @@
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
-2. [Reference Site: Campusly → MedOne](#2-reference-site-campusly--medone)
-3. [Website Structure](#3-website-structure)
-4. [Build Order](#4-build-order)
-5. [Tech Stack](#5-tech-stack)
-6. [Design Direction](#6-design-direction)
-7. [Folder Structure](#7-folder-structure)
-8. [Day 1: Full Website](#8-day-1-full-website)
-9. [Day 2: Booking and Payments](#9-day-2-booking-and-payments)
-10. [Day 3: Online Consultations and AI Assistant](#10-day-3-online-consultations-and-ai-assistant)
-11. [Day 4: Admin Panel, Live Demo and Launch](#11-day-4-admin-panel-live-demo-and-launch)
-12. [Core Rules](#12-core-rules)
-13. [If You Run Out of Time](#13-if-you-run-out-of-time)
-14. [Notes](#14-notes)
+2. [Campusly → MedOne: Full Mapping](#2-campusly--medone-full-mapping)
+3. [Design System](#3-design-system)
+4. [Public Website](#4-public-website)
+5. [Sign-in Pages](#5-sign-in-pages)
+6. [Portals](#6-portals)
+7. [Admin Panel](#7-admin-panel)
+8. [Tech Stack](#8-tech-stack)
+9. [Folder Structure](#9-folder-structure)
+10. [Build Order](#10-build-order)
+11. [Day 1: Design System and Public Website](#11-day-1-design-system-and-public-website)
+12. [Day 2: Sign-in, Booking, Payments, Patient Portal](#12-day-2-sign-in-booking-payments-patient-portal)
+13. [Day 3: Doctor Portal, Video Visits, AI Front Desk](#13-day-3-doctor-portal-video-visits-ai-front-desk)
+14. [Day 4: Admin Panel, Live Demo, Launch](#14-day-4-admin-panel-live-demo-launch)
+15. [Core Rules](#15-core-rules)
+16. [If You Run Out of Time](#16-if-you-run-out-of-time)
+17. [Notes](#17-notes)
 
 ---
 
 ## 1. Project Overview
 
-**MedOne Clinic** is a clinic website with:
-
 | Part | What it does |
 |---|---|
-| **Website** | The clinic, departments, doctors, check-ups, prices, health guides and contacts |
-| **Booking** | Reserve a time slot for an in-clinic or online visit and pay |
-| **Online consultation** | Talk to a doctor over video |
-| **AI assistant ("Front Desk")** | Answers questions using the clinic's own data and helps find the right doctor |
-| **Patient Portal** | Appointments, prescriptions and results in one place |
-| **Admin panel** | Manage everything shown on the website |
-| **Live demo** | Try the portal as a patient, doctor or admin, no password needed |
+| **Public website** | Clinic, departments, check-ups, health guides, doctors, how a visit works, FAQ |
+| **Booking** | In-clinic or online visit, time slot, payment |
+| **Patient Portal** | Visits, results, prescriptions, AI Front Desk, notices |
+| **Doctor Portal** | Today's queue, schedule, video visits, notes and prescriptions, patient questions |
+| **Admin panel** | Manage all content, requests, users, appointments and payments |
+| **Video visits** | Doctor and patient talk over video |
+| **AI Front Desk** | Answers from clinic data (RAG), helps find the right doctor |
+| **Live demo** | One click, no password: patient, doctor or admin; resets every night |
 
-**Users:** patient, doctor, admin.
+**Roles:** patient, doctor, admin.
 **Languages:** English, Uzbek.
 
 ---
 
-## 2. Reference Site: Campusly → MedOne
+## 2. Campusly → MedOne: Full Mapping
 
-### What Campusly is
+### Public website
 
-Campusly is a website for a **fictional private school in Tashkent**, built as a portfolio project. It combines a public school website with a **portal** for students, parents and teachers, and offers a **live demo without a password**.
-
-### What we take from it
-
-| Campusly pattern | Why it works | How MedOne uses it |
-|---|---|---|
-| Calm, plain-language copy ("A calm, focused school where every student is known") | Builds trust, does not sound like marketing | Same tone for a clinic |
-| Hero with a short claim + key numbers | Instant credibility | Doctors, departments, patients per year, founded year |
-| Portal showcase with role tabs (Student / Parent) and a phone mockup | Shows the product, not just the building | Patient / Doctor tabs, Web / Mobile switch |
-| **"Live demo, no password"** | Visitors (and recruiters) try it in one click | One-click demo as patient, doctor or admin |
-| Program cards with schedule and "Ask about schedule" | Concrete, practical information | Department cards with opening days and hours |
-| Mock tests: price, date, room, **seats left**, contact person | Creates urgency, very clear | Check-up packages and screening days with **slots left** |
-| Free open courses, no sign-up | Gives value before asking for anything | Free health guides and articles |
-| 6-step admission process | Removes uncertainty | "Your visit in 6 steps" |
-| Enquiry form with "We will call you back within 1 working day" and a hidden spam field | Simple lead capture | "Request a call back" form |
-| Facilities list (metro distance, safety, meals, medical room) | Answers practical questions | Equipment, lab, pharmacy, parking, metro, accessibility |
-| Team section with a director's quote | Human face of the organisation | Chief physician's quote + doctor cards |
-| Footer note: "a portfolio project; the school and its people are fictional" | Honest, avoids confusion | Same note for MedOne |
-
-### What we do **not** take
-
-- Campusly's name, logo, texts, photos, people or colours
-- Its green colour palette and fonts (Lora, Plus Jakarta Sans). MedOne keeps its own design system (section 6), so the two sites look clearly different
-- School-only features (grades, homework, honour students)
-
----
-
-## 3. Website Structure
-
-### Navigation
-
-`Departments · Doctors · Check-ups · Prices · Health guides · FAQ` · `EN / UZ` · **Patient Portal** · **Book a visit**
-
-### Home page sections (in order)
-
-| # | Section | Content | Campusly equivalent |
-|---|---|---|---|
-| 1 | **Hero** | Eyebrow: "Tashkent · Open daily 08:00–20:00". Claim: *"Calm, careful care, and a doctor who knows your name."* Subline: specialists in 8 departments, in-clinic or online, in English and Uzbek. Buttons: **Book a visit**, **Patient Portal**. Small line: *"Live demo: patient, doctor or admin, no password"* | Hero |
-| 2 | **Key numbers** | 40 doctors · 8 departments · 25,000 patients a year · founded 2018 | Stats |
-| 3 | **News & events** | E.g. "Free blood pressure check day", "New MRI scanner", "Flu vaccination week" with date, place and time | News & Events |
-| 4 | **Why MedOne** | 4 pillars: *In-clinic or online visits* · *AI Front Desk that answers from clinic data and never diagnoses* · *Doctors who speak English and Uzbek* · *Clear prices, no surprises* | Why choose |
-| 5 | **Facilities** | 1.5T MRI, lab with same-day results, pharmacy, parking, 5 minutes from metro, step-free access, children's waiting area | Facilities |
-| 6 | **Patient Portal showcase** | Tabs **Patient / Doctor**; feature cards (book in a minute, reminders, results online, prescriptions, video visits, AI Front Desk); phone mockup; **Web / Mobile** switch | Portal showcase |
-| 7 | **Partners** | Insurance companies and laboratories (fictional names) | Partners |
-| 8 | **Departments** | Cards: department, short description, opening days and hours, "Book" link | Programs & clubs |
-| 9 | **Check-ups & screening days** | Cards: package name, what is included, price in UZS, date and time, place, **slots left**, coordinator contact, "Book" button | Mock tests |
-| 10 | **Health guides** | Free articles and short videos, filter by topic (Heart, Children, Women's health, Lifestyle), no sign-up | Open courses |
-| 11 | **Our doctors** | Chief physician's quote + doctor ID cards (photo, name, department, languages, years of experience) | Our team |
-| 12 | **Care for every age** | Children (0–17) · Adults · 60+ with what each group gets | School stages |
-| 13 | **Your visit in 6 steps** | 01 Ask the Front Desk or choose a doctor · 02 Pick a time · 03 Pay online or at the clinic · 04 Get SMS reminders · 05 Visit in clinic or online · 06 See results and prescriptions in the portal | Admission process |
-| 14 | **Request a call back** | Form: name, phone (+998), department, preferred time, hidden spam field. *"We call back within 30 minutes during opening hours."* | Admissions enquiry |
-| 15 | **FAQ** | Insurance, payment options, children, results timing, what is needed for an online visit, parking | FAQ |
-| 16 | **Footer** | Address, nearest metro, phones, hours, socials, portal links (Patient sign in, Doctor sign in, Live demo), *"MedOne Clinic is a portfolio project; the clinic and its people are fictional."* | Footer |
-
-### Other pages
-
-| Page | Content |
+| Campusly | MedOne Clinic |
 |---|---|
-| `/departments`, `/departments/[slug]` | List and detail (services, doctors, hours) |
-| `/doctors`, `/doctors/[slug]` | List (filter by department and language), profile with free slots |
-| `/check-ups`, `/check-ups/[slug]` | Packages and screening days |
-| `/prices` | Full price list, printed-menu style, with search |
-| `/guides`, `/guides/[slug]` | Health guides |
-| `/news`, `/news/[slug]` | News and events |
-| `/about` | Story, facilities, leadership |
-| `/contact` | Map, address, phones, hours, call-back form |
-| `/faq` | All questions |
-| `/assistant` | AI Front Desk, full page |
-| `/booking` | Booking flow |
-| `/portal` | Patient Portal (appointments, prescriptions, results) |
-| `/doctor` | Doctor panel |
-| `/admin` | Admin panel |
-| `/demo` | One-click live demo |
+| Hero: "A calm, focused school where every student is known." | Hero: "A calm, careful clinic where every patient is known." |
+| Eyebrow pill "Tashkent · Grades 1–11" | "Tashkent · Open daily 08:00–20:00" |
+| Buttons "Enquire now" / "Campusly Portal →" | "Book a visit" / "Patient Portal →" |
+| "Live demo: student, parent or teacher — no password" | "Live demo: patient, doctor or admin — no password" |
+| Stats: students · teachers · programs · founded | doctors · departments · patients a year · founded |
+| News & Events carousel | News & Events (free check-up day, new MRI, vaccination week) |
+| Why choose Campusly (4 cards) | Why choose MedOne (4 cards) |
+| Facilities (icon list around a student portrait) | Facilities (icon list around a doctor portrait) |
+| Campusly Portal showcase (Student / Parent tabs, device mockups) | Patient Portal showcase (Patient / Doctor tabs, device mockups) |
+| Partners marquee (CollegeBoard, British Council…) | Partners marquee (insurance companies and labs, fictional names) |
+| Programs & clubs (photo cards with schedule) | Departments (photo cards with days and hours) |
+| Mock tests (seats left, price, date, room, contact) | Check-ups & screening days (slots left, price, date, place, coordinator) |
+| Open Courses (free, filter chips) | Health guides (free, filter chips) |
+| Honor Students (gold badge cards) | Recognition (doctors' awards and certifications) |
+| Our team (director quote + photo grid) | Our doctors (chief physician quote + photo grid) |
+| School stages (Primary / Middle / High) | Care for every age (Children / Adults / 60+) |
+| Admission process (6 steps, zig-zag timeline) | Your visit in 6 steps (same timeline) |
+| Admissions office form | Patient desk: "Request a call back" form |
+| FAQ accordion | FAQ accordion |
+| Footer (address, metro, socials, portals, disclaimer) | Same structure, MedOne content |
 
----
+### Sign-in and portals
 
-## 4. Build Order
-
-```
-Day 1               Day 2                  Day 3                       Day 4
-FULL WEBSITE   →   BOOKING            →   ONLINE CONSULTATION     →   ADMIN PANEL
-(all sections)     + PAYMENTS + SMS        + AI ASSISTANT (RAG)        + LIVE DEMO + LAUNCH
-```
-
-- **The website is finished first**, then each feature is added one at a time.
-- Until the admin panel exists (days 1–3), data is loaded with a **seed script**.
-- At the end of every day: commit, push and leave the project in a working state.
-
----
-
-## 5. Tech Stack
-
-| Part | Technology |
+| Campusly | MedOne Clinic |
 |---|---|
-| Frontend | Next.js, TypeScript, Tailwind CSS |
-| UI primitives | Radix UI (unstyled, fully custom styling) |
-| Internationalization | next-intl (`en`, `uz`) |
-| Backend | Node.js, Express, TypeScript |
-| Database | MongoDB Atlas |
-| Authentication | Phone number + SMS code (Eskiz.uz) |
-| Payments | Payme, Click (sandbox mode) |
-| Video calls | WebRTC, Socket.io |
-| AI | RAG: LLM API + MongoDB Atlas Vector Search |
-| Animation | Framer Motion (used sparingly) |
-| Deployment | Vercel (website), Render (backend) |
+| `/login` Student / Parent tabs + Live demo box | `/login` Patient sign-in (phone + SMS) + Live demo box |
+| `/login/teacher` | `/login/staff` (doctors and admins) |
+| Student portal: Home, My Courses, Calendar, Grades, AI Study Tutor, Announcements | Patient Portal: Home, My Visits, Calendar, Results, Prescriptions, AI Front Desk, Notices |
+| Parent portal: child switcher, Overview, Grades, Attendance, Calendar, Announcements | Family members: switch between your own profile and your children's profiles |
+| Teacher portal: Dashboard, My Courses, Gradebook, Attendance, Announcements, Q&A | Doctor Portal: Dashboard, Schedule, Visits, Patients, Notices, Patient Q&A |
+| `/_admin`: activity, enquiries, programs, mock tests, news, open courses, honor students, team, users, settings, records | `/admin`: activity, call-back requests, departments, check-ups, news, health guides, recognition, doctors, users, settings, appointments & payments |
+
+### What stays original
+
+MedOne uses the same **visual style and layout patterns**, but its **own name, logo, texts, photos and people**. No images, logos or text are copied from Campusly.
 
 ---
 
-## 6. Design Direction
+## 3. Design System
 
-The site must **not look AI-generated or template-made**, and it must look **clearly different from Campusly** even though the structure is similar.
+All values below were measured from campusly.uz.
 
-### Concept: "Modern Tashkent Clinic"
-
-A calm, editorial look that mixes **clinical precision** with **subtle Uzbek craft details**. Think of a well-designed printed hospital brochure, not a SaaS landing page.
-
-### What to avoid (the "AI look")
-
-| ❌ Avoid | ✅ Do instead |
-|---|---|
-| Purple/blue gradients, glowing blobs | Flat, warm background with one strong accent colour |
-| Glassmorphism and heavy drop shadows | Thin 1px rules and borders, almost no shadows |
-| Everything rounded (`rounded-2xl` everywhere) | Small radius (4–6px), some sharp corners |
-| Centred hero + three identical feature cards | Asymmetric editorial grid, large typography, numbered sections |
-| Default shadcn/ui look | Custom-styled Radix primitives |
-| Emoji and generic icon sets as decoration | A small custom line-icon set and one ornamental pattern |
-| Stock photos of smiling doctors with stethoscopes | Calm, documentary-style photos: real rooms, equipment, hands, light |
-| "Revolutionizing healthcare with AI ✨" copy | Short, plain, human sentences |
-| Floating chat bubble with a robot avatar | AI presented as the clinic's "Front Desk" with footnote-style sources |
-
-### Colour palette
+### Colours
 
 | Token | Hex | Use |
 |---|---|---|
-| `paper` | `#F5F1E8` | Main background (warm off-white) |
-| `ink` | `#14302B` | Text, headers, dark sections |
-| `clay` | `#C2553A` | Primary accent: buttons, links, highlights |
-| `tile` | `#2C6E8F` | Secondary accent, inspired by Uzbek tile blue (used rarely) |
-| `line` | `#D9D2C3` | Borders and dividers |
-| `muted` | `#6B6A63` | Secondary text |
-| `alert` | `#B3261E` | Emergency messages only |
+| `bg` | `#F8F8F6` | Page background |
+| `surface` | `#FFFFFF` | Cards, header after scroll |
+| `text` | `#242A27` | Body text |
+| `heading` | `#111827` | Headings |
+| `primary` | `#2F7A63` | Links, eyebrow labels, stat numbers, accents |
+| `primary-dark` | `#1F4E43` | Main buttons, active sidebar item, login panel |
+| `primary-deeper` | `#163830` | Pressed states, dark sections |
+| `primary-light` | `#4FA383` | Icons, success dots |
+| `primary-tint` | `#E5F1EB` | Soft tags ("Covered by insurance"), contact box, live-demo bar |
+| `surface-alt` | `#F3F5F2` | Table headers, input backgrounds |
+| `border` | `#E7E5E4` | Card and input borders |
+| `muted` | `#78716C` | Secondary text |
+| `muted-dark` | `#57534E` | Labels |
+| `gold` | `#D4A017` | Recognition badge |
+| `amber-tint` | `#FEF3C7` (approx.) | "Slots left" pill, "Not taken" style warnings |
+
+**Icon tiles** (square, radius 8–10px, white icon, gradient at 145°, soft coloured shadow):
+
+| Name | Gradient |
+|---|---|
+| blue | `#4A7FE6 → #1E56C8` |
+| violet | `#8466E6 → #5B3FCF` |
+| sky | `#2290C8 → #0B6FA8` |
+| orange | `#D9722A → #A94C08` |
+| teal | `#1A9890 → #0F766E` |
+| green | `#4FA383 → #2F7A63` |
+| rose | `#E35A7A → #C2304F` |
+
+Shadow: `0 8px 16px -8px <colour at 55%>, inset 0 1px 0 rgba(255,255,255,0.25)`.
 
 ### Typography
 
 | Role | Font | Notes |
 |---|---|---|
-| Headings | **Fraunces** (serif) | Large sizes, tight letter-spacing |
-| Body and UI | **IBM Plex Sans** | Clear, good Latin support for Uzbek (`o'`, `g'`) |
-| Numbers (prices, times, dates, slots left) | **IBM Plex Mono** | Makes prices and time slots feel precise |
+| Headings and body | **Plus Jakarta Sans** | Headings 600–800, letter-spacing `-0.025em` |
+| Logo wordmark, quotes | **Lora** 500 | Uppercase wordmark with wide letter-spacing |
+| Numbers, IDs, codes | **JetBrains Mono** 500/600 | Plus `font-variant-numeric: tabular-nums` on the body |
 
-### Signature elements
+| Element | Size |
+|---|---|
+| Hero heading | 54px desktop / 40px mobile, bold, tight line-height |
+| Section heading (H2) | 30–36px (`1.875rem`–`2.25rem`) |
+| Card title | 18–20px |
+| Body | 15px (`0.9375rem`), line-height 24px |
+| Small text | 13–14px |
+| Eyebrow label | 12px, uppercase, letter-spacing `0.1em`, `primary` colour |
 
-1. **Ornamental line pattern** inspired by Uzbek tilework (girih), used only in the hero corner, dividers and footer
-2. **Price list like a printed menu**: name left, price right, dotted leader line, mono prices
-3. **Time-slot picker like a departure board**: mono times, taken slots struck through, selected slot filled with `clay`
-4. **Doctor cards like ID cards**: portrait, serif name, department, language tags, large "years of experience" number
-5. **Numbered sections**: `01 Departments`, `02 Doctors` in small mono labels
-6. **"Slots left" counter** on check-up cards in mono, turning `clay` when fewer than 5 remain
-7. **AI "Front Desk"**: a side panel from the right with numbered footnote sources `[1] [2]`
-8. **Emergency screen**: a full-width `alert` block with a large "Call 103" button
+### Shape, depth, layout
 
-### Layout and interaction rules
+| Token | Value |
+|---|---|
+| Radius | 8px (buttons, inputs), 12px (cards), 16px (large cards), pill `9999px` (tags, segmented controls) |
+| Card border | `1px solid #E7E5E4` |
+| Shadow small | `0 1px 2px rgba(0,0,0,0.05)` |
+| Shadow card | `0 4px 12px -2px rgba(36,42,39,0.08)` |
+| Container | max width `1152px`, side padding 16 / 32 / 48px |
+| Header | fixed, 76px tall |
 
-- 12-column grid with generous white space; content does not always sit in the centre
-- Large headings (48–72px on desktop), short paragraphs
-- Animations: gentle fade/slide on scroll and clear hover states only
-- Mobile first: tap targets at least 44px, sticky bottom bar with "Book" and "Call"
-- Accessibility: WCAG AA contrast, visible focus states, body text at least 17px
+### Motion
+
+| Effect | Value |
+|---|---|
+| Section reveal on scroll | opacity 700ms + translate 900ms, `cubic-bezier(0.23, 1, 0.32, 1)` |
+| Hover and colour changes | 250ms, `cubic-bezier(0.4, 0, 0.2, 1)` |
+| Header | transparent over the hero, turns white with border on scroll (300ms) |
+| Smooth scrolling | Lenis |
+| Stats | count up when visible |
+| Hero | slideshow with dots and pause button |
+| Partners | infinite horizontal marquee with faded edges |
+
+### Components
+
+| Component | Look |
+|---|---|
+| **Primary button** | `primary-dark` fill, white text, radius 8px |
+| **Hero buttons** | white fill + `primary` text; outline white button |
+| **Secondary button** | white, 1px border, dark text |
+| **Eyebrow + heading** | small green uppercase label above a bold heading |
+| **Tag / pill** | soft tint background, small text (green, amber, gray) |
+| **Stat card** | white card overlapping the hero bottom; big green number + "· label" |
+| **Feature card** | `surface-alt` card, gradient icon tile, title, text or checklist |
+| **Photo card** | image left, title, subtitle, schedule line, description, footer with tag and "→" link |
+| **Event card** | slots-left pill, big green price in UZS, date and place with icons, divider, contact person + phone pill |
+| **Person card** | photo on top, name, role in green |
+| **Timeline** | dashed vertical line, alternating left/right steps, numbered titles, muted icon tiles |
+| **Accordion** | white rounded rows, chevron on the right |
+| **Segmented control** | pill track with a white active segment |
+| **Sidebar item (portal)** | icon + label; active = `primary-dark` pill with white text and soft shadow |
+| **Live demo bar (portal)** | `primary-tint` bar: "LIVE DEMO" pill, "Viewing as …", "What to try", "Switch role" |
+| **Data table** | gray header row, thin row dividers, mono numbers |
+| **Calendar widget** | 7-column grid, selected day = `primary-dark` rounded square, coloured legend dots |
 
 ---
 
-## 7. Folder Structure
+## 4. Public Website
+
+### Header
+- Logo (MedOne wordmark in Lora + small "CLINIC · TASHKENT" line)
+- Menu: **Departments · Check-ups · Health guides · Doctors · How it works · FAQ**
+- Language switch (English / O'zbek), **Patient Portal** (outline), **Book a visit** (white)
+- Mobile: logo, "Book" button, hamburger menu
+
+### Home page sections (in order)
+
+| # | Section | Content |
+|---|---|---|
+| 1 | **Hero** | Full-width photo slideshow with a dark green overlay. Pill "Tashkent · Open daily 08:00–20:00". Heading *"A calm, careful clinic where every patient is known."* Subline *"Experienced specialists, clear prices, and visits in the clinic or online."* Buttons **Book a visit**, **Patient Portal →**. Line *"Live demo: patient, doctor or admin — no password"*. Dots + pause |
+| 2 | **Stats card** | 40 · doctors / 12 · departments / 25,000 · patients a year / 2018 · founded |
+| 3 | **News & Events** | Carousel: photo left, card right (tag, date · place · time, title, text, "Read more →"), arrows top-right |
+| 4 | **Why choose MedOne?** | *"Everything you need for your health, in one calm and well-run clinic."* 4 cards: **Digital clinic** (checklist: book online in a minute · results and prescriptions in the Patient Portal · AI Front Desk that answers from clinic data) · **Visits in the clinic or online** · **Doctors who speak English and Uzbek** · **Clear prices, no surprises** |
+| 5 | **Facilities** | Doctor portrait in the middle, 10 icon items around it: MRI and CT, same-day lab results, pharmacy on site, children's area, step-free access, parking, 5 minutes from metro, 24/7 emergency line, sterile operating rooms, Wi-Fi and waiting lounge |
+| 6 | **Patient Portal showcase** | *"MedOne Portal: your health in one app."* Tabs **Patient / Doctor**; three checklist items per tab; laptop + phone mockups; "Live preview · Web / Mobile" switch |
+| 7 | **Partners** | *"Who we work with"*: insurance companies and laboratories, infinite marquee |
+| 8 | **Departments** | Eyebrow "Our departments". Photo cards: Cardiology, Neurology, Paediatrics, Gynaecology, ENT, Dermatology… with subtitle, days and hours, description, tag "Online visits available", "See doctors →" |
+| 9 | **Check-ups & screening days** | Eyebrow "Open to everyone". Cards: "12 slots left", "450,000 UZS", *Heart Check-up*, what is included, date · time, place, divider, "To book, contact: coordinator name + phone pill" |
+| 10 | **Health guides** | Eyebrow "Free · No sign-up". Filter chips (Heart, Children, Women's health, Lifestyle). Cards: cover, "3 articles", title, source, "Start reading" |
+| 11 | **Recognition** | Eyebrow "Clinical excellence". Cards with gold badge: doctor photo, name, department, award or certification |
+| 12 | **Our doctors** | Chief physician card (round photo, name, title, quote with green left border) + photo grid of doctors |
+| 13 | **Care for every age** | 3 photo cards: *Children · 0–17*, *Adults · 18–59*, *60+* with 3 checklist items each |
+| 14 | **Your visit in 6 steps** | Zig-zag timeline: 01 Choose a doctor or ask the Front Desk · 02 Pick a time · 03 Pay online or at the clinic · 04 Get SMS reminders · 05 Visit in the clinic or online · 06 Results and prescriptions in your portal |
+| 15 | **Patient desk** | Left: eyebrow "Patient desk", *"Questions about a visit or a check-up?"*, green contact box (phones, hours). Right: form (full name, phone +998, department, preferred time), hidden spam field, "Request a call back →", *"We will call you back within 30 minutes during opening hours."* |
+| 16 | **FAQ** | Insurance · payment options · children · results timing · online visit requirements · parking |
+| 17 | **Footer** | Logo, address, nearest metro, phones, email · "Follow us" (Telegram, Instagram, YouTube with coloured icon tiles) · "Portals" rows (Patient sign in →, Staff sign in →, Live demo →) · © 2026 MedOne Clinic · *"MedOne Clinic is a portfolio project; the clinic and its people are fictional."* · language switch |
+
+### Inner pages
+
+`/departments/[slug]` · `/doctors` · `/doctors/[slug]` (profile + free slots) · `/check-ups/[slug]` · `/guides/[slug]` · `/news/[slug]` · `/booking` · `/assistant`. All use the same header, footer and components.
+
+---
+
+## 5. Sign-in Pages
+
+### `/login` (patients)
+Split screen, exactly like Campusly:
+
+- **Left panel** (`primary-dark`): logo, heading *"Your visits, results and prescriptions in one place."*, subline *"For patients and families."*, 3 items with outlined icon boxes (Book and manage visits · See results and prescriptions · Ask the AI Front Desk), quote at the bottom in italic, footer "© 2026 MedOne · Clinic website ↗"
+- **Right panel**: language switch; heading **Sign in**; "Use your phone number."; uppercase label PHONE NUMBER with `+998` prefix; **Send code** (full-width `primary-dark` button); then a 6-digit code field
+- **"or" divider**, then the **Live demo box**: *"One click, no password. A made-up clinic that resets every night."* Four role cards:
+  - **Patient · in-clinic**: Aziz, upcoming visit and lab results
+  - **Patient · online**: Madina, video visit today and AI Front Desk
+  - **Doctor**: Dr. Nilufar, today's queue and prescriptions
+  - **Admin**: clinic manager, content and reports (read-only)
+  - Note: *"Sending SMS, payments and file uploads are turned off in the demo."*
+- Bottom link: *"Staff? Sign in here →"*
+
+### `/login/staff` (doctors and admins)
+Same layout; staff ID + password; link *"Just looking? Open the doctor demo"*.
+
+---
+
+## 6. Portals
+
+### Shared portal layout
+- **Left sidebar** (256px): logo with sub-label (PATIENT PORTAL / DOCTOR PORTAL / ADMIN), menu, active item as a dark green pill; bottom: "MedOne · Patient Portal · 2026" and "Clinic website ↗"
+- **Top bar**: page title (or breadcrumb), language switch, bell with orange count badge, name + subtitle, round dark green avatar with initials
+- **Live demo bar** under the top bar (demo accounts only)
+- Page header: small eyebrow (e.g. "November · Week 46"), greeting *"Good morning, Madina"*, one-line summary
+
+### Patient Portal (`/portal`)
+
+| Page | Content |
+|---|---|
+| **Home** | Greeting, "You have 2 upcoming visits". **Upcoming visits** list (doctor, department, date and time, type tag, buttons **Join call** / **Reschedule**). Right column: **To do** (e.g. "Fasting blood test tomorrow: no food after 22:00") and **Calendar** widget with legend (Visit, Check-up, Result ready, Reminder). **Recent results** cards |
+| **My Visits** | Upcoming and past tabs, filter chips, rows with status tags (Confirmed, Paid, Completed, Cancelled) |
+| **Calendar** | Month view + day list, filter chips (All, Visits, Check-ups, Results) |
+| **Results** | Table: test, date, doctor, status, "Download PDF" |
+| **Prescriptions** | Cards: medicine, dose, days, doctor, "Print" |
+| **AI Front Desk** | Same layout as Campusly's AI Study Tutor: conversation list on the left, chat on the right, topic selector (Any department), suggestion chips (*"Which doctor for back pain?"*, *"How much is an MRI?"*, *"Free slots for a cardiologist tomorrow?"*), pill input with send button, footer *"Answers from clinic data, not a diagnosis · 10 left today"* |
+| **Notices** | Clinic announcements (pinned first) |
+| **Family** | Profile switcher in the top bar for your children (like Campusly's parent child switcher) |
+
+### Doctor Portal (`/doctor`)
+
+| Page | Content |
+|---|---|
+| **Dashboard** | Greeting + date. **Today's visits** card (patient, time, type; status pill "Waiting" / "In progress"; button **Start visit** or **Join call**). **Patient questions** card (unanswered). **Upcoming** list with day badges. **My week** summary cards |
+| **Schedule** | Weekly calendar, set free slots, block time off |
+| **Visits** | Table with filters; open a visit → notes, prescription, upload result |
+| **Patients** | Search; patient page with visit history, results and prescriptions |
+| **Notices** | Read clinic notices, post notices to own patients |
+| **Patient Q&A** | Questions from patients with "Answer" action |
+
+### Video visit (`/call/[id]`)
+Portal layout without sidebar: large video area, small self-view, controls (mic, camera, audio only, end), side panel with chat and, for doctors, a notes and prescription form.
+
+---
+
+## 7. Admin Panel
+
+Route `/admin`, same portal layout.
+
+| Section | Content |
+|---|---|
+| **Activity** | Recent actions log (who changed what) |
+| **Call-back requests** | Inbox: New → Called → Closed |
+| **Appointments & payments** | All records with filters, export CSV |
+| **Departments** | Create, edit, delete (photo, schedule, description) |
+| **Check-ups** | Packages and screening days (price, date, place, total slots, coordinator) |
+| **News & events** | Posts and events for the home carousel |
+| **Health guides** | Guides with topics and articles |
+| **Recognition** | Doctor awards and certifications |
+| **Doctors** | Profiles, photos, languages, login accounts |
+| **Users** | Patients and staff, roles |
+| **Settings** | Clinic name, contacts, hours, stats numbers, hero slides, partners, FAQ |
+
+Every content form has **English / O'zbek** tabs. Any change also **refreshes the AI Front Desk data**.
+
+---
+
+## 8. Tech Stack
+
+Matched to what Campusly uses, so the result looks and behaves the same.
+
+| Part | Technology |
+|---|---|
+| Framework | Next.js, TypeScript |
+| UI | **MUI** with a custom theme (Emotion), tokens from section 3 |
+| Fonts | `next/font`: Plus Jakarta Sans, Lora, JetBrains Mono |
+| Smooth scroll and motion | Lenis + CSS transitions / Framer Motion |
+| Internationalization | next-intl (`en`, `uz`) |
+| Backend | Node.js, Express, TypeScript |
+| Database | MongoDB Atlas |
+| Patient sign-in | Phone + SMS code (Eskiz.uz) |
+| Staff sign-in | Staff ID + password |
+| Payments | Payme, Click (sandbox) |
+| Video | WebRTC + Socket.io |
+| AI | RAG: LLM API + MongoDB Atlas Vector Search |
+| Deploy | Vercel (web), Render (api) |
+
+---
+
+## 9. Folder Structure
 
 ```
 medone-clinic/
-├── web/                         # Next.js website
+├── web/
 │   ├── app/[locale]/
-│   │   ├── (site)/              # home, departments, doctors, check-ups, prices, guides, news, about, contact, FAQ
-│   │   ├── login/
-│   │   ├── demo/                # one-click live demo
+│   │   ├── (site)/                   # public website
+│   │   ├── login/, login/staff/
 │   │   ├── booking/
-│   │   ├── portal/              # patient portal
-│   │   ├── call/[id]/           # video consultation
-│   │   ├── assistant/           # AI Front Desk (full page)
-│   │   ├── doctor/              # doctor panel
-│   │   └── admin/               # admin panel
+│   │   ├── portal/                   # patient portal
+│   │   ├── doctor/                   # doctor portal
+│   │   ├── admin/                    # admin panel
+│   │   ├── call/[id]/                # video visit
+│   │   └── assistant/                # public AI Front Desk page
 │   ├── components/
-│   │   ├── ui/                  # base components (Button, Tag, Card...)
-│   │   └── site/                # home page sections
-│   ├── styles/                  # design tokens, fonts, pattern SVGs
-│   ├── messages/                # en.json, uz.json
-│   └── lib/
-│
-├── api/                         # Express backend
-│   ├── src/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── services/            # booking, payment, sms, ai, demo
-│   │   ├── middlewares/
-│   │   ├── socket.ts
-│   │   └── server.ts
-│   └── scripts/seed.ts
-│
+│   │   ├── theme/                    # MUI theme: colours, typography, shapes, component overrides
+│   │   ├── ui/                       # IconTile, Eyebrow, Tag, StatCard, PhotoCard, EventCard, PersonCard, Timeline...
+│   │   ├── site/                     # home page sections
+│   │   └── portal/                   # Sidebar, TopBar, LiveDemoBar, CalendarWidget, DataTable...
+│   ├── messages/                     # en.json, uz.json
+│   └── public/images/                # our own photos and mockups
+├── api/
+│   ├── src/models, routes, services, middlewares
+│   ├── src/socket.ts
+│   └── scripts/seed.ts, scripts/reset-demo.ts
 └── README.md
 ```
 
 ---
 
-## 8. Day 1: Full Website
+## 10. Build Order
 
-**Goal:** by the end of the day the full public website works in English and Uzbek, with all home page sections and its own design.
+```
+Day 1                    Day 2                         Day 3                          Day 4
+DESIGN SYSTEM       →   SIGN-IN + BOOKING        →   DOCTOR PORTAL             →   ADMIN PANEL
++ PUBLIC WEBSITE         + PAYMENTS                    + VIDEO VISITS                  + LIVE DEMO
+                         + PATIENT PORTAL              + AI FRONT DESK (RAG)           + DEPLOY
+```
 
-### Block 1: Project setup (1 h)
-- [ ] Create `web` (Next.js) and `api` (Express)
-- [ ] Connect to MongoDB Atlas, `.env` and `.env.example`
-- [ ] Tailwind CSS, Radix UI, next-intl (`en`, `uz`)
+Until the admin panel exists, data comes from the seed script. Every evening: commit, push, working state.
 
-### Block 2: Design system (1.5 h)
-- [ ] Tokens in Tailwind: colours, fonts, radius, spacing
-- [ ] Fonts: Fraunces, IBM Plex Sans, IBM Plex Mono
-- [ ] Ornamental pattern SVG
-- [ ] Base components: Button, Link, Tag, Card, Section heading (with number), Divider, Stat
+---
+
+## 11. Day 1: Design System and Public Website
+
+**Goal:** the full public website, looking like Campusly, in English and Uzbek.
+
+### Block 1: Setup (1 h)
+- [ ] `web` (Next.js + MUI + Emotion) and `api` (Express), MongoDB Atlas, `.env`
+- [ ] next-intl with `en` and `uz`
+
+### Block 2: Theme and base components (2 h)
+- [ ] MUI theme with all tokens from section 3 (colours, fonts, radius, shadows, button and input overrides)
+- [ ] Fonts: Plus Jakarta Sans, Lora, JetBrains Mono
+- [ ] Components: IconTile (7 gradients), Eyebrow + SectionHeading, Tag, StatCard, FeatureCard, PhotoCard, EventCard, PersonCard, Timeline, Accordion, SegmentedControl
+- [ ] Reveal-on-scroll wrapper and Lenis
 
 ### Block 3: Data and API (1.5 h)
-- [ ] Models: **Department**, **Doctor**, **Service**, **CheckupEvent** (price, date, place, total and taken slots, coordinator), **Guide**, **News**, **Partner**, **FAQ**, **CallbackRequest**, **Settings**
-- [ ] Public APIs for all of them, plus `POST /callback-requests` (rate-limited, honeypot check)
-- [ ] Seed script with bilingual content: 8 departments, 16 doctors, 40 services, 4 check-ups, 6 guides, 3 news items, 4 partners, 15 FAQs
+- [ ] Models: Department, Doctor, CheckupEvent, Guide, News, Recognition, Partner, FAQ, CallbackRequest, Settings
+- [ ] Public APIs + `POST /callback-requests` (rate limit + hidden spam field)
+- [ ] Seed: bilingual content for every section
 
-### Block 4: Layout (1 h)
-- [ ] Header with navigation, `EN / UZ`, phone, **Patient Portal**, **Book a visit**
-- [ ] Footer with address, metro, hours, socials, portal links, portfolio disclaimer
-- [ ] Mobile menu and sticky bottom bar
+### Block 4: Header and footer (1 h)
+- [ ] Transparent-to-white header on scroll, language switch, mobile menu
+- [ ] Footer with portals rows and portfolio disclaimer
 
-### Block 5: Home page (3.5 h)
-- [ ] Hero, key numbers, news & events
-- [ ] Why MedOne, facilities
-- [ ] Patient Portal showcase (role tabs, phone mockup, Web / Mobile switch)
-- [ ] Partners, departments, check-ups with slots left
-- [ ] Health guides (topic filter), our doctors with quote
-- [ ] Care for every age, your visit in 6 steps
-- [ ] Request a call back form, FAQ
+### Block 5: Home page (4 h)
+- [ ] Hero slideshow, stats card, news carousel
+- [ ] Why choose MedOne, facilities
+- [ ] Portal showcase (tabs, mockups, Web / Mobile)
+- [ ] Partners marquee, departments, check-ups
+- [ ] Health guides, recognition, our doctors
+- [ ] Care for every age, 6-step timeline, patient desk form, FAQ
 
-### Block 6: Inner pages (2.5 h)
-- [ ] Departments (list + detail), Doctors (list + profile)
-- [ ] Check-ups (list + detail), Prices (printed-menu style with search)
-- [ ] Guides, News, About, Contact (map), FAQ
+### Block 6: Inner pages (1.5 h)
+- [ ] Department, doctor list and profile, check-up, guide, news pages
 
 ### Block 7: Review (0.5 h)
-- [ ] Every page on a phone and in both languages
-- [ ] Compare against the "What to avoid" table and against Campusly (must look different)
+- [ ] Side by side with campusly.uz on desktop and mobile: spacing, sizes, colours, motion
+- [ ] Both languages
 
 ### ✅ Day 1 result
-- [ ] All 16 home sections and inner pages work in English and Uzbek
+- [ ] Public website matches the Campusly look, with MedOne content
+- [ ] Works on mobile and in both languages
 - [ ] Call-back requests are saved
-- [ ] The site has its own recognisable style and looks good on mobile
 
 ---
 
-## 9. Day 2: Booking and Payments
+## 12. Day 2: Sign-in, Booking, Payments, Patient Portal
 
-**Goal:** a patient signs in, books an appointment or a check-up and pays.
+**Goal:** a patient signs in, books, pays and manages visits in the portal.
 
-### Block 1: Sign-in (2 h)
-- [ ] **User** model: phone, name, role (patient, doctor, admin)
-- [ ] Send and verify SMS code (Eskiz.uz; in development the code is printed to the console)
-- [ ] Sign-in page: phone number → SMS code
-- [ ] Role-based access checks
+### Block 1: Sign-in pages (2 h)
+- [ ] User model (patient, doctor, admin)
+- [ ] `/login`: split-screen design, phone + SMS code (Eskiz; console in development)
+- [ ] `/login/staff`: staff ID + password
+- [ ] Role-based access
 
-### Block 2: Time slots and booking (3.5 h)
-- [ ] **Slot** and **Appointment** models (type: in-clinic or online)
-- [ ] Seed: two weeks of free slots for every doctor
-- [ ] Free slots on the doctor's page (departure-board style)
-- [ ] Booking API: **only one patient per slot**
-- [ ] Test: out of 50 simultaneous requests only 1 succeeds
+### Block 2: Slots and booking (3 h)
+- [ ] Slot and Appointment models (in-clinic or online)
+- [ ] Free slots on the doctor profile
+- [ ] Booking API: **one patient per slot** + test (50 parallel requests → 1 success)
+- [ ] Check-up booking: slots left never below zero
 
-### Block 3: Check-up booking (1 h)
-- [ ] Book a seat on a check-up or screening day
-- [ ] "Slots left" decreases safely, never below zero (same protection as doctor slots)
+### Block 3: Booking page (1.5 h)
+- [ ] Steps: visit type → department → doctor → date and time → confirm, in the Campusly card style
 
-### Block 4: Booking page (1.5 h)
-- [ ] Step by step: visit type → department → doctor → date and time → confirm
-- [ ] Sign in with SMS right there if needed
-
-### Block 5: Payments (2 h)
-- [ ] **Payment** model; Payme and Click sandbox; "Pay at the clinic"
-- [ ] Protection against **charging twice**
-- [ ] Unpaid online bookings release the slot after 10 minutes
-
-### Block 6: SMS and Patient Portal (1.5 h)
+### Block 4: Payments and SMS (2 h)
+- [ ] Payme and Click sandbox, "Pay at the clinic"
+- [ ] **No double charging**; unpaid online bookings free the slot after 10 minutes
 - [ ] Confirmation SMS and reminders (1 day and 2 hours before)
-- [ ] Patient Portal: "My appointments" (upcoming, past, cancel) and "My check-ups"
+
+### Block 5: Patient Portal (3 h)
+- [ ] Portal layout: sidebar, top bar, bell, avatar
+- [ ] Home (upcoming visits, to do, calendar widget, recent results)
+- [ ] My Visits, Calendar, Results, Prescriptions, Notices
+- [ ] Family profile switcher
 
 ### ✅ Day 2 result
-- [ ] A patient signs in with SMS, books a doctor or a check-up and pays (sandbox)
-- [ ] Two people cannot take the same slot or the last check-up seat (proven by tests)
-- [ ] Bookings appear in the Patient Portal
+- [ ] Sign in → book → pay (sandbox) → see the visit in the portal
+- [ ] Double booking and double charging are impossible (tests)
+- [ ] Portal looks like the Campusly student portal
 
 ---
 
-## 10. Day 3: Online Consultations and AI Assistant
+## 13. Day 3: Doctor Portal, Video Visits, AI Front Desk
 
-**Goal:** video consultations work and the AI Front Desk answers using the clinic's data.
+**Goal:** doctors run their day, video visits work, and the AI answers from clinic data.
 
-### Block 1: Doctor panel (1.5 h)
-- [ ] "Today's appointments", set own free slots, "Join call" for online visits
+### Block 1: Doctor Portal (2.5 h)
+- [ ] Dashboard (today's visits, patient questions, upcoming, week summary)
+- [ ] Schedule (set free slots, time off), Visits, Patients, Notices, Patient Q&A
 
-### Block 2: Video consultation (3 h)
-- [ ] Socket.io: only this appointment's patient and doctor can join
-- [ ] WebRTC video and audio; microphone, camera, end call; "Audio only" mode
+### Block 2: Video visits (3 h)
+- [ ] Socket.io: only this visit's patient and doctor can join
+- [ ] WebRTC video and audio, controls, audio-only mode
+- [ ] Chat side panel; doctor notes and prescription form
 - [ ] Test on two devices
 
-### Block 3: Notes, prescriptions and results (1 h)
-- [ ] The doctor writes a summary and prescription; the patient sees them in the portal
-- [ ] Results (PDF) visible only to their owner
+### Block 3: AI data (2 h)
+- [ ] Chunk departments, doctors, check-ups, guides, FAQ, settings
+- [ ] Embed and store (Atlas Vector Search); retrieval
 
-### Block 4: AI data preparation (2 h)
-- [ ] Split departments, doctors, services, check-ups, guides, FAQ and "About" into chunks
-- [ ] Embed and store them (Atlas Vector Search)
-- [ ] Retrieval of the most relevant chunks for a question
+### Block 4: AI answers (2 h)
+- [ ] **Emergency filter** first → "Call 103!"
+- [ ] Live tools: free slots, prices, check-up slots left, doctors
+- [ ] Answers only from retrieved data, with sources; English or Uzbek
 
-### Block 5: AI answering (2.5 h)
-- [ ] **Emergency filter** first: "chest pain", "can't breathe" → "Call 103!"
-- [ ] Live database tools: free slots, prices, doctors, **check-up slots left**
-- [ ] Answers only from retrieved data, with sources
-- [ ] Replies in English or Uzbek, matching the patient
-
-### Block 6: Front Desk interface (1 h)
-- [ ] Right-side panel on every page + full `/assistant` page
-- [ ] Streaming answers, numbered footnote sources, "Book this doctor" button
-- [ ] "This is not a diagnosis" notice
+### Block 5: AI Front Desk interface (1.5 h)
+- [ ] Portal page in the Campusly AI Tutor layout (conversation list, topic selector, suggestion chips, pill input, daily limit)
+- [ ] Public `/assistant` page and a "Ask the Front Desk" entry on the website
+- [ ] "Book this doctor" button under answers; "This is not a diagnosis"
 
 ### ✅ Day 3 result
-- [ ] Patient and doctor talk over video; prescriptions appear in the portal
-- [ ] The AI correctly answers about prices, doctors, free slots, check-ups and opening hours
-- [ ] In emergencies the AI does not recommend a doctor
+- [ ] Doctor sees the queue, runs a video visit, writes a prescription; patient sees it
+- [ ] AI correctly answers about prices, doctors, slots, check-ups and hours
+- [ ] Emergencies never get a doctor recommendation
 
 ---
 
-## 11. Day 4: Admin Panel, Live Demo and Launch
+## 14. Day 4: Admin Panel, Live Demo, Launch
 
-**Goal:** the admin fully manages the site, visitors can try a live demo, and the project is online.
+**Goal:** admins manage everything, anyone can try the demo, the site is live.
 
-### Block 1: Admin foundation (1 h)
-- [ ] Admin sign-in, side navigation, data table, bilingual inputs (EN / UZ tabs), image upload
+### Block 1: Admin layout and tables (1 h)
+- [ ] Sidebar sections from section 7, data table, bilingual form tabs, image upload
 
-### Block 2: Content management (3 h)
-- [ ] Departments, Doctors (with login account), Services and prices
-- [ ] Check-up events (price, date, total slots), Guides, News, Partners, FAQ
-- [ ] Settings: address, phones, hours, key numbers, "About" text
+### Block 2: Content sections (3 h)
+- [ ] Departments, check-ups, news, health guides, recognition, doctors, settings (stats, hero slides, partners, FAQ)
 
 ### Block 3: Operations (1.5 h)
-- [ ] Doctor schedules; all appointments and payments with filters
-- [ ] **Call-back requests** inbox (new → called → closed)
-- [ ] Simple report: appointments today and this month, revenue, busiest doctors, check-up occupancy
+- [ ] Call-back requests inbox, appointments and payments (filters, CSV export), users, activity log
 
 ### Block 4: AI sync (0.5 h)
-- [ ] Any admin change **updates the AI data automatically**; test by adding a doctor and asking about them
+- [ ] Admin changes refresh AI data automatically; test with a new doctor
 
-### Block 5: Live demo, no password (1.5 h)
-- [ ] `/demo` page with three buttons: **Patient**, **Doctor**, **Admin**
-- [ ] Each button signs in to a seeded demo account with sample data
-- [ ] Demo accounts cannot send real SMS; payments stay in sandbox
-- [ ] Demo data resets every night
-- [ ] Hero and footer link to the demo
+### Block 5: Live demo (1.5 h)
+- [ ] Live demo box on `/login` with 4 role cards
+- [ ] Live demo bar in portals: "Viewing as …", **What to try** tips, **Switch role**
+- [ ] Demo limits: no real SMS, sandbox payments, no uploads, admin read-only
+- [ ] `reset-demo` script runs every night
 
 ### Block 6: Testing and security (1 h)
-- [ ] A patient cannot see another patient's data or calls
-- [ ] Rate limits on SMS codes, AI chat, sign-in and call-back form
-- [ ] Test the AI with 40 questions in English and Uzbek
+- [ ] Patients see only their own data and calls
+- [ ] Rate limits: SMS codes, sign-in, AI, call-back form
+- [ ] 40 AI test questions in English and Uzbek
 
-### Block 7: Deployment and README (2.5 h)
-- [ ] Backend → Render, website → Vercel, Payme and Click sandbox webhooks
-- [ ] Test the live site end to end: website → Front Desk → booking → payment → video → prescription → admin
-- [ ] README: what it does, screenshots, live demo link, how to run locally
+### Block 7: Deploy and README (2.5 h)
+- [ ] Render (api), Vercel (web), sandbox payment webhooks
+- [ ] Full test on the live site: website → Front Desk → booking → payment → video → prescription → admin
+- [ ] README: screenshots, live demo link, how to run locally
 
 ### ✅ Day 4 result
-- [ ] The admin can change everything and changes appear immediately (including in the AI)
-- [ ] Anyone can try the portal in one click as patient, doctor or admin
-- [ ] The site is live and the README is ready
+- [ ] Admin manages all content; changes show on the site and in the AI
+- [ ] One-click demo for patient, doctor and admin
+- [ ] Live site and README
 
 ---
 
-## 12. Core Rules
+## 15. Core Rules
 
 ### Booking and payments
-- **Only one patient** per time slot; check-up seats never go below zero
-- A patient is **never charged twice**
+- **One patient per slot**; check-up slots never below zero
+- **Never charge twice**
 - Unpaid online bookings release the slot after **10 minutes**
 
 ### Security
-- A patient sees **only their own** appointments, prescriptions, results and calls
-- **Only that patient and that doctor** can join a video call
-- **Only admins** can access the admin panel
-- Demo accounts are isolated: no real SMS, sandbox payments, nightly reset
+- Patients see **only their own** visits, results, prescriptions and calls
+- **Only that patient and that doctor** can join a video visit
+- **Only admins** open the admin panel
+- Demo accounts: no real SMS, sandbox payments, nightly reset
 
-### AI assistant
+### AI Front Desk
 - Answers **only from clinic data**; otherwise "I don't have that information, please call us"
-- Every answer shows its **sources**
-- **Never gives a diagnosis**
-- In emergencies: **"Call 103!"**
-- Recommends **only** what the clinic actually has
+- Always shows **sources**
+- **Never diagnoses**
+- Emergencies: **"Call 103!"**
+- Recommends **only** what the clinic has
 
 ---
 
-## 13. If You Run Out of Time
+## 16. If You Run Out of Time
 
 Postpone in this order (top first):
 
-1. Partners section and health guides
-2. News & events
-3. Admin reports
-4. SMS reminders (keep the confirmation SMS)
-5. Click (keep only Payme)
-6. Ornamental pattern and scroll animations (keep colours and fonts)
-7. "Audio only" mode
+1. Recognition section
+2. Health guides
+3. Family profile switcher
+4. Patient Q&A in the Doctor Portal
+5. Activity log and CSV export
+6. Click (keep Payme)
+7. Hero slideshow (keep one image) and partners marquee (static row)
 
-**Never cut:** one patient per slot, double-charge protection, access checks, the AI emergency filter, video consultations, the core of the admin panel, the live demo, deployment.
+**Never cut:** one patient per slot, no double charging, access checks, AI emergency filter, video visits, core admin, live demo, deployment.
 
 ---
 
-## 14. Notes
+## 17. Notes
 
-- Campusly is used **only as a reference for structure and UX patterns**. MedOne uses its own name, texts, images, colours and fonts.
-- Payments run in **Payme and Click sandbox mode**. Real payments require a registered legal entity with a merchant agreement.
-- Before launching for a real clinic, check the legal requirements for **personal data and online medical services** with a lawyer.
-- The demo uses **fictional data only**. The footer states that MedOne Clinic is a portfolio project and that the clinic and its people are fictional.
+- Campusly is the **design reference**. MedOne uses its own name, logo, texts, photos and people; nothing is copied from Campusly's content or images.
+- Photos: licensed stock or our own generated images, credited in the README if required.
+- Payments run in **Payme and Click sandbox**. Real payments need a registered legal entity and merchant agreements.
+- Before using this for a real clinic, check **personal data and online medical services** rules with a lawyer.
+- All demo data is **fictional**; the footer says so.
