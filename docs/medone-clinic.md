@@ -5,7 +5,7 @@ Klinika veb-sayti, ichida **qabulga yozilish**, **onlayn (video) qabul** va **AI
 Ish uch qismdan iborat va shu tartibda qilinadi:
 1. **Klinika veb-sayti**
 2. **Qabulga yozilish va onlayn qabul** (to'lov va SMS eslatmalar bilan)
-3. **AI yordamchi**
+3. **AI yordamchi (RAG):** klinikaning barcha ma'lumotlariga qarab javob beradi
 
 ---
 
@@ -19,7 +19,7 @@ Ish uch qismdan iborat va shu tartibda qilinadi:
 | Video qo'ng'iroq | WebRTC, Socket.io |
 | To'lov | Payme, Click |
 | SMS | Eskiz.uz |
-| AI | LLM API (masalan, Claude yoki OpenAI) |
+| AI | RAG: LLM API (masalan, Claude yoki OpenAI) + MongoDB Atlas Vector Search |
 | Tillar | O'zbek, rus, ingliz, koreys |
 
 ---
@@ -125,37 +125,98 @@ Maqsad: bemor saytdan shifokorga yoziladi, to'laydi va klinikaga keladi yoki **v
 
 ---
 
-## 3-QISM: AI yordamchi
+## 3-QISM: AI yordamchi (RAG)
 
-Maqsad: bemor qaysi shifokorga borishni bilmasa, AI yordam beradi.
+Maqsad: klinika haqidagi **har qanday savolga klinikaning o'z ma'lumotlari asosida** javob beradigan AI yordamchi. U o'zidan narsa to'qimaydi, faqat klinika bazasidagi ma'lumotlarga qarab javob beradi.
 
-### Qanday ishlaydi
+### RAG nima (sodda qilib)
+
+RAG: AI javob berishdan oldin **klinika bazasidan kerakli ma'lumotni qidirib topadi**, keyin faqat shu ma'lumotga tayanib javob yozadi.
 
 ```
-1. Bemor yozadi: "3 kundan beri boshim og'riyapti, isitmam bor"
-        ↓
-2. AI javob beradi: "Sizga Terapevt kerak"
-        ↓
-3. Shu bo'lim shifokorlari ko'rsatiladi va "Qabulga yozilish" tugmasi chiqadi
+Bemor savoli
+    ↓
+1. Klinika bazasidan savolga mos ma'lumotlar qidiriladi
+    ↓
+2. Topilgan ma'lumotlar + savol AI'ga beriladi
+    ↓
+3. AI faqat shu ma'lumotlarga qarab javob yozadi va manbani ko'rsatadi
+```
+
+### AI qaysi ma'lumotlarni biladi
+
+AI klinikaning **butun bazasi** bilan bog'langan:
+
+| Ma'lumot | Misol savol |
+|---|---|
+| **Bo'limlar** | "Sizda nevrolog bormi?" |
+| **Shifokorlar** (tajriba, mutaxassislik, tillar) | "Koreys tilida gaplashadigan kardiolog bormi?" |
+| **Xizmatlar va narxlar** | "MRT qancha turadi?" |
+| **Shifokorlarning bo'sh vaqtlari** | "Ertaga pediatrga yozilsa bo'ladimi?" |
+| **Klinika haqida** (manzil, ish vaqti, telefon, uskunalar) | "Shanba kuni ishlaysizlarmi?" |
+| **Ko'p so'raladigan savollar (FAQ)** | "Tahlil topshirishdan oldin ovqat yesa bo'ladimi?" |
+| **Simptomlar va bo'limlar bog'liqligi** | "Boshim og'riyapti, qaysi shifokorga boray?" |
+
+### Ma'lumotlarning ikki turi
+
+| Tur | Nima | Qanday olinadi |
+|---|---|---|
+| **Matnli ma'lumotlar** | Bo'limlar, shifokorlar haqida, xizmatlar tavsifi, klinika haqida, FAQ | **Vektor qidiruv (RAG)** orqali |
+| **Tez o'zgaradigan ma'lumotlar** | Bo'sh vaqtlar, joriy narxlar | AI kerak bo'lganda **bazadan to'g'ridan-to'g'ri so'raydi** (tool calling) |
+
+Bo'sh vaqtlar har daqiqada o'zgaradi. Shuning uchun AI ularni eski nusxadan emas, har safar bazadan yangisini oladi.
+
+### Ma'lumotlar doim yangi bo'ladi
+
+Admin panelda biror narsa o'zgarsa (yangi shifokor qo'shildi, narx o'zgardi, FAQ yozildi), **AI bazasi avtomatik yangilanadi**. Admin alohida hech narsa qilmaydi.
+
+### Misol suhbat
+
+```
+Bemor: Koreys tilida gaplashadigan kardiolog bormi? Narxi qancha?
+
+AI:    Ha, Kardiologiya bo'limida Dr. Kim Min-jun koreys va rus tillarida qabul qiladi.
+       Konsultatsiya narxi: 250 000 so'm.
+       Eng yaqin bo'sh vaqtlar: ertaga 10:00, 11:30.
+       [Qabulga yozilish]
+
+       Manba: Shifokorlar · Xizmatlar va narxlar
 ```
 
 ### Muhim qoidalar
 
-- **AI tashxis qo'ymaydi,** faqat qaysi bo'lim shifokoriga borishni tavsiya qiladi. Buni sahifada aniq yozamiz: "Bu tashxis emas".
-- **Xavfli holatlarda AI shifokor tavsiya qilmaydi.** Bemor "ko'kragim qattiq og'riyapti" yoki "nafas ololmayapman" deb yozsa, darhol **"103 ga qo'ng'iroq qiling!"** degan xabar chiqadi.
-- AI faqat **klinikamizda bor bo'limlarni** tavsiya qiladi.
-- AI 4 tilda ishlaydi: o'zbek, rus, ingliz, koreys.
+- **AI faqat klinika ma'lumotlariga tayanadi.** Bazada javob bo'lmasa: *"Bu haqida ma'lumotim yo'q, iltimos +998 XX XXX XX XX raqamiga qo'ng'iroq qiling"*.
+- **Har bir javobda manba ko'rsatiladi** (qaysi sahifa yoki bo'limdan olingani).
+- **AI tashxis qo'ymaydi,** faqat qaysi shifokorga borishni tavsiya qiladi. Sahifada aniq yoziladi: "Bu tashxis emas".
+- **Xavfli holatlarda shifokor tavsiya qilmaydi.** "Ko'kragim qattiq og'riyapti" yoki "nafas ololmayapman" kabi xabarlarda darhol **"103 ga qo'ng'iroq qiling!"** degan xabar chiqadi.
+- **Faqat klinikada bor** bo'lim, shifokor va xizmatlarni tavsiya qiladi.
+- **4 tilda ishlaydi:** bemor qaysi tilda yozsa, shu tilda javob beradi.
+- **Javobdan to'g'ridan-to'g'ri qabulga yozilish** mumkin.
+
+### Texnologiyalar
+
+| Qism | Texnologiya |
+|---|---|
+| Vektor qidiruv | MongoDB Atlas Vector Search |
+| Embedding (matnni vektorga aylantirish) | Ko'p tilli embedding modeli |
+| AI modeli | LLM API (masalan, Claude yoki OpenAI), tool calling bilan |
+| Javobni ekranga chiqarish | Streaming (javob so'zma-so'z chiqadi) |
 
 ### Qadamlar
 
-1. Xavfli holatlarni aniqlaydigan filtr (4 tilda kalit so'zlar)
-2. AI'ga savol yuborish va javobni olish (klinikadagi bo'limlar ro'yxati bilan)
-3. AI yordamchi sahifasi: savol yozish joyi va javob kartochkasi
-4. Javobdan keyin shu bo'lim shifokorlarini ko'rsatish va qabulga yozilishga o'tkazish
-5. Xavfli holat uchun alohida qizil ogohlantirish ekrani
-6. 20–30 ta misol bilan AI javoblarini sinab ko'rish
+1. **FAQ bo'limi:** admin panelga savol-javoblar qo'shish imkoniyati (4 tilda)
+2. **Ma'lumotlarni bo'laklash:** har bir bo'lim, shifokor, xizmat, FAQ va "Biz haqimizda" matnini kichik bo'laklarga ajratish
+3. **Vektorlash:** bo'laklarni embedding orqali vektorga aylantirib, MongoDB'ga saqlash
+4. **Avtomatik yangilash:** admin biror narsani o'zgartirsa, shu ma'lumotning vektori ham yangilanadi
+5. **Qidiruv:** savolga eng mos 5–8 ta bo'lakni topish
+6. **Bazadan jonli so'rovlar (tools):** "bo'sh vaqtlarni ko'r", "narxni ko'r", "shifokorlarni qidir"
+7. **Xavfli holatlar filtri** (4 tilda kalit so'zlar), AI'dan oldin ishlaydi
+8. **AI javobi:** tizim ko'rsatmasi (qoidalar), topilgan ma'lumotlar, savol → javob va manbalar
+9. **Chat sahifasi:** suhbat oynasi, javob so'zma-so'z chiqadi, manbalar, "Qabulga yozilish" tugmasi, "Bu tashxis emas" ogohlantirishi
+10. **Saytning har bir sahifasida** pastki o'ng burchakda AI chat tugmasi
+11. **Sinash:** 4 tilda 40–50 ta savol tayyorlab, javoblar to'g'ri ma'lumotga asoslanganini va to'qib chiqarilmaganini tekshirish
 
-**3-qism natijasi:** bemorga to'g'ri shifokorni topishga yordam beradigan AI.
+**3-qism natijasi:** klinikaning barcha ma'lumotlarini biladigan, aniq va manbali javob beradigan, bemorni to'g'ridan-to'g'ri qabulga yozdira oladigan AI yordamchi.
 
 ---
 
