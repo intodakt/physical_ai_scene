@@ -103,6 +103,14 @@ class SceneGraphEngine:
             ok, ev = (False, {}) if virtual else rules.check_left_of(sa, sb)
             if ok:
                 found.append((src, "left_of", tgt, "camera_side", ev))
+            if not virtual:
+                ok, ev = rules.check_inside(sa, sb)
+                if ok:
+                    found.append((src, "inside", tgt, "containment", ev))
+                else:
+                    ok, ev = rules.check_under(sa, sb)
+                    if ok:
+                        found.append((src, "under", tgt, "vertical_cover", ev))
         ok, ev = (False, {}) if virtual else rules.check_near(a, b)
         if ok:
             s, t = sorted((ida, idb))
@@ -155,3 +163,27 @@ class SceneGraphEngine:
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         Path(path).write_text(json.dumps(self.export(), indent=2))
+
+    @classmethod
+    def load(cls, path_or_graph, **kw):
+        """Rebuild an engine from a saved Scene Graph JSON (file path or dict) so updates can continue.
+
+        Nodes, their first/last_seen and states, and the full edge history (incl. ended edges) are restored.
+        The camera-side x (cam_x) is not part of the export; it is refreshed when the object is seen again."""
+        g = path_or_graph if isinstance(path_or_graph, dict) else json.loads(Path(path_or_graph).read_text())
+        eng = cls(session_id=g.get("session_id", "s4_session"), **kw)
+        eng.timestamp, eng.alignment = g.get("timestamp"), g.get("desk_alignment")
+        for n in g["nodes"]:
+            attrs = {"persistent_object_id": n["persistent_object_id"], "names": n["names"], "center": list(n["pose_map"]),
+                     "size": list(n["size"]), "yaw": n.get("yaw", 0.0), "cam_x": None, "state": n["state"],
+                     "confidence": n["confidence"], "depth_confidence": n["depth_confidence"],
+                     "first_seen": n["first_seen"], "last_seen": n["last_seen"]}
+            if n.get("virtual"):
+                attrs.update(virtual=True, source=n.get("source"))
+            eng.graph.add_node(n["id"], **attrs)
+        for e in g["edges"]:
+            rec = dict(e)
+            eng._edges[(e["source"], e["predicate"], e["target"])] = rec
+            if rec["end_time"] is None:
+                eng.graph.add_edge(e["source"], e["target"], key=e["predicate"], **rec)
+        return eng
