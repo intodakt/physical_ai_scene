@@ -201,3 +201,12 @@ def test_save_load_round_trip_and_continue(tmp_path):
     g = back.update(frame).export()
     glass = next(n for n in g["nodes"] if n["id"].startswith("glass"))
     assert glass["state"] == "occluded" and glass["first_seen"] == a["nodes"][[n["id"] for n in a["nodes"]].index(glass["id"])]["first_seen"]
+
+
+def test_pose_history_records_moves_only():
+    eng = SceneGraphEngine(use_support_plane=False)
+    for t, x in ((1.0, 0.50), (2.0, 0.505), (3.0, 0.70)):          # 5 mm noise, then a 20 cm move
+        eng.update(_frame([("mug_01", [x, 0.0, 0.05], [0.08, 0.08, 0.10])], t))
+    mug = next(n for n in eng.export()["nodes"] if n["id"] == "mug_01")
+    assert [h["t"] for h in mug["pose_history"]] == [1.0, 3.0]
+    assert mug["pose_history"][0]["pose_map"][0] == 0.5
