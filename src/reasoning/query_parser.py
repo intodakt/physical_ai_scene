@@ -26,7 +26,9 @@ Convert the user's question into ONLY a JSON object with exactly these keys. No 
 }
 
 Rules:
-- "relations" holds positive relations such as "closest_to", "near", "on", "under".
+- "relations" holds positive relations such as "closest_to", "near", "on", "under", "inside".
+  "What is under the mug?" -> reference "mug", relations ["under"]; "Which pen is inside the cup?" -> target "pen", reference "cup", relations ["inside"].
+- "Where was the mug before?" -> target "mug" (time words are handled by the verifier).
 - Anything the answer must AVOID goes in "negative_constraints" as {"relation": "...", "object": "..."}.
   Words like "not", "no", "without", "far from" mean a negative constraint. NEVER write "not_near" in "relations".
 - Use an empty string "" when there is no target or no reference. Never write "...".
@@ -147,11 +149,14 @@ def _chat(model, messages):
         return ollama.chat(model=model, messages=messages, format="json", options=options)
 
 
-def parse_query(question: str, model: Optional[str] = None) -> dict:
+def parse_query(question: str, model: Optional[str] = None, feedback: Optional[str] = None) -> dict:
+    """``feedback``: the verifier's reason why the first parse could not be verified (propose -> verify -> correct)."""
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": question},
     ]
+    if feedback:
+        messages.append({"role": "user", "content": feedback})
     try:
         response = _chat(model or MODEL_NAME, messages)
     except (ollama.ResponseError, ConnectionError, TypeError) as error:
