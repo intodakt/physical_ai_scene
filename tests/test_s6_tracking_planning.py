@@ -145,3 +145,40 @@ def test_detour_planner_goes_around_the_laptop():
     assert goal["clearance_m"] >= CFG["clearance_m"] - 0.011       # one grid cell of tolerance
     sim = simulate(goal, g, CFG)
     assert sim["success"] and sim["collisions"] == 0
+
+
+# ---------------------------------------------------------------- W10-W11
+def test_long_occlusion_reid_from_long_term_memory():
+    t = MultiTermTracker(max_missed_frames=3, long_memory_frames=50)
+    t.update([_obj("book", 0.7, -0.2)], 0)
+    for k in range(1, 21):                               # hidden 20 frames, far beyond the TTL of 3
+        t.update([], k)
+    assert not t.tracks and t.lost
+    o = t.update([_obj("book", 0.72, -0.2)], 21)
+    assert o[0]["persistent_id"] == "book_01"
+    e = next(e for e in t.events if e["event"] == "REAPPEARED")
+    assert e.get("from_long_memory")
+
+
+def test_long_memory_respects_label_and_window():
+    t = MultiTermTracker(max_missed_frames=2, long_memory_frames=5)
+    t.update([_obj("book", 0.7, -0.2)], 0)
+    for k in range(1, 12):
+        t.update([], k)                                   # removed at frame 3, forgotten 5 frames later
+    assert t.update([_obj("book", 0.7, -0.2)], 12)[0]["persistent_id"] == "book_02"
+    t2 = MultiTermTracker(max_missed_frames=2)
+    t2.update([_obj("book", 0.7, -0.2)], 0)
+    for k in range(1, 6):
+        t2.update([], k)
+    assert t2.update([_obj("mug", 0.7, -0.2)], 6)[0]["persistent_id"] == "mug_01"   # another label never inherits
+
+
+def test_reachability_report_when_blocked():
+    g = _glass_behind_laptop()
+    goal = build_action_goal(_verified("glass_0"), g, CFG)                 # straight planner: rejected ...
+    assert goal["reason_code"] == "PATH_BLOCKED"
+    r = goal["reachability"]
+    assert r["straight_clear"] is False and r["detour_exists"] and r["detour_waypoints"] >= 1
+    assert any(w.startswith("REACHABLE_BY_DETOUR") for w in goal["warnings"])      # ... but reachable by detour
+    ok = build_action_goal(_verified("mug_0"), S4_GRAPH, CFG)
+    assert ok["reachability"] == {"straight_clear": True}
