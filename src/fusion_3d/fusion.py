@@ -41,21 +41,25 @@ def _clip01(x: float) -> float:
 
 
 def rgb_quality(rgb: np.ndarray, mask: np.ndarray) -> tuple[float, dict]:
-    """Brightness (best near mid-grey) x sharpness (Laplacian variance) in the mask."""
+    """Brightness (best near mid-grey) x sharpness (Laplacian variance) in the mask.
+
+    Computed on the mask's bounding box only (W11 speed-up; same result as on the whole image:
+    the Laplacian is evaluated at interior mask pixels, i.e. not on the image border)."""
     m = mask.astype(bool)
     if not m.any():
         return 0.0, {"brightness": None, "sharpness": None}
-    gray = rgb.astype(np.float32).mean(axis=2) / 255.0
-    brightness = float(gray[m].mean())
+    H, W = m.shape
+    ys, xs = np.nonzero(m)
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    brightness = float(rgb[y0:y1, x0:x1][m[y0:y1, x0:x1]].astype(np.float32).mean(axis=-1).mean() / 255.0)
     q_bright = 1.0 - min(1.0, abs(brightness - 0.5) * 2.0) ** 2
-    lap = (
-        -4 * gray[1:-1, 1:-1]
-        + gray[:-2, 1:-1]
-        + gray[2:, 1:-1]
-        + gray[1:-1, :-2]
-        + gray[1:-1, 2:]
-    )
-    lap_var = float(lap[m[1:-1, 1:-1]].var()) if m[1:-1, 1:-1].any() else 0.0
+    r0, r1, c0, c1 = max(y0, 1), min(y1, H - 1), max(x0, 1), min(x1, W - 1)     # interior pixels with neighbours
+    lap_var = 0.0
+    if r1 > r0 and c1 > c0:
+        gray = rgb[r0 - 1:r1 + 1, c0 - 1:c1 + 1].astype(np.float32).mean(axis=2) / 255.0
+        lap = -4 * gray[1:-1, 1:-1] + gray[:-2, 1:-1] + gray[2:, 1:-1] + gray[1:-1, :-2] + gray[1:-1, 2:]
+        sub = m[r0:r1, c0:c1]
+        lap_var = float(lap[sub].var()) if sub.any() else 0.0
     q_sharp = 1.0 - np.exp(-lap_var / 2e-4)
     return _clip01(q_bright * (0.5 + 0.5 * q_sharp)), {
         "brightness": brightness,

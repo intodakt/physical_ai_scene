@@ -108,6 +108,12 @@ def min_area_rect(xy: np.ndarray, angle_step_deg: float = 1.0):
     (cos angle, sin angle).
     """
     xy = np.asarray(xy, dtype=np.float64)
+    if len(xy) > 8:                    # extremes of projections lie on the convex hull (W11 speed-up, same result)
+        import cv2
+
+        hull = cv2.convexHull(xy.astype(np.float32), returnPoints=False)
+        if hull is not None and len(hull) >= 3:
+            xy = xy[hull.ravel()]
     angles = np.deg2rad(np.arange(0.0, 90.0, angle_step_deg))
     c, s = np.cos(angles), np.sin(angles)
     a = np.outer(c, xy[:, 0]) + np.outer(s, xy[:, 1])  # (A, N)
