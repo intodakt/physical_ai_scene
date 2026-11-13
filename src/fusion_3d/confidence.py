@@ -21,6 +21,7 @@ from typing import Optional
 
 import numpy as np
 
+from ..preprocessing.depth_cleaning import nanmedian_fast
 from ..preprocessing.mask_utils import erode
 
 TAU_M = 0.01
@@ -37,11 +38,7 @@ def _local_residual(depth_m: np.ndarray, region: np.ndarray, window: int = WINDO
     crop = np.where(np.isfinite(crop) & (crop > 0), crop, np.nan)
     pad = np.pad(crop, r, constant_values=np.nan)
     win = np.lib.stride_tricks.sliding_window_view(pad, (window, window))
-    with np.errstate(all="ignore"):
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            local = np.nanmedian(win.reshape(*crop.shape, -1), axis=-1)
+    local = nanmedian_fast(win.reshape(*crop.shape, -1), axis=-1)
     return (slice(y0, y1), slice(x0, x1)), crop, crop - local
 
 
@@ -65,11 +62,15 @@ def reject_depth_spikes(depth_m: np.ndarray, mask: np.ndarray, k: float = 3.0, f
     the local median does not follow them, so they stand out. Returns (depth copy, n removed).
     """
     mask = mask.astype(bool)
-    sigma = depth_noise(depth_m, mask, window)
-    if sigma is None:
+    if mask.sum() < 20:
         return depth_m, 0
-    sl, _, res = _local_residual(depth_m, mask, window)
-    bad = mask[sl] & np.isfinite(res) & (np.abs(res) > max(k * sigma, floor_m))
+    sl, _, res = _local_residual(depth_m, mask, window)        # computed once (W11 speed-up)
+    sel = mask[sl] & np.isfinite(res)
+    if sel.sum() < 20:
+        return depth_m, 0
+    r = res[sel]
+    sigma = float(1.4826 * np.median(np.abs(r - np.median(r))))
+    bad = sel & (np.abs(res) > max(k * sigma, floor_m))
     out = depth_m.copy()
     out[sl][bad] = 0.0
     return out, int(bad.sum())

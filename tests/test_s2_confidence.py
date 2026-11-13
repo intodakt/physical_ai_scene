@@ -47,3 +47,17 @@ def test_spikes_removed_surface_kept():
     assert n >= 0.9 * len(pick)
     assert n <= 1.1 * len(pick)
     assert (out[ys[pick], xs[pick]] == 0).mean() > 0.9
+
+
+def test_nanmedian_fast_matches_numpy():
+    import warnings
+
+    from src.preprocessing.depth_cleaning import nanmedian_fast
+    rng = np.random.default_rng(3)
+    for shape, axis in (((9, 40, 50), 0), ((30, 20, 25), -1)):
+        a = rng.random(shape)
+        a[rng.random(shape) < 0.5] = np.nan
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ref = np.nanmedian(a, axis=axis)
+        assert np.allclose(nanmedian_fast(a, axis), ref, equal_nan=True)
