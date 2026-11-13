@@ -13,7 +13,9 @@ Per frame:
              come back somewhere else, e.g. after being picked up and put down)
 3. assign    Hungarian on the cost matrix; pairs above the gate are left unmatched
 4. update    matched → observed; unmatched track → occluded (confidence × decay) → removed after
-             ``max_missed_frames``; unmatched detection → new track (APPEARED)
+             ``max_missed_frames``; unmatched detection → a removed track from the long-term memory
+             (same label and size, within ``reid_gate_m``, removed ≤ ``long_memory_frames`` ago) gets its
+             ID back (REAPPEARED, W10), otherwise a new track (APPEARED)
 5. events    from the state changes and from where the object rests
 
 Input/output contract is the S2 frame payload: ``update(objects)`` writes ``persistent_id`` into each
@@ -54,6 +56,7 @@ class Track:
     rest: Optional[np.ndarray] = None  # where the object last came to rest (for MOVED)
     lifted: bool = False
     history: list = field(default_factory=list)  # [(timestamp, [x, y, z])]
+    removed_frame: int = -1
 
     def to_dict(self) -> dict:
         return {"persistent_id": self.persistent_id, "label": self.label, "label_candidates": sorted(self.labels),
@@ -94,10 +97,12 @@ class MultiTermTracker:
     desk_top_z: float = 0.0
     lift_threshold_m: float = 0.03     # box bottom this far above the desk → lifted (PICKED_UP)
     history_len: int = 300
+    long_memory_frames: int = 150      # W10: removed tracks can still be re-identified this long (0 = off)
     tracks: list = field(default_factory=list)
     last_motion: dict = field(default_factory=dict)   # persistent_id -> metres moved since last frame
     events: list = field(default_factory=list)        # this frame's events
     event_log: list = field(default_factory=list)     # all events
+    lost: list = field(default_factory=list)          # removed tracks kept for long-term re-identification
     _counts: dict = field(default_factory=dict)
     _frame: int = -1
 
@@ -203,8 +208,22 @@ class MultiTermTracker:
             if t.missed > self.max_missed_frames:
                 t.state = "removed"
                 self._event("REMOVED", t, ts, after_frames=t.missed)
+                if self.long_memory_frames:
+                    t.removed_frame = self._frame
+                    self.lost.append(t)
         for j, o in enumerate(objects):
             if j in matched_o:
+                continue
+            old = self._from_long_memory(o)
+            if old is not None:                      # W10: an object hidden longer than the TTL comes back
+                c = _center(o)
+                old.center, old.state, old.missed, old.hits, old.last_seen, old.velocity = c, "observed", 0, old.hits + 1, ts, np.zeros(3)
+                old.history = (old.history + [(ts, [round(float(x), 4) for x in c])])[-self.history_len:]
+                self.tracks.append(old)
+                o["persistent_id"] = old.persistent_id
+                self._event("REAPPEARED", old, ts, after_frames=self._frame - old.removed_frame + self.max_missed_frames + 1,
+                            from_long_memory=True)
+                self._rest_and_lift(old, o, ts, True)
                 continue
             label = o["semantic_label"]
             self._counts[label] = self._counts.get(label, 0) + 1
@@ -217,7 +236,24 @@ class MultiTermTracker:
             self._event("APPEARED", t, ts)
             self._rest_and_lift(t, o, ts, False)
         self.tracks = [t for t in self.tracks if t.state != "removed"]
+        self.lost = [t for t in self.lost if t.state == "removed" and self._frame - t.removed_frame <= self.long_memory_frames]
         return objects
+
+    def _from_long_memory(self, o: dict) -> Optional["Track"]:
+        """Nearest removed track with a compatible label within ``reid_gate_m`` (and similar size), or None."""
+        best, best_d = None, self.reid_gate_m
+        for t in self.lost:
+            if self._label_term(t, o) >= FORBIDDEN:
+                continue
+            d = float(np.linalg.norm(_center(o) - t.center))
+            s = _size(o)
+            if s is not None and t.size is not None and np.mean(np.abs(s - t.size) / np.maximum(t.size, 1e-3)) > 0.5:
+                continue
+            if d <= best_d:
+                best, best_d = t, d
+        if best is not None:
+            self.lost.remove(best)
+        return best
 
     # ------------------------------------------------------------ export
     def state(self, timestamp: Optional[float] = None) -> dict:
