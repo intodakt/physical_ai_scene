@@ -15,12 +15,15 @@ STOPWORDS = {
     "which", "what", "where", "is", "are", "the", "a", "an", "find", "show", "me", "that", "to",
     "go", "pick", "up", "move", "bring", "get", "locate", "please", "there", "it", "of", "s",
     "object", "objects", "thing", "item", "can", "you", "i", "my", "for", "one",
+    "was", "were", "before", "previously", "earlier", "originally", "used", "be", "now", "lying", "sitting", "standing",
 }
 GENERIC = {"object", "objects", "thing", "item", "something"}
 
 _NEG = re.compile(r"\b(?:not|isn't|isnt|never|without being)\s+(?:the\s+)?(near|next to|close to|on|under|beside)"
                   r"\s+(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)(?=$|\s+(?:and|but|that|which)\b)")
 _FAR = re.compile(r"\bfar\s+from\s+(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)(?=$|\s+(?:and|but|that|which)\b)")
+_REL = re.compile(r"\b(on top of|on|under|below|beneath|inside|in)\s+(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)"
+                  r"(?=$|\s+(?:and|but|that|which)\b)")
 _CLOSEST = re.compile(r"\b(?:closest|nearest)\s+(?:to\s+)?(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)"
                       r"(?=$|\s+(?:and|but|that|which)\b)")
 
@@ -45,6 +48,13 @@ def parse_query(question: str, model=None) -> dict:
         parsed["relations"].append("closest_to")
         text = text[:m.start()]
 
+    if not parsed["reference"]:
+        m = _REL.search(text)
+        if m:
+            rel = m.group(1).replace(" ", "_")
+            parsed["reference"] = m.group(2).strip()
+            parsed["relations"].append({"on_top_of": "on", "below": "under", "beneath": "under", "in": "inside"}.get(rel, rel))
+            text = text[:m.start()]
     words = [w for w in text.replace("'", " ").split() if w not in STOPWORDS]
     parsed["positive_constraints"] = [w for w in words if w in ADJECTIVES]
     nouns = [w for w in words if w not in ADJECTIVES]

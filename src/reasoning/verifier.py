@@ -14,6 +14,8 @@ GRAPH_PATH = Path(os.environ.get("S5_GRAPH", Path(__file__).parent / "sample_sce
 LOW_CONFIDENCE = 0.6
 NEAR_THRESHOLD = 0.3  # meters, same rule as S4's "near" edges
 NEAR_WORDS = {"near", "next_to", "close_to", "beside", "by", "nearby", "closest_to"}
+GRAPH_RELATIONS = {"on": "on", "on_top_of": "on", "under": "under", "below": "under", "beneath": "under",
+                   "inside": "inside", "in": "inside", "within": "inside", "left_of": "left_of"}
 
 
 class GraphError(Exception):
@@ -245,6 +247,61 @@ def filter_not_near(graph, target_text, negatives, only_free=False):
         [chosen],
         extra,
     )
+
+
+def graph_relation(relation):
+    """'under' / 'below' -> 'under' etc.; None for distance relations (near, closest_to) and unknown words."""
+    return GRAPH_RELATIONS.get(str(relation or "").lower().strip().replace(" ", "_"))
+
+
+def find_related(graph, relation, reference_text, target_text=""):
+    """Objects X with an active S4 edge (X, relation, reference): "What is under the mug?", "Which pen is inside the cup?"."""
+    refs = find_nodes_by_name(graph, reference_text)
+    if not refs:
+        return fail(f"no node matches reference '{reference_text}'", "the reference object is not in the scene graph.")
+    ref = refs[0]
+    pool = find_nodes_by_name(graph, target_text) if target_text else [n for n in graph["nodes"] if n["id"] != ref["id"]]
+    ids = {n["id"]: n for n in pool}
+    hits = [(ids[e["source"]], e) for e in graph.get("edges", [])
+            if is_active(e) and e["predicate"] == relation and e["target"] == ref["id"] and e["source"] in ids]
+    if not hits:
+        return fail(f"no active '{relation}' edge to {ref['id']}" + (f" from a '{target_text}'" if target_text else ""),
+                    f"nothing is {relation.replace('_', ' ')} the {reference_text}.")
+    best, edge = max(hits, key=lambda h: _conf(h[0]) or 0)
+    evidence = ", ".join(f"{k}={v}" for k, v in (edge.get("evidence") or {}).items())
+    extra = [f"{len(hits)} objects are {relation} {ref['id']}: {', '.join(h[0]['id'] for h in hits)}"] if len(hits) > 1 else []
+    return _ok(best, f"edge {best['id']} {relation} {ref['id']} ({evidence})",
+               f"The {target_text or 'object'} {relation.replace('_', ' ')} the {reference_text} is {best['id']} ({evidence}).",
+               [best, ref], extra)
+
+
+def where_before(graph, target_text):
+    """Temporal query "Where was the mug before?": previous resting place from S4's pose_history and ended edges."""
+    matches = find_nodes_by_name(graph, target_text)
+    if not matches:
+        return fail(f"no node matches '{target_text}'", f"'{target_text}' is not in the scene graph.")
+    node = matches[0]
+    hist = node.get("pose_history") or []
+    ended = [e for e in graph.get("edges", []) if e.get("end_time") is not None and e["source"] == node["id"]
+             and e["predicate"] in ("near", "on", "under", "inside")]
+    ended_txt = "; ".join(f"was {e['predicate']} {e['target']} until t={e['end_time']}" for e in ended[-3:])
+    now = node["pose_map"]
+    if len(hist) >= 2:
+        prev, cur = hist[-2], hist[-1]
+        moved = math.dist(prev["pose_map"], cur["pose_map"])
+        px, py, pz = prev["pose_map"]
+        facts = (f"pose_history: {len(hist)} positions; previous [{px:.2f}, {py:.2f}, {pz:.2f}] from t={prev['t']}, "
+                 f"moved {moved:.2f} m at t={cur['t']}" + (f"; {ended_txt}" if ended_txt else ""))
+        answer = (f"Before t={cur['t']}, {node['id']} was at x={px:.2f}, y={py:.2f}, z={pz:.2f} m; "
+                  f"it moved {moved:.2f} m to x={now[0]:.2f}, y={now[1]:.2f}, z={now[2]:.2f} m.")
+        return _ok(node, facts, answer, [node])
+    if ended:
+        return _ok(node, f"no move recorded; {ended_txt}",
+                   f"{node['id']} has not moved, but its relations changed: {ended_txt}.", [node])
+    first = hist[0]["t"] if hist else node.get("first_seen")
+    return _ok(node, f"no move recorded since first seen (t={first})",
+               f"{node['id']} has not moved since it was first seen (t={first}); it is at x={now[0]:.2f}, "
+               f"y={now[1]:.2f}, z={now[2]:.2f} m.", [node])
 
 
 if __name__ == "__main__":
