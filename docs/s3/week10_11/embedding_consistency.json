@@ -1,0 +1,11 @@
+{
+  "embedder": "hsv_hist_8x4x4",
+  "data": "synthetic desk sequence, 8 frames (mug slides, book hidden 2 frames)",
+  "same_id_mean": 1.0,
+  "same_id_min": 0.998,
+  "different_id_mean": 0.052,
+  "different_id_max": 0.238,
+  "gap": 0.947,
+  "pairs_same": 127,
+  "pairs_different": 72
+}
