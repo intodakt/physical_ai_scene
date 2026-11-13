@@ -1,0 +1,19 @@
+{
+  "detector": "yolov8s-worldv2.pt",
+  "segmenter": "sam2_t.pt",
+  "prompts": [
+    "laptop",
+    "coffee mug",
+    "keyboard",
+    "mouse",
+    "book",
+    "bottle"
+  ],
+  "confidence": 0.25,
+  "iou": 0.5,
+  "image_size": 640,
+  "max_detections": 30,
+  "name": "desk_v1",
+  "source_config": "desk.json",
+  "sha256": "88862a4abbb34036d6d13dcb934c5d76d879b26ef4c2ac8a9a8b3ba19f01773d"
+}
