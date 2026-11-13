@@ -165,3 +165,13 @@ def test_pipeline_graph_changes_over_time(run_result):
     assert ("laptop_01", "mug_01") in near          # the mug slid next to the laptop
     r = pipe.ask("Find a cup that is not near the laptop")
     assert r["reasoning_result"]["target_id"] is None   # so no cup qualifies any more
+
+
+def test_latency_stats_and_log(run_result, tmp_path):
+    pipe, summary = run_result
+    st = summary["latency_stats_ms"]
+    assert {"s1_load", "s2_fusion", "total", "s5_reasoning", "s6_action"} <= set(st)
+    assert st["total"]["p50"] <= st["total"]["p95"] <= st["total"]["max"] and st["total"]["n"] == summary["n_frames"]
+    assert summary["p95_latency_ms"] == st["total"]["p95"] and summary["fps_at_p95"] > 0
+    rows = pipe.write_latency_log(tmp_path / "lat.csv").read_text().strip().splitlines()
+    assert rows[0].startswith("frame,timestamp,n_objects") and len(rows) == summary["n_frames"] + 1
