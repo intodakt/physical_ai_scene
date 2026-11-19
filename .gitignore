@@ -228,3 +228,7 @@ data/demo_store/
 
 # local S1/S3 reports (docs/demo/QOLLANMA_UZ.md §15.3)
 reports/
+
+# W12 evaluation: per-run pipeline outputs are large; keep only tables/figures in git
+eval/results/*/runs/
+eval/results/s2/synthetic_selfcheck/

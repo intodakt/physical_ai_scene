@@ -156,6 +156,11 @@ class Pipeline:
                "events": [{k: e[k] for k in ("event", "persistent_id")} for e in self.tracker.events],
                "timings_ms": {k: round(v * 1e3, 2) for k, v in t.items()}}
         rec["timings_ms"]["total"] = round(sum(t.values()) * 1e3, 2)
+        # W12: S3's own detection / segmentation split (live mode writes it into observation.json); not added to total
+        tsec = json.loads(Path(obs_path).read_text(encoding="utf-8")).get("timing_seconds") or {}
+        for k in ("detection", "segmentation"):
+            if k in tsec:
+                rec["timings_ms"][f"s3_{k}"] = round(float(tsec[k]) * 1e3, 2)
         self.frames.append(rec)
         return rec
 

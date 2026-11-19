@@ -1,0 +1,31 @@
+task_id,difficulty,frames,question,expect_label,expect_safe,gt_x,gt_y,gt_z,required_relation,notes
+T01,easy,H01_language_easy_rep1,What is closest to the laptop?,,,,,,,"known objects, static, simple nearest-object query"
+T02,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T03,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T04,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T05,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T06,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T07,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T08,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T09,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T10,easy,,,,,,,,,"known objects, static, simple nearest-object query"
+T11,medium,E02_motion_medium_rep1,Find a cup that is not near the laptop,,,,,,,object movement / occlusion + negative query
+T12,medium,,,,,,,,,object movement / occlusion + negative query
+T13,medium,,,,,,,,,object movement / occlusion + negative query
+T14,medium,,,,,,,,,object movement / occlusion + negative query
+T15,medium,,,,,,,,,object movement / occlusion + negative query
+T16,medium,,,,,,,,,object movement / occlusion + negative query
+T17,medium,,,,,,,,,object movement / occlusion + negative query
+T18,medium,,,,,,,,,object movement / occlusion + negative query
+T19,medium,,,,,,,,,object movement / occlusion + negative query
+T20,medium,,,,,,,,,object movement / occlusion + negative query
+T21,hard,D02_unseen_hard_rep1,Where was the mug before it moved?,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T22,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T23,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T24,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T25,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T26,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T27,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T28,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T29,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
+T30,hard,,,,,,,,,unseen object + temporal / multi-hop query + blocked path
