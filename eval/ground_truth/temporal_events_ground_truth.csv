@@ -1,0 +1,2 @@
+sequence_id,object_id,event,t_gt,notes
+#E01_motion_easy_rep1,mug_01,MOVED,14.2,event: MOVED | PICKED_UP | PLACED_ON | REAPPEARED | OCCLUDED; t_gt = bag time (s)

@@ -1,0 +1,17 @@
+bag_id: F01_occlusion_medium_rep1
+date: 2026-11-XX
+duration_s: null
+camera: ZED_Mini
+camera_height_m: null
+camera_pitch_deg: null
+lighting: indoor_normal
+difficulty: medium
+family: F occlusion_reentry
+scenario: hand covers mug 5-10 frames
+split: dev
+objects: []
+unseen_objects: []
+motion_events: []
+occlusion_fraction: 0.0
+ground_truth_available: false
+notes: ''
