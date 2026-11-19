@@ -28,6 +28,15 @@ DEFAULT_CONFIG = REPO / "configs" / "s7_integration.yaml"
 STAGES = ("s1_load", "s3_perception", "s2_fusion", "s6_tracking", "s4_graph")
 
 
+def latency_stats(values) -> dict:
+    """mean / p50 / p95 / max of a list of milliseconds (W11 latency logging)."""
+    v = np.asarray(values, dtype=float)
+    if not v.size:
+        return {}
+    return {"mean": round(float(v.mean()), 2), "p50": round(float(np.percentile(v, 50)), 2),
+            "p95": round(float(np.percentile(v, 95)), 2), "max": round(float(v.max()), 2), "n": int(v.size)}
+
+
 def load_config(path=None) -> dict:
     return yaml.safe_load(Path(path or DEFAULT_CONFIG).read_text(encoding="utf-8"))
 
@@ -66,6 +75,7 @@ class Pipeline:
                                              session_id=self.out.name)
         self._s3 = None
         self.frames: list[dict] = []
+        self.queries: list[dict] = []          # per question: s5_reasoning / s6_action ms
         self.contract_errors: list[str] = []
 
     # ------------------------------------------------------------ helpers
@@ -181,6 +191,7 @@ class Pipeline:
         self._check("action_goal", goal, "S6")
         out = {"question": question, "reasoning_result": reasoning, "action_goal": goal, "simulation": sim,
                "timings_ms": {"s5_reasoning": round(t_s5 * 1e3, 2), "s6_action": round(t_s6 * 1e3, 2)}}
+        self.queries.append(dict(out["timings_ms"]))
         self._write("reasoning/last_query.json", out)
         return out
 
@@ -189,6 +200,26 @@ class Pipeline:
         per_stage = {s: round(float(np.mean([f["timings_ms"][s] for f in self.frames])), 2) for s in STAGES} \
             if self.frames else {}
         mean = float(np.mean(totals)) if totals else 0.0
+        stats = {k: latency_stats([f["timings_ms"][k] for f in self.frames]) for k in (*STAGES, "total")} if self.frames else {}
+        for k in ("s5_reasoning", "s6_action"):
+            if self.queries:
+                stats[k] = latency_stats([q[k] for q in self.queries])
+        p95 = stats.get("total", {}).get("p95", 0.0)
         return {"n_frames": len(self.frames), "s3_mode": self.s3_mode, "s5_parser": self.parser,
                 "mean_latency_ms": round(mean, 2), "fps": round(1e3 / mean, 3) if mean else 0.0,
-                "stage_latency_ms": per_stage, "contract_errors": self.contract_errors, "frames": self.frames}
+                "p95_latency_ms": p95, "fps_at_p95": round(1e3 / p95, 3) if p95 else 0.0,
+                "stage_latency_ms": per_stage, "latency_stats_ms": stats,
+                "contract_errors": self.contract_errors, "frames": self.frames}
+
+    def write_latency_log(self, path) -> Path:
+        """One CSV row per frame: stage timings, total and objects (W11 latency & FPS logging)."""
+        import csv
+
+        path = Path(path)
+        cols = ["frame", "timestamp", "n_objects", "n_rejected", *STAGES, "total"]
+        with path.open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow([c if c in ("frame", "timestamp", "n_objects", "n_rejected") else f"{c}_ms" for c in cols])
+            for r in self.frames:
+                w.writerow([r["frame"], r["timestamp"], r["n_objects"], r["n_rejected"], *(r["timings_ms"][k] for k in (*STAGES, "total"))])
+        return path

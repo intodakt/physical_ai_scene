@@ -69,6 +69,7 @@ def summarize(summary: dict, rows: list[dict]) -> dict:
         "s3_mode": summary["s3_mode"],
         "s5_parser": summary["s5_parser"],
         "mean_latency_ms_S1_to_S6": summary["mean_latency_ms"],
+        "p95_latency_ms_S1_to_S6": summary.get("p95_latency_ms"),
         "fps": summary["fps"],
         **{f"latency_ms_{s}": v for s, v in summary["stage_latency_ms"].items()},
         "answer_accuracy": _rate(sum(r["correct"] for r in rows), len(rows)),

@@ -57,6 +57,7 @@ def run(frames=None, bag=None, query=None, out="outputs/pipeline", s3=None, pars
     summary = pipe.summary()
     summary["last_query"] = result
     Path(out, "run_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    pipe.write_latency_log(Path(out, "latency_log.csv"))
 
     rr, goal = result["reasoning_result"], result["action_goal"]
     log(f"\n[S5] Q: {result['question']}\n     A: {rr['final_answer']}")
@@ -64,8 +65,8 @@ def run(frames=None, bag=None, query=None, out="outputs/pipeline", s3=None, pars
         log(f"     ! {w}")
     log(f"[S6] ActionGoal: target={goal['target_object_id']} pose={goal['target_pose']} "
         f"validated={goal['validated']} ({goal['reason']})")
-    log(f"[S7] mean latency {summary['mean_latency_ms']:.0f} ms/frame ({summary['fps']:.2f} FPS), "
-        f"contract errors: {len(summary['contract_errors'])}")
+    log(f"[S7] latency {summary['mean_latency_ms']:.0f} ms/frame mean, {summary['p95_latency_ms']:.0f} ms p95 "
+        f"({summary['fps']:.2f} FPS), contract errors: {len(summary['contract_errors'])} · log: {out}/latency_log.csv")
     for e in summary["contract_errors"]:
         log(f"     x {e}")
     return pipe, summary
