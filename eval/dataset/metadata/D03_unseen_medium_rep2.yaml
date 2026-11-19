@@ -1,0 +1,17 @@
+bag_id: D03_unseen_medium_rep2
+date: 2026-11-XX
+duration_s: null
+camera: ZED_Mini
+camera_height_m: null
+camera_pitch_deg: null
+lighting: indoor_normal
+difficulty: medium
+family: D unseen_objects
+scenario: one held-out object among known ones
+split: test
+objects: []
+unseen_objects: []
+motion_events: []
+occlusion_fraction: 0.0
+ground_truth_available: false
+notes: ''
