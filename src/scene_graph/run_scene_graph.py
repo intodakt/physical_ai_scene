@@ -1,4 +1,4 @@
-"""CLI: python -m src.scene_graph.run_scene_graph --objects <S2 *_objects.json> --out <graph.json> [--watch]"""
+"""CLI: python -m src.scene_graph.run_scene_graph --objects <S2 *_objects.json> --out <graph.json> [--watch] [--resume <graph.json>]"""
 import argparse
 import time
 from pathlib import Path
@@ -12,9 +12,10 @@ def main():
     p.add_argument("--out", default="outputs/scene_graph/scene_graph.json")
     p.add_argument("--desk-top-z", type=float, default=0.0, help="desk surface height in the map frame")
     p.add_argument("--watch", action="store_true", help="re-read the input and rewrite the output every second")
+    p.add_argument("--resume", help="continue from a saved Scene Graph JSON (keeps nodes and edge history)")
     a = p.parse_args()
 
-    engine = SceneGraphEngine(desk_top_z=a.desk_top_z)
+    engine = SceneGraphEngine.load(a.resume, desk_top_z=a.desk_top_z) if a.resume else SceneGraphEngine(desk_top_z=a.desk_top_z)
     last = None
     while True:
         mtime = Path(a.objects).stat().st_mtime

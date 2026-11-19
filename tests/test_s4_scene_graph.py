@@ -148,3 +148,65 @@ def test_real_bag_frames_everything_on_desk_despite_placeholder_tf():
     assert {s for s, p, t in edges(g, "on") if t == "desk_01"} == objs
     assert not edges(SceneGraphEngine(use_support_plane=False).update(
         load_objects(REAL / "s2_frame_130_objects.json")).export(), "on")
+
+
+# ---------------------------------------------------------------- W10: under / inside
+def test_under_with_contact_and_with_gap():
+    book = box([0, 0, 0.02], [0.2, 0.15, 0.04])
+    mug_on_book = box([0, 0, 0.09], [0.08, 0.08, 0.10])
+    ok, ev = rules.check_under(book, mug_on_book)
+    assert not ok                                           # the mug's footprint does not cover the book
+    small = box([0, 0, 0.02], [0.05, 0.05, 0.04])
+    shelf = box([0, 0, 0.25], [0.4, 0.3, 0.02])
+    ok, ev = rules.check_under(small, shelf)                # 20 cm gap under a shelf
+    assert ok and ev["vertical_gap_m"] == pytest.approx(0.2, abs=1e-3)
+    assert not rules.check_under(shelf, small)[0]           # not the other way round
+    assert not rules.check_under(small, box([0, 0, 0.6], [0.4, 0.3, 0.02]))[0]   # too far above
+
+
+def test_inside_cup():
+    cup = box([0, 0, 0.05], [0.08, 0.08, 0.10])
+    pen = box([0.005, 0, 0.07], [0.012, 0.012, 0.14])       # bottom 0.0 = cup bottom, sticks out of the top
+    ok, ev = rules.check_inside(pen, cup)
+    assert ok and ev["xy_overlap"] == 1.0
+    assert not rules.check_inside(cup, pen)[0]              # the bigger box is never inside the smaller one
+    assert not rules.check_inside(box([0.3, 0, 0.05], [0.01, 0.01, 0.1]), cup)[0]   # beside the cup
+    assert not rules.check_inside(box([0, 0, 0.16], [0.01, 0.01, 0.02]), cup)[0]   # above the rim
+
+
+def _frame(objs, ts):
+    return {"timestamp": ts, "objects": [{"object_id": i, "persistent_id": i, "semantic_label": i.split("_")[0],
+             "label_candidates": [i.split("_")[0]], "detector_score": 0.9, "fused_confidence": 0.8, "depth_confidence": 0.9,
+             "centroid": [0, 0, 1], "box_map": {"center": c, "dimensions": [s[0], s[2], s[1]], "yaw": 0.0}} for i, c, s in objs]}
+
+
+def test_engine_builds_under_and_inside_edges():
+    g = SceneGraphEngine(use_support_plane=False).update(_frame([
+        ("cup_01", [0.5, 0.0, 0.05], [0.08, 0.08, 0.10]), ("pen_01", [0.5, 0.0, 0.07], [0.012, 0.012, 0.14]),
+        ("shelf_01", [0.8, 0.2, 0.25], [0.4, 0.3, 0.02]), ("box_01", [0.8, 0.2, 0.03], [0.1, 0.1, 0.06])], 1.0)).export()
+    assert ("pen_01", "inside", "cup_01") in edges(g, "inside")
+    assert ("box_01", "under", "shelf_01") in edges(g, "under")
+
+
+# ---------------------------------------------------------------- W11: save / load
+def test_save_load_round_trip_and_continue(tmp_path):
+    eng = SceneGraphEngine().update(load_objects(MOCK))
+    eng.save(tmp_path / "g.json")
+    back = SceneGraphEngine.load(tmp_path / "g.json")
+    a, b = eng.export(), back.export()
+    assert a["nodes"] == b["nodes"] and a["edges"] == b["edges"]
+    frame = copy.deepcopy(load_objects(MOCK))
+    frame["objects"] = [o for o in frame["objects"] if o["semantic_label"] != "glass"]   # glass hidden now
+    frame["timestamp"] = (frame.get("timestamp") or 0) + 1
+    g = back.update(frame).export()
+    glass = next(n for n in g["nodes"] if n["id"].startswith("glass"))
+    assert glass["state"] == "occluded" and glass["first_seen"] == a["nodes"][[n["id"] for n in a["nodes"]].index(glass["id"])]["first_seen"]
+
+
+def test_pose_history_records_moves_only():
+    eng = SceneGraphEngine(use_support_plane=False)
+    for t, x in ((1.0, 0.50), (2.0, 0.505), (3.0, 0.70)):          # 5 mm noise, then a 20 cm move
+        eng.update(_frame([("mug_01", [x, 0.0, 0.05], [0.08, 0.08, 0.10])], t))
+    mug = next(n for n in eng.export()["nodes"] if n["id"] == "mug_01")
+    assert [h["t"] for h in mug["pose_history"]] == [1.0, 3.0]
+    assert mug["pose_history"][0]["pose_map"][0] == 0.5

@@ -9,6 +9,8 @@ from .levelling import desk_alignment
 
 SCHEMA_VERSION = "0.1"
 DESK_ID = "desk_01"
+POSE_HISTORY_MIN_MOVE_M = 0.02   # a new pose_history entry when the object moved more than this
+POSE_HISTORY_LEN = 50
 
 
 def load_objects(path):
@@ -84,12 +86,19 @@ class SceneGraphEngine:
 
     def _upsert(self, nid, attrs, ts):
         if nid in self.graph:                 # moved object: update the node, never duplicate it
-            first = self.graph.nodes[nid]["first_seen"]
-            self.graph.nodes[nid].update(attrs)
-            self.graph.nodes[nid]["first_seen"] = first
+            node = self.graph.nodes[nid]
+            first, hist = node["first_seen"], node.get("pose_history", [])
+            node.update(attrs)
+            node["first_seen"], node["pose_history"] = first, hist
         else:
-            self.graph.add_node(nid, first_seen=ts, **attrs)
-        self.graph.nodes[nid]["last_seen"] = ts
+            self.graph.add_node(nid, first_seen=ts, pose_history=[], **attrs)
+        node = self.graph.nodes[nid]
+        node["last_seen"] = ts
+        hist, c = node["pose_history"], [round(v, 4) for v in node["center"]]
+        if not node.get("virtual") and (not hist or
+                                        sum((p - q) ** 2 for p, q in zip(c, hist[-1]["pose_map"])) ** 0.5 > POSE_HISTORY_MIN_MOVE_M):
+            hist.append({"t": ts, "pose_map": c})       # where the object rested from time t on
+            del hist[:-POSE_HISTORY_LEN]
 
     # -- edges -------------------------------------------------------------
     def _candidates(self, ida, idb):
@@ -103,6 +112,14 @@ class SceneGraphEngine:
             ok, ev = (False, {}) if virtual else rules.check_left_of(sa, sb)
             if ok:
                 found.append((src, "left_of", tgt, "camera_side", ev))
+            if not virtual:
+                ok, ev = rules.check_inside(sa, sb)
+                if ok:
+                    found.append((src, "inside", tgt, "containment", ev))
+                else:
+                    ok, ev = rules.check_under(sa, sb)
+                    if ok:
+                        found.append((src, "under", tgt, "vertical_cover", ev))
         ok, ev = (False, {}) if virtual else rules.check_near(a, b)
         if ok:
             s, t = sorted((ida, idb))
@@ -141,6 +158,7 @@ class SceneGraphEngine:
                 "yaw": round(a.get("yaw", 0.0), 4),   # rotation of `size` about z; footprint = rotated box
                 "state": a["state"], "first_seen": a["first_seen"], "last_seen": a["last_seen"],
                 "confidence": a["confidence"], "depth_confidence": a["depth_confidence"],
+                "pose_history": list(a.get("pose_history", [])),   # [{t, pose_map}] each time it moved > 2 cm
             }
             if a.get("virtual"):
                 node["virtual"], node["source"] = True, a["source"]
@@ -155,3 +173,28 @@ class SceneGraphEngine:
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         Path(path).write_text(json.dumps(self.export(), indent=2))
+
+    @classmethod
+    def load(cls, path_or_graph, **kw):
+        """Rebuild an engine from a saved Scene Graph JSON (file path or dict) so updates can continue.
+
+        Nodes, their first/last_seen and states, and the full edge history (incl. ended edges) are restored.
+        The camera-side x (cam_x) is not part of the export; it is refreshed when the object is seen again."""
+        g = path_or_graph if isinstance(path_or_graph, dict) else json.loads(Path(path_or_graph).read_text())
+        eng = cls(session_id=g.get("session_id", "s4_session"), **kw)
+        eng.timestamp, eng.alignment = g.get("timestamp"), g.get("desk_alignment")
+        for n in g["nodes"]:
+            attrs = {"persistent_object_id": n["persistent_object_id"], "names": n["names"], "center": list(n["pose_map"]),
+                     "size": list(n["size"]), "yaw": n.get("yaw", 0.0), "cam_x": None, "state": n["state"],
+                     "confidence": n["confidence"], "depth_confidence": n["depth_confidence"],
+                     "first_seen": n["first_seen"], "last_seen": n["last_seen"],
+                     "pose_history": list(n.get("pose_history", []))}
+            if n.get("virtual"):
+                attrs.update(virtual=True, source=n.get("source"))
+            eng.graph.add_node(n["id"], **attrs)
+        for e in g["edges"]:
+            rec = dict(e)
+            eng._edges[(e["source"], e["predicate"], e["target"])] = rec
+            if rec["end_time"] is None:
+                eng.graph.add_edge(e["source"], e["target"], key=e["predicate"], **rec)
+        return eng
