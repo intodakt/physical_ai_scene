@@ -117,6 +117,31 @@ def score(pred, true_events, seen_events, frames):
             "event_delay_frames": round(float(np.mean(delays)), 2) if delays else None}
 
 
+def occlusion_sweep(hidden=(2, 5, 10, 11, 15, 20), relocate=(0.0, 0.30)):
+    """W10: re-identification after an occlusion of h frames; the book comes back in place or 30 cm away."""
+    out = {}
+    for dx in relocate:
+        for h in hidden:
+            ok = {"baseline": 0, "multi_term": 0}
+            for seed in SEEDS:
+                rng = np.random.default_rng(seed)
+                frames = []
+                for k in range(10 + h + 5):
+                    f = []
+                    for lab, (x, y, d) in BASE.items():
+                        if lab == "book" and 10 <= k < 10 + h:
+                            continue
+                        if lab == "book" and k >= 10 + h:
+                            x = x + dx
+                        f.append((lab, obj(lab, x, y, d, rng)))
+                    frames.append(f)
+                for key, make in (("baseline", lambda: CentroidTracker()), ("multi_term", lambda: MultiTermTracker())):
+                    pred, _ = run(make(), frames)
+                    ok[key] += pred[10 + h]["book"] == pred[9]["book"]
+            out[f"{'moved' if dx else 'in_place'}_{h}"] = {k: round(v / len(SEEDS), 2) for k, v in ok.items()}
+    return out
+
+
 def real_bag():
     files = sorted((ROOT / "data" / "real").glob("s2_frame_*_objects.json"))
     out = {}
@@ -144,7 +169,9 @@ def main():
                 agg[key].append(score(pred, ev, seen, frames))
         res[name] = {k: {m: (round(float(np.mean([r[m] for r in v if r[m] is not None])), 2)
                              if any(r[m] is not None for r in v) else None) for m in v[0]} for k, v in agg.items()}
-    metrics = {"seeds": len(SEEDS), "frames_per_scenario": 30, "scenarios": res, "real_static_bag": real_bag()}
+    sweep = occlusion_sweep()
+    metrics = {"seeds": len(SEEDS), "frames_per_scenario": 30, "scenarios": res, "real_static_bag": real_bag(),
+               "reid_after_occlusion": sweep}
     (OUT / "metrics.json").write_text(json.dumps(metrics, indent=2))
     rows = ["| Scenario | Tracker | ID switches | re-ID ok / gaps | events found | event delay (frames) |", "|---|---|---|---|---|---|"]
     for name in names:
@@ -160,6 +187,12 @@ def main():
         f"Real S1 static bag ({rb['multi_term']['frames']} frames of real S2 output): baseline same IDs on every frame = "
         f"{rb['baseline']['same_ids_on_every_frame']} ({rb['baseline']['n_ids']} IDs); multi-term = "
         f"{rb['multi_term']['same_ids_on_every_frame']} ({rb['multi_term']['n_ids']} IDs).", "",
+        "## Re-identification after occlusion (W10)", "",
+        "Share of runs where the book gets its old ID back after being hidden h frames (memory TTL = 10 frames).", "",
+        "| Hidden frames | in place: baseline | in place: multi-term | moved 30 cm: baseline | moved 30 cm: multi-term |",
+        "|---|---|---|---|---|",
+        *[f"| {h} | {sweep[f'in_place_{h}']['baseline']} | {sweep[f'in_place_{h}']['multi_term']} | "
+          f"{sweep[f'moved_{h}']['baseline']} | {sweep[f'moved_{h}']['multi_term']} |" for h in (2, 5, 10, 11, 15, 20)], "",
         "Limits: the scenarios are synthetic object lists (no rendering, no S3/S2 errors); real relocation and",
         "occlusion bags still have to be labelled with ground-truth identities.", ""])
     (OUT / "README.md").write_text(text)

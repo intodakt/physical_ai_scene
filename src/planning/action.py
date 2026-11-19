@@ -7,6 +7,7 @@ target_pose, exclusion_zones, validated) and adds:
     reason_code   OK | OK_DETOUR | TARGET_UNVERIFIED | TARGET_NOT_IN_GRAPH | TARGET_OCCLUDED |
                   TARGET_IN_EXCLUSION_ZONE | PATH_BLOCKED
     reason        human-readable explanation
+    reachability  straight line clear? if not: does a detour exist (waypoints, length)?  (W11)
     path          waypoints [[x, y], ...] the virtual agent will drive
     clearance_m   smallest distance between the path and any exclusion zone
     warnings      e.g. low target confidence (the goal is still sent, the warning is shown)
@@ -187,15 +188,20 @@ def build_action_goal(reasoning: dict, graph: dict, cfg: dict) -> dict:
     blocked = path_hits(straight, zones, step)
     if not blocked:
         goal.update(validated=True, reason_code="OK", reason="path is clear", path=straight,
-                    clearance_m=clearance(straight, zones, step))
+                    clearance_m=clearance(straight, zones, step), reachability={"straight_clear": True})
         return goal
-    if cfg.get("planner", "straight") == "detour":
-        b = cfg.get("workspace_bounds", [0.0, 1.4, -0.6, 0.6])
-        path = astar(agent, (tx, ty), zones, b, res=cfg.get("grid_m", 0.01), clearance_m=cfg.get("clearance_m", 0.0))
-        if path:
-            goal.update(validated=True, reason_code="OK_DETOUR", path=path, clearance_m=clearance(path, zones, step),
-                        reason=f"straight line crosses {', '.join(blocked)}; detour with {len(path) - 2} waypoint(s)")
-            return goal
+    # W11 reachability: is the target reachable at all when the straight line is blocked?
+    b = cfg.get("workspace_bounds", [0.0, 1.4, -0.6, 0.6])
+    path = astar(agent, (tx, ty), zones, b, res=cfg.get("grid_m", 0.01), clearance_m=cfg.get("clearance_m", 0.0))
+    goal["reachability"] = {"straight_clear": False, "blocked_by": blocked, "detour_exists": bool(path),
+                            "detour_waypoints": len(path) - 2 if path else None,
+                            "detour_length_m": round(sum(math.dist(p, q) for p, q in zip(path, path[1:])), 3) if path else None}
+    if path and cfg.get("planner", "straight") == "detour":
+        goal.update(validated=True, reason_code="OK_DETOUR", path=path, clearance_m=clearance(path, zones, step),
+                    reason=f"straight line crosses {', '.join(blocked)}; detour with {len(path) - 2} waypoint(s)")
+        return goal
+    goal["warnings"].append("REACHABLE_BY_DETOUR: a path around the zones exists (planner: detour)" if path
+                            else "UNREACHABLE: no path around the exclusion zones inside the workspace")
     goal["path"] = straight
     return reject("PATH_BLOCKED", f"path crosses exclusion zone of {', '.join(blocked)}")
 

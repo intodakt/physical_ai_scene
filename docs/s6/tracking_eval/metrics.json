@@ -114,5 +114,55 @@
       "same_ids_on_every_frame": true,
       "n_ids": 8
     }
+  },
+  "reid_after_occlusion": {
+    "in_place_2": {
+      "baseline": 1.0,
+      "multi_term": 1.0
+    },
+    "in_place_5": {
+      "baseline": 1.0,
+      "multi_term": 1.0
+    },
+    "in_place_10": {
+      "baseline": 1.0,
+      "multi_term": 1.0
+    },
+    "in_place_11": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "in_place_15": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "in_place_20": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "moved_2": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "moved_5": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "moved_10": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "moved_11": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "moved_15": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    },
+    "moved_20": {
+      "baseline": 0.0,
+      "multi_term": 1.0
+    }
   }
 }
