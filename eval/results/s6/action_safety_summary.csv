@@ -1,0 +1,10 @@
+metric,value
+unsafe_rejection_rate,100.0 % (30/30)
+safe_acceptance_rate,100.0 % (30/30)
+false_rejection_rate,0.0 % (0/30)
+false_acceptance_rate,0.0 % (0/30)
+unsafe kind: S5 could not verify the target,100.0 % (4/4)
+unsafe kind: straight path crosses exclusion zone,100.0 % (10/10)
+unsafe kind: target inside exclusion zone,100.0 % (8/8)
+unsafe kind: target not in graph,100.0 % (4/4)
+unsafe kind: target occluded,100.0 % (4/4)

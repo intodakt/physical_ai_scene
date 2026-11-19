@@ -9,6 +9,7 @@ Per frame:
                  d / gate                      position term (to the predicted centre)
                + w_label · label term          0 same label · 0.5 shared label candidate · else forbidden
                + w_size  · relative size change
+               + w_app   · (1 − cosine) of appearance embeddings      (W12, when detections carry "appearance")
              observed tracks are gated at ``gate_m``; occluded tracks at ``reid_gate_m`` (an object may
              come back somewhere else, e.g. after being picked up and put down)
 3. assign    Hungarian on the cost matrix; pairs above the gate are left unmatched
@@ -57,6 +58,7 @@ class Track:
     lifted: bool = False
     history: list = field(default_factory=list)  # [(timestamp, [x, y, z])]
     removed_frame: int = -1
+    appearance: Optional[np.ndarray] = None   # W12: running mean of the detection's appearance embedding
 
     def to_dict(self) -> dict:
         return {"persistent_id": self.persistent_id, "label": self.label, "label_candidates": sorted(self.labels),
@@ -91,6 +93,7 @@ class MultiTermTracker:
     reid_gate_m: float = 0.60          # occluded track: may come back this far away (relocation)
     w_label: float = 1.0
     w_size: float = 0.5
+    w_app: float = 0.0                 # W12 multi-cue: weight of (1 − cosine) between appearance embeddings (0 = off)
     move_threshold_m: float = 0.03     # rest position changed more than this → MOVED
     confidence_decay: float = 0.85     # per missed frame
     velocity_smoothing: float = 0.5
@@ -131,6 +134,10 @@ class MultiTermTracker:
                 st = 0.0 if (s is None or t.size is None) else float(np.mean(np.abs(s - t.size) / np.maximum(t.size, 1e-3)))
                 # re-identifying an occluded track costs a little more, so a visible track wins a tie
                 C[i, j] = d / gate + self.w_label * lt + self.w_size * min(st, 1.0) + (0.25 if t.state == "occluded" else 0.0)
+                if self.w_app and t.appearance is not None and o.get("appearance") is not None:
+                    a = np.asarray(o["appearance"], float)
+                    cos = float(a @ t.appearance / (np.linalg.norm(a) * np.linalg.norm(t.appearance) + 1e-9))
+                    C[i, j] += self.w_app * (1.0 - cos)
         return C
 
     # ------------------------------------------------------------ events
@@ -193,6 +200,9 @@ class MultiTermTracker:
                 t.labels |= set(o.get("label_candidates") or []) | {o["semantic_label"]}
                 t.confidence = float(o.get("fused_confidence") or t.confidence)
                 t.history = (t.history + [(ts, [round(float(x), 4) for x in c])])[-self.history_len:]
+                if o.get("appearance") is not None:
+                    a = np.asarray(o["appearance"], float)
+                    t.appearance = a if t.appearance is None else 0.8 * t.appearance + 0.2 * a
                 o["persistent_id"] = t.persistent_id
                 self.last_motion[t.persistent_id] = round(moved, 4)
                 self._rest_and_lift(t, o, ts, reappeared)
@@ -230,7 +240,8 @@ class MultiTermTracker:
             pid = f"{label.replace(' ', '_')}_{self._counts[label]:02d}"
             c = _center(o)
             t = Track(pid, label, set(o.get("label_candidates") or []) | {label}, c, _size(o),
-                      float(o.get("fused_confidence") or 0.0), ts, ts, history=[(ts, [round(float(x), 4) for x in c])])
+                      float(o.get("fused_confidence") or 0.0), ts, ts, history=[(ts, [round(float(x), 4) for x in c])],
+                      appearance=None if o.get("appearance") is None else np.asarray(o["appearance"], float))
             self.tracks.append(t)
             o["persistent_id"] = pid
             self._event("APPEARED", t, ts)
