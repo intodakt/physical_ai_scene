@@ -1,0 +1,2 @@
+bag_id,frame_id,time,subject,predicate,object,gt,pred,confidence,evidence_value,annotator,checked_by
+#B01_static_easy_rep1,frame_0060,2.0,mug_01,on,desk,1,,,,S4,S1
