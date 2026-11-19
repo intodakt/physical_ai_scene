@@ -1,0 +1,2 @@
+bag_id,frame_id,object_id,class,x_gt,y_gt,z_gt,size_x,size_y,size_z,condition,measured_by,notes
+#B01_static_easy_rep1,frame_0060,mug_01,mug,0.4,0.25,0.06,0.08,0.08,0.1,normal,S1,centre measured with tape from the table origin; condition: normal|shiny|transparent|small|occluded

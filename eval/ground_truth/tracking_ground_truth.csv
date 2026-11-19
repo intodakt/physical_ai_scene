@@ -1,0 +1,2 @@
+sequence_id,scenario,frame_id,gt_object_id,pred_track_id,occluded,reappeared,id_switch,association_cost,x,y
+#F01_occlusion_medium_rep1,medium_occlusion,12,mug_A,mug_01,0,0,,,0.41,0.22
