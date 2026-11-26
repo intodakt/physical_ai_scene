@@ -1,0 +1,17 @@
+bag_id: H02_language_medium_rep1
+date: 2026-11-XX
+duration_s: null
+camera: ZED_Mini
+camera_height_m: null
+camera_pitch_deg: null
+lighting: indoor_normal
+difficulty: medium
+family: H language_action
+scenario: negative / multi-hop queries
+split: dev
+objects: []
+unseen_objects: []
+motion_events: []
+occlusion_fraction: 0.0
+ground_truth_available: false
+notes: ''

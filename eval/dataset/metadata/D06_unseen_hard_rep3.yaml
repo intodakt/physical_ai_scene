@@ -1,0 +1,17 @@
+bag_id: D06_unseen_hard_rep3
+date: 2026-11-XX
+duration_s: null
+camera: ZED_Mini
+camera_height_m: null
+camera_pitch_deg: null
+lighting: indoor_normal
+difficulty: hard
+family: D unseen_objects
+scenario: held-out object + distractors (multimeter, calculator, power bank)
+split: test
+objects: []
+unseen_objects: []
+motion_events: []
+occlusion_fraction: 0.0
+ground_truth_available: false
+notes: ''

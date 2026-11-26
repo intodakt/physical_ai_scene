@@ -1,0 +1,17 @@
+bag_id: E01_motion_easy_rep1
+date: 2026-11-XX
+duration_s: null
+camera: ZED_Mini
+camera_height_m: null
+camera_pitch_deg: null
+lighting: indoor_normal
+difficulty: easy
+family: E motion_relocation
+scenario: mug moved desk -> book
+split: dev
+objects: []
+unseen_objects: []
+motion_events: []
+occlusion_fraction: 0.0
+ground_truth_available: false
+notes: ''

@@ -1,0 +1,46 @@
+bag_id,family,difficulty,scenario,typical_duration,purpose,used_by,repetition,split
+A01_calibration_easy_rep1,A calibration_reference,easy,"checkerboard: centre, corners, near/far, tilts (>= 20 poses)",30-60 s,"camera calibration, alignment, static geometry","S1, S2",1,test
+A02_calibration_easy_rep1,A calibration_reference,easy,"tape-marked table frame, empty desk",30-60 s,"camera calibration, alignment, static geometry","S1, S2",1,test
+A03_calibration_easy_rep1,A calibration_reference,easy,static reference objects at measured positions,30-60 s,"camera calibration, alignment, static geometry","S1, S2",1,test
+B01_static_easy_rep1,B static_known,easy,"laptop, mug, book, bottle separated",30-45 s,baseline localization and graph relations,"S2, S4",1,dev
+B02_static_medium_rep1,B static_known,medium,"mug ON book, bottle near laptop",30-45 s,baseline localization and graph relations,"S2, S4",1,dev
+B03_static_hard_rep1,B static_known,hard,"cluttered: 6 objects, partial overlap",30-45 s,baseline localization and graph relations,"S2, S4",1,test
+B04_static_easy_rep2,B static_known,easy,"laptop, mug, book, bottle separated",30-45 s,baseline localization and graph relations,"S2, S4",2,test
+B05_static_medium_rep2,B static_known,medium,"mug ON book, bottle near laptop",30-45 s,baseline localization and graph relations,"S2, S4",2,test
+B06_static_hard_rep2,B static_known,hard,"cluttered: 6 objects, partial overlap",30-45 s,baseline localization and graph relations,"S2, S4",2,test
+C01_difficult_medium_rep1,C difficult_depth,medium,shiny mug + dark phone,30-45 s,"glass, shiny, dark, small, partial depth",S2,1,dev
+C02_difficult_hard_rep1,C difficult_depth,hard,transparent glass beside laptop,30-45 s,"glass, shiny, dark, small, partial depth",S2,1,dev
+C03_difficult_medium_rep1,C difficult_depth,medium,"small objects (USB stick, eraser)",30-45 s,"glass, shiny, dark, small, partial depth",S2,1,test
+C04_difficult_hard_rep2,C difficult_depth,hard,shiny mug + dark phone,30-45 s,"glass, shiny, dark, small, partial depth",S2,2,test
+C05_difficult_medium_rep2,C difficult_depth,medium,transparent glass beside laptop,30-45 s,"glass, shiny, dark, small, partial depth",S2,2,test
+C06_difficult_hard_rep2,C difficult_depth,hard,"small objects (USB stick, eraser)",30-45 s,"glass, shiny, dark, small, partial depth",S2,2,test
+D01_unseen_medium_rep1,D unseen_objects,medium,one held-out object among known ones,30-60 s,"5 held-out classes, prompt robustness",S3,1,dev
+D02_unseen_hard_rep1,D unseen_objects,hard,"held-out object + distractors (multimeter, calculator, power bank)",30-60 s,"5 held-out classes, prompt robustness",S3,1,dev
+D03_unseen_medium_rep2,D unseen_objects,medium,one held-out object among known ones,30-60 s,"5 held-out classes, prompt robustness",S3,2,test
+D04_unseen_hard_rep2,D unseen_objects,hard,"held-out object + distractors (multimeter, calculator, power bank)",30-60 s,"5 held-out classes, prompt robustness",S3,2,test
+D05_unseen_medium_rep3,D unseen_objects,medium,one held-out object among known ones,30-60 s,"5 held-out classes, prompt robustness",S3,3,test
+D06_unseen_hard_rep3,D unseen_objects,hard,"held-out object + distractors (multimeter, calculator, power bank)",30-60 s,"5 held-out classes, prompt robustness",S3,3,test
+E01_motion_easy_rep1,E motion_relocation,easy,mug moved desk -> book,45-60 s,"tracking, temporal graph, relation changes","S4, S6",1,dev
+E02_motion_medium_rep1,E motion_relocation,medium,two objects swapped,45-60 s,"tracking, temporal graph, relation changes","S4, S6",1,dev
+E03_motion_hard_rep1,E motion_relocation,hard,"pick up, hold, place elsewhere",45-60 s,"tracking, temporal graph, relation changes","S4, S6",1,test
+E04_motion_easy_rep2,E motion_relocation,easy,mug moved desk -> book,45-60 s,"tracking, temporal graph, relation changes","S4, S6",2,test
+E05_motion_medium_rep2,E motion_relocation,medium,two objects swapped,45-60 s,"tracking, temporal graph, relation changes","S4, S6",2,test
+E06_motion_hard_rep2,E motion_relocation,hard,"pick up, hold, place elsewhere",45-60 s,"tracking, temporal graph, relation changes","S4, S6",2,test
+F01_occlusion_medium_rep1,F occlusion_reentry,medium,hand covers mug 5-10 frames,45-60 s,object permanence and re-ID,S6,1,dev
+F02_occlusion_hard_rep1,F occlusion_reentry,hard,box hides object 11-20 frames,45-60 s,object permanence and re-ID,S6,1,dev
+F03_occlusion_medium_rep1,F occlusion_reentry,medium,object leaves view and re-enters (21-40 frames),45-60 s,object permanence and re-ID,S6,1,test
+F04_occlusion_hard_rep2,F occlusion_reentry,hard,hand covers mug 5-10 frames,45-60 s,object permanence and re-ID,S6,2,test
+F05_occlusion_medium_rep2,F occlusion_reentry,medium,box hides object 11-20 frames,45-60 s,object permanence and re-ID,S6,2,test
+F06_occlusion_hard_rep2,F occlusion_reentry,hard,object leaves view and re-enters (21-40 frames),45-60 s,object permanence and re-ID,S6,2,test
+G01_similar_hard_rep1,G similar_crossing,hard,two identical mugs cross paths,45-60 s,ID-switch stress test,S6,1,test
+G02_similar_hard_rep1,G similar_crossing,hard,two similar bottles swap places,45-60 s,ID-switch stress test,S6,1,test
+G03_similar_hard_rep2,G similar_crossing,hard,two identical mugs cross paths,45-60 s,ID-switch stress test,S6,2,test
+G04_similar_hard_rep2,G similar_crossing,hard,two similar bottles swap places,45-60 s,ID-switch stress test,S6,2,test
+H01_language_easy_rep1,H language_action,easy,"known objects, simple queries",45-90 s,"reasoning, verification, safe action","S5, S7",1,dev
+H02_language_medium_rep1,H language_action,medium,negative / multi-hop queries,45-90 s,"reasoning, verification, safe action","S5, S7",1,dev
+H03_language_hard_rep1,H language_action,hard,blocked path + unseen target,45-90 s,"reasoning, verification, safe action","S5, S7",1,test
+H04_language_easy_rep2,H language_action,easy,"known objects, simple queries",45-90 s,"reasoning, verification, safe action","S5, S7",2,test
+H05_language_medium_rep2,H language_action,medium,negative / multi-hop queries,45-90 s,"reasoning, verification, safe action","S5, S7",2,test
+H06_language_hard_rep2,H language_action,hard,blocked path + unseen target,45-90 s,"reasoning, verification, safe action","S5, S7",2,test
+H07_language_easy_rep3,H language_action,easy,"known objects, simple queries",45-90 s,"reasoning, verification, safe action","S5, S7",3,test
+H08_language_medium_rep3,H language_action,medium,negative / multi-hop queries,45-90 s,"reasoning, verification, safe action","S5, S7",3,test
