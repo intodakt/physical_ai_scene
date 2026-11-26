@@ -47,8 +47,12 @@ class SceneGraphEngine:
     """
 
     def __init__(self, desk_top_z=0.0, desk_size=(1.2, 0.8, 0.04), session_id="s4_session",
-                 use_support_plane=True):
+                 use_support_plane=True, near_enter_m=None, near_exit_m=None):
         self.desk_top_z, self.use_support_plane, self.alignment = desk_top_z, use_support_plane, None
+        # W12 hysteresis (guide §7.5): a NEAR edge starts below near_enter_m and ends only above near_exit_m.
+        # Both default to the plain threshold, i.e. no hysteresis.
+        self.near_enter_m = near_enter_m if near_enter_m is not None else rules.NEAR_THRESHOLD_M
+        self.near_exit_m = max(near_exit_m if near_exit_m is not None else self.near_enter_m, self.near_enter_m)
         self.graph = nx.MultiDiGraph()   # directed, one edge per predicate between a pair
         self.session_id = session_id
         self.timestamp = None
@@ -120,9 +124,11 @@ class SceneGraphEngine:
                     ok, ev = rules.check_under(sa, sb)
                     if ok:
                         found.append((src, "under", tgt, "vertical_cover", ev))
-        ok, ev = (False, {}) if virtual else rules.check_near(a, b)
+        s, t = sorted((ida, idb))
+        rec = self._edges.get((s, "near", t))
+        active = rec is not None and rec["end_time"] is None
+        ok, ev = (False, {}) if virtual else rules.check_near(a, b, self.near_exit_m if active else self.near_enter_m)
         if ok:
-            s, t = sorted((ida, idb))
             found.append((s, "near", t, "proximity", ev))
         return found
 
