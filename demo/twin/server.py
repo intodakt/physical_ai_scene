@@ -136,11 +136,41 @@ def main(argv=None):
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8600)
     ap.add_argument("--no-browser", action="store_true")
+    ap.add_argument("--max-frames", type=int, default=40, help="frames replayed per imported bag")
+    ap.add_argument("recording", nargs="?", default=None,
+                    help="optional: a recording to import first (folder with the bag + S3 output, a .zip or a .db3); "
+                         "on Windows, drag the folder onto G1_Twin.bat")
     a = ap.parse_args(argv)
+    run = a.run
+    if a.recording:
+        from demo import runs as store
+
+        src_path = Path(a.recording).expanduser()
+        if not src_path.exists():
+            sys.exit(f"[twin] not found: {src_path}")
+        print(f"[twin] importing {src_path.name}: S1 replay + S3 masks -> S2 -> S6 -> S4 -> S5 -> S6 "
+              "(a few minutes for a long bag) ...", flush=True)
+        last = [-1]
+
+        def progress(msg, frac):
+            pct = int(frac * 100)
+            if pct >= last[0] + 5 or frac >= 1:
+                last[0] = pct
+                print(f"  [{pct:3d}%] {msg}", flush=True)
+
+        try:
+            names = store.import_and_run(src_path, parser=a.parser, max_frames=a.max_frames, progress=progress)
+        except Exception as e:
+            sys.exit(f"[twin] import failed: {e}\n       The recording needs S3's output (observation.json + masks) "
+                     "next to the bag; see docs/demo/TWIN.md.")
+        for warn in store.LAST_ERRORS:
+            print(f"[twin] note: {warn}", flush=True)
+        run = store.RUNS / names[0]
+        print(f"[twin] imported: {', '.join(names)}", flush=True)
     print("[twin] building the virtual table from the recording ...", flush=True)
-    app = App(a.run, a.parser, a.planner)
+    app = App(run, a.parser, a.planner)
     src = app.twin.source
-    print(f"[twin] recording: {src['name']} ({len(src['objects'])} objects, frame {src['frame']}) · "
+    print(f"[twin] recording: {src['name']} ({len(src['objects'])} objects, frame {src['frame']}) - "
           f"S5 parser: {app.twin.pipe.parser}", flush=True)
     server = ThreadingHTTPServer((a.host, a.port), make_handler(app))
     url = f"http://{a.host}:{a.port}/"

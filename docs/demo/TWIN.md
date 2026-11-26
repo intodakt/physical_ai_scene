@@ -34,11 +34,22 @@ The browser opens at http://127.0.0.1:8600. Options: `--run <run folder>`, `--pa
 ## Presentation-day workflow
 
 1. Record the desk with the ZED Mini (15–30 s) and run S3 on it (as for every bag).
-2. Import it into the demo store: `python -m demo.runs --import <bag + S3 zip>` (or use *➕ Add recording*
-   in `streamlit run demo/app.py`). This runs the whole pipeline on the real recording.
-3. Start the twin. It picks the newest recording in `data/demo_store/runs/` (choose another in the
-   *Recording* menu, top right). Without any recording it builds the synthetic desk.
-4. Show the real recording first (left card + *Recording point cloud* toggle), then edit the twin.
+2. Put the bag (`metadata.yaml` + `.db3`, or the lone `.db3`) and S3's output folder
+   (`frame_XXXXXX/observation.json` + `masks/`) in **one folder**, e.g. `my_recording/`. Name the S3
+   folder after the bag or its scenario tag (`S2_bag.db3` ↔ `S2_static/`) if the folder holds several bags.
+3. Import it and open the twin in one step:
+   * Windows: **drag the folder onto `G1_Twin.bat`**;
+   * any OS: `python -m demo.twin path/to/my_recording` (a `.zip` or `.db3` works too).
+
+   This replays the bag (S1), attaches S3's masks, runs S2 → S6 → S4 → S5 → S6 on every frame, stores
+   the result in `data/demo_store/runs/<bag name>` and builds the twin from it. A bag without S3 output
+   is refused with a message (the demo install has no YOLO-World).
+4. Later starts (`G1_Twin.bat` alone) open the newest imported recording; the *Recording* menu (top
+   right) switches between recordings. With none imported, the synthetic desk is used.
+5. Show the real recording first (left card + *Recording point cloud* toggle), then edit the twin.
+
+Recordings imported in the Streamlit demo (*➕ Add recording*) or with `python -m demo.runs --import`
+land in the same store and show up in the *Recording* menu too.
 
 ## On the page
 

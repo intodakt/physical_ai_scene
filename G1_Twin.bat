@@ -1,6 +1,7 @@
 @echo off
 rem G1 virtual table on Windows: double-click this file.
 rem First run: creates .venv and installs the packages (a few minutes). Later runs start in seconds.
+rem To import a recording first: drag its folder (bag + S3 output) onto this file.
 rem Options are passed on, e.g.:  G1_Twin.bat --run data\demo_store\runs\S2_bag --parser rules
 setlocal
 cd /d "%~dp0"
