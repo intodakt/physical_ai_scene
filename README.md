@@ -24,6 +24,16 @@ Replays a recorded ZED Mini bag like `ros2 bag play` and shows one tab per membe
 On a MacBook, double-click `G1_Demo.command` (local Ollama LLM included).
 Deploys as-is on Railway (`railway.json`) or Google Cloud Run. See [docs/demo/README.md](docs/demo/README.md).
 
+## Virtual table (digital twin of the recorded desk)
+
+```bash
+python -m demo.twin                          # or double-click G1_Twin.bat (Windows) / G1_Twin.command (macOS)
+```
+
+Builds a 3D twin from the newest recording's pipeline output. Drag, hide or turn objects; each change is
+rendered and processed by the real S2 → S6 → S4 code, then ask S5 and watch S6's robot. See
+[docs/demo/TWIN.md](docs/demo/TWIN.md).
+
 ## Quick start
 
 ```bash
