@@ -36,6 +36,16 @@ python tools/check_contracts.py              # PR gatekeeper: absolute paths + J
 python -m pytest -q
 ```
 
+## Final evaluation and demo (weeks 12–16)
+
+| What | Command |
+|---|---|
+| All evaluations + Tables 1–7, Figures 1–9, acceptance checklist | `python -m src.evaluation.run_all --frames-root <frames> --bags <bags> --runs-root <runs>` |
+| Final 12-step demonstration with a run log | `python scripts/final_demo.py --bag <demo bag> --unseen-description "electrical measuring device" --blocked glass` |
+| Freeze / check the frozen configuration | `python tools/freeze_manifest.py` · `python tools/freeze_manifest.py --check` |
+
+Step-by-step per member: [`eval/README.md`](eval/README.md).
+
 ## Contributing
 
 Work on a branch and open a pull request into `main`. Before asking for a merge, run

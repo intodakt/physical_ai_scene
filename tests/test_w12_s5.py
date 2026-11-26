@@ -33,3 +33,25 @@ def test_s5_generate_and_run_offline(tmp_path):
     temporal_d = [r for r in res if r["method"] == METHODS["D"] and r["family"] == "temporal" and "moved" not in r["question"]]
     assert temporal_d and all(int(r["correct"]) for r in temporal_d if "previously" in r["question"])
     assert summarise(res)["comparison"]
+
+
+def test_rule_parser_ignores_time_clauses():
+    """W13 fix found by the S5 evaluation: 'before it moved' is not an object."""
+    from src.integration import rule_parser
+
+    assert rule_parser.parse_query("Where was the mug before it moved?")["target"] == "mug"
+    assert rule_parser.parse_query("What was the mug on before it moved?")["target"] == "mug"
+    assert rule_parser.parse_query("Where was the cup before it was picked up?")["target"] == "cup"
+    q = rule_parser.parse_query("What is on the book?")
+    assert q["reference"] == "book" and q["relations"] == ["on"]
+
+
+def test_negative_query_without_a_class():
+    """W13 fix found by the final-demo rehearsal: 'Find an object that is not near the laptop' was refused."""
+    from src.integration import s5_adapter
+
+    g = json.load(open("outputs/scene_graph/frame_000_scene_graph.json"))
+    r = s5_adapter.answer("Find an object that is not near the laptop", g, "rules")
+    assert r["verification_status"] and r["target_id"] not in (None, "laptop_0", "desk_01")
+    nodes = {n["id"]: n for n in g["nodes"]}
+    assert math.dist(nodes[r["target_id"]]["pose_map"], nodes["laptop_0"]["pose_map"]) >= 0.30

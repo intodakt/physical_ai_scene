@@ -200,7 +200,7 @@ def checklist() -> list[dict]:
         ("All final metrics include numerator/denominator or sample size", True, "built in: stats.rate() prints 'x % (k/n)'"),
         ("Key results include easy/medium/hard conditions", bool(e2e) and {r["difficulty"] for r in e2e} >= {"easy", "medium", "hard"}, ""),
         ("All thresholds/configurations/prompts are frozen and versioned",
-         Path("configs/frozen/desk_v1.json").exists() and Path("configs/s4_frozen.yaml").exists() and (R / "s2" / "frozen_fusion_config.yaml").exists(),
+         Path("src/open_vocab/configs/frozen/desk_v1.json").exists() and Path("configs/s4_frozen.yaml").exists() and (R / "s2" / "frozen_fusion_config.yaml").exists(),
          "S3 frozen prompts, S4 frozen thresholds, S2 frozen fusion config"),
         ("One-command pipeline run works on a clean setup", (REPORT / "environment_freeze.txt").exists(),
          "python -m src.evaluation.run_all (+ smoke test)"),

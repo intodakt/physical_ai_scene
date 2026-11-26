@@ -111,3 +111,12 @@ visible-surface centroid error ~3 cm (a single view only sees the front of the o
 
 - Run on S1's real ZED Mini bags once uploaded (loader is ready); replace mock with real S3 masks.
 - Sensor-subset ablation (F1 RGB vs F2 RGB-D) on real data.
+
+## W12–W16 evaluation (S2) — professor's step-by-step guide
+
+- Four-method ablation on the GT scenes (§5): `python -m src.evaluation.s2_fusion_eval --frames <frames> --tf configs/sensors/measured_tf.yaml`
+  M1 depth only · M2 mask + desk plane · M3 fixed RGB-D (one rule) · M4 adaptive (this module's frozen config)
+- Outputs (`eval/results/s2/`): `s2_object_level_results.csv`, `fusion_ablation_table.csv` (median / mean / p95 / RMSE / failure rate > 5 cm), per-condition table vs the minimums (normal 50, shiny / transparent / small / occluded 30), `error_by_object_type.png`, `failures/`, `frozen_fusion_config.yaml`
+- Tool self-check on generated frames: `--synthetic` (not a result). Done means (§16): ≥ 3 fusion variants compared on real GT scenes, with error tables and failure cases.
+
+Full workflow and the shared dataset: [`eval/README.md`](../../eval/README.md).

@@ -119,3 +119,13 @@ Still open (need the owners):
 | S1 | No `s1-sensors` branch yet. Real bags need `camera_intrinsics.yaml` and `T_map_camera` (or the static TF in `configs/fusion_3d.yaml`). Please push the recording scripts and one short bag + calibration to Drive. |
 | S6 | No branch yet. `src/integration/s6_placeholder.py` implements the Week-5 behaviour (15 cm gate, N-frame memory, straight path, 4-field ActionGoal) so the system runs today. Merge `src/tracking` + `src/planning` with the same inputs/outputs and S7 switches the launch file to them. |
 | S5 | Optional: flat imports (`from verifier import …`) prevent `import src.reasoning`; S7 loads it through `s5_adapter.py`. |
+
+## W12–W16 evaluation (S7) — professor's step-by-step guide
+
+- 30 end-to-end tasks, first failing stage, 3 repeats, runtime p50 / p95 / max: `python -m src.evaluation.s7_e2e_eval tasks | run --frames-root <frames> | runtime --runs <runs>`
+- Everything + report (Tables 1–7, Figures 1–9, Appendix C checklist): `python -m src.evaluation.run_all ...`, `python -m src.evaluation.report`
+- Final demonstration (§13, 12 steps, one run log): `python scripts/final_demo.py --bag <demo bag> --unseen-description "electrical measuring device" --blocked glass`
+- Freeze (W15): `python tools/freeze_manifest.py` after the dev tuning; `python tools/freeze_manifest.py --check` before every final run
+- Done means (§16): ≥ 30 end-to-end tasks logged, latency and failure stages summarised, one-command reproducible execution.
+
+Full workflow and the shared dataset: [`eval/README.md`](../../eval/README.md).

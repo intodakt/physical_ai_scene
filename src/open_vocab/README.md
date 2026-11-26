@@ -33,3 +33,13 @@ validator: `contract.py`. Also written: `annotated.jpg`, `segmentation.jpg`, `ma
 ## In the G1 pipeline
 `python main_pipeline.py --s3 live` runs this module on every frame (`configs/s7_integration.yaml: s3_config`);
 the default `replay` mode reads `observation.json` files that S3 already wrote.
+
+## W12–W16 evaluation (S3) — professor's step-by-step guide
+
+- Second detector: `GroundingDinoDetector` in `models.py` (needs `pip install torch transformers`); same prompts / thresholds / frames as YOLO-World
+- `python -m src.evaluation.s3_detection_eval draft | predict --detector {yolo_world,grounding_dino} | score | prompts | clip` (see `--help`)
+- Frozen prompt set used by default: `src/open_vocab/configs/frozen/desk_v1.json` (SHA-256 inside; `python -m src.open_vocab.freeze --check`)
+- Outputs (`eval/results/s3/`): detector comparison, P / R / F1 per split and class (IoU ≥ 0.5), prompt robustness (5 forms per unseen class), distractor test, CLIP on real crops, `failure_cases/`
+- Done means (§16): two detectors benchmarked, seen / unseen P / R / F1, prompt robustness measured, CLIP consistency on real data.
+
+Full workflow and the shared dataset: [`eval/README.md`](../../eval/README.md).

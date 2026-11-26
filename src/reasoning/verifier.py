@@ -224,10 +224,11 @@ def find_closest(graph, reference_text, target_text="", only_free=False, negativ
 
 def filter_not_near(graph, target_text, negatives, only_free=False):
     """negatives: an object name ("laptop" = NOT near the laptop) or a list of {"relation", "object"}."""
-    if not target_text:
-        return fail("no target given", "the question does not say which object to find.")
     negatives = _as_negatives(negatives)
-    candidates = find_nodes_by_name(graph, target_text)
+    if not target_text and not negatives:
+        return fail("no target given", "the question does not say which object to find.")
+    # "Find an object that is not near X": no class named -> every real object is a candidate (W13 fix)
+    candidates = find_nodes_by_name(graph, target_text) if target_text else [n for n in graph["nodes"] if not n.get("virtual")]
     if only_free:
         candidates = [c for c in candidates if c.get("state") == "free"]
     if not candidates:
@@ -243,7 +244,7 @@ def filter_not_near(graph, target_text, negatives, only_free=False):
     return _ok(
         chosen,
         f"'{chosen['id']}': " + "; ".join(rule_facts) if rule_facts else f"'{chosen['id']}' kept",
-        f"{chosen['id']} is a {target_text} that is {_rule_text(negatives)}.",
+        f"{chosen['id']} is a{'' if target_text else 'n'} {target_text or 'object'} that is {_rule_text(negatives)}.",
         [chosen],
         extra,
     )

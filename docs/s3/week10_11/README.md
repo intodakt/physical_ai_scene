@@ -4,8 +4,8 @@
 
 | Frozen set | Source | Prompts |
 |---|---|---|
-| `configs/frozen/desk_v1.json` | `desk.json` | 6 |
-| `configs/frozen/generic_tabletop_v1.json` | `generic_tabletop.json` | 69 |
+| `src/open_vocab/configs/frozen/desk_v1.json` | `desk.json` | 6 |
+| `src/open_vocab/configs/frozen/generic_tabletop_v1.json` | `generic_tabletop.json` | 69 |
 
 Each file stores the prompts, detector / segmenter and thresholds plus a SHA-256 fingerprint.
 `python -m src.open_vocab.freeze --check <S3 run> --frozen <frozen json>` reports frames that used a

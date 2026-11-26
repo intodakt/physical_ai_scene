@@ -48,3 +48,13 @@ Over time: a moved object updates its existing node. A relation that stops holdi
 ## Not done yet
 - Real S1 data (needs S2's output on the real bag, and S1's map frame / desk height).
 - `right_of`, `occupied_by`, `carried_by` (the S5 sample has the last two; S4 only emits `on`, `near`, `left_of`).
+
+## W12–W16 evaluation (S4) — professor's step-by-step guide
+
+- NEAR hysteresis: `SceneGraphEngine(near_enter_m=0.30, near_exit_m=0.35)` (default: no hysteresis)
+- `python -m src.evaluation.s4_relation_eval sheet | score | sweep | events | flips` (see `--help`)
+  sheet = every pair × predicate with the prediction filled (negatives included); sweep = NEAR 0.20–0.40 m on dev → `configs/s4_frozen.yaml`
+- Outputs (`eval/results/s4/`): relation accuracy by type, NEAR sweep, temporal events (detection rate, false events, time error), flip comparison, graph snapshots, temporal graph JSON
+- Done means (§16): relation P / R / F1, temporal events evaluated, thresholds frozen, graph history saved and reloaded.
+
+Full workflow and the shared dataset: [`eval/README.md`](../../eval/README.md).

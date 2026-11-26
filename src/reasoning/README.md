@@ -71,3 +71,13 @@ set the `S5_GRAPH` environment variable to the real file.
 If the answer cannot be proven from the graph, `target_id` is `null`, `verification_status` is `false`
 and `final_answer` starts with "Cannot determine". `warnings` lists occluded or low-confidence objects
 and constraints that could not be checked (for example colors).
+
+## W12–W16 evaluation (S5) — professor's step-by-step guide
+
+- GT graphs from tape-measured positions, 200 candidate queries, four configurations (A LLM only, B LLM + graph, C verifier, D full loop):
+  `python -m src.evaluation.s5_query_eval graphs | generate | run --methods A B C D --only-checked`
+- Outputs: `eval/queries/queries_200.csv`, `eval/results/s5/` (method comparison, accuracy by family, hallucination analysis, 10 proofs, 10 failures)
+- W13 fixes found by the evaluation: “Find an object that is not near X” (no class named) is now answered; the offline parser ignores time clauses (“before it moved”). Still open: functional descriptions (“device used to measure voltage”) are not mapped to a class.
+- Done means (§16): ≥ 200 labelled queries across four configurations, with hallucination / correction analysis.
+
+Full workflow and the shared dataset: [`eval/README.md`](../../eval/README.md).
