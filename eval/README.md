@@ -71,7 +71,7 @@ python -m src.evaluation.s3_detection_eval score   --frames <frames>
 python -m src.evaluation.s3_detection_eval prompts --frames <frames>                               # 5 prompt forms per unseen class
 python -m src.evaluation.s3_detection_eval clip --run <pipeline run> --frames <its frames> --clip  # real-data CLIP pairs
 ```
-Same frozen prompts / thresholds / frames for both detectors (configs/frozen/desk_v1.json). IoU ≥ 0.5 and the
+Same frozen prompts / thresholds / frames for both detectors (src/open_vocab/configs/frozen/desk_v1.json). IoU ≥ 0.5 and the
 same canonical class (aliases.yaml) = correct.
 
 ### S4 — Jaloliddin

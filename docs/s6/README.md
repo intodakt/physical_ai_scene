@@ -34,3 +34,13 @@ static bag. Tests: `tests/test_s6_tracking_planning.py`.
 
 Open items for S6: label the real relocation / occlusion bags with ground-truth identities and
 run the same metrics on them; decide whether `planner: detour` should become the default.
+
+## W12–W16 evaluation (S6) — professor's step-by-step guide
+
+- Tracking GT tied to detections, so the baseline (15 cm gate) and the multi-cue tracker (Hungarian: distance + label + size [+ appearance, `w_app`]) are scored on one file:
+  `python -m src.evaluation.s6_tracking_eval plan | sheet --run <run> | score --runs <runs> [--frames-root <frames>]`
+- 60 action trials (30 safe / 30 unsafe, independent geometric labels): `python -m src.evaluation.s6_tracking_eval actions --graph <graph>`
+  First result (real static-bag graph, generated targets): unsafe rejected 100 % (30/30), safe accepted 100 % (30/30) — `eval/results/s6/`
+- Done means (§16): ≥ 30 real tracking sequences and 60 action trials with quantitative tracking / safety metrics.
+
+Full workflow and the shared dataset: [`eval/README.md`](../../eval/README.md).

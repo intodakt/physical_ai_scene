@@ -1,0 +1,102 @@
+[
+  {
+    "item": "S0 calibration bag exists and measured TF replaces placeholder values",
+    "done": "no",
+    "evidence": "calibration_report.json + measured_tf.yaml in configs/sensors/"
+  },
+  {
+    "item": "Final dataset split and all evaluation bags are frozen",
+    "done": "no",
+    "evidence": "0 recorded bags (target ~45); splits.json yes"
+  },
+  {
+    "item": "All final bags have metadata",
+    "done": "no",
+    "evidence": "0/0"
+  },
+  {
+    "item": "Selected scenes have ground-truth 3D positions",
+    "done": "no",
+    "evidence": "0 scenes (>= 15)"
+  },
+  {
+    "item": "S2 has real-data fusion ablation and error tables",
+    "done": "no",
+    "evidence": "0 object-method rows (>= 170 instances x 4 methods)"
+  },
+  {
+    "item": "S3 has a second detector baseline and real-data CLIP test",
+    "done": "no",
+    "evidence": "detectors: []; CLIP pairs: 0"
+  },
+  {
+    "item": "S3 reports seen/unseen precision, recall and F1",
+    "done": "no",
+    "evidence": "0 annotated appearances (~260-300)"
+  },
+  {
+    "item": "S4 reports relation accuracy and temporal-event accuracy",
+    "done": "no",
+    "evidence": "0 annotated relations (>= 250)"
+  },
+  {
+    "item": "S5 has >= 200 labeled queries and four configuration comparisons",
+    "done": "no",
+    "evidence": "0 queries (0 checked); 0 configurations"
+  },
+  {
+    "item": "S5 reports hallucination catch / correction metrics",
+    "done": "no",
+    "evidence": ""
+  },
+  {
+    "item": "S6 has >= 30 real tracking sequences",
+    "done": "no",
+    "evidence": "0 sequences"
+  },
+  {
+    "item": "S6 has >= 60 action safety trials",
+    "done": "yes",
+    "evidence": "60 trials"
+  },
+  {
+    "item": "S7 has >= 30 end-to-end tasks with failure-stage logging",
+    "done": "no",
+    "evidence": "0 tasks"
+  },
+  {
+    "item": "All final metrics include numerator/denominator or sample size",
+    "done": "yes",
+    "evidence": "built in: stats.rate() prints 'x % (k/n)'"
+  },
+  {
+    "item": "Key results include easy/medium/hard conditions",
+    "done": "no",
+    "evidence": ""
+  },
+  {
+    "item": "All thresholds/configurations/prompts are frozen and versioned",
+    "done": "no",
+    "evidence": "S3 frozen prompts, S4 frozen thresholds, S2 frozen fusion config"
+  },
+  {
+    "item": "One-command pipeline run works on a clean setup",
+    "done": "no",
+    "evidence": "python -m src.evaluation.run_all (+ smoke test)"
+  },
+  {
+    "item": "Final dashboard shows perception, 3D, tracking, graph, reasoning proof and action",
+    "done": "yes",
+    "evidence": "demo/app.py (existing)"
+  },
+  {
+    "item": "Final README explains data, commands, configurations and expected outputs",
+    "done": "yes",
+    "evidence": "eval/README.md"
+  },
+  {
+    "item": "Failure cases are documented, not hidden",
+    "done": "no",
+    "evidence": ""
+  }
+]

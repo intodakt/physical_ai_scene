@@ -36,7 +36,7 @@ from .common import COLUMNS, GT, as_float, read_csv, results_dir, write_csv, wri
 from .stats import cosine, describe, iou_2d, prf
 
 IOU_MIN = 0.5
-DEFAULT_CONFIG = Path("configs/frozen/desk_v1.json")
+DEFAULT_CONFIG = Path("src/open_vocab/configs/frozen/desk_v1.json")
 VARIANTS = Path("src/open_vocab/configs/prompt_variants.yaml")
 
 
@@ -332,7 +332,7 @@ def main():
         s = sub.add_parser(name)
         s.add_argument("--frames", required=name != "clip")
         s.add_argument("--gt", default=str(GT / "detection_annotations.csv"))
-        s.add_argument("--config", help="frozen S3 config (default configs/frozen/desk_v1.json)")
+        s.add_argument("--config", help="frozen S3 config (default src/open_vocab/configs/frozen/desk_v1.json)")
         s.add_argument("--detector", default="yolo_world", choices=["yolo_world", "grounding_dino"])
         s.add_argument("--images-list")
         if name == "score":

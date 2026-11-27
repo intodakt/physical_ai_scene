@@ -43,3 +43,12 @@ def test_s3_prompt_robustness_with_fake_detector(tmp_path):
     summ = {r["prompt_type"]: r["detected"] for r in summarise_prompts(rows)}
     assert summ == {"exact": "1/1", "functional": "0/1"}
     assert {d["selected"] for d in distract} == {"digital multimeter", "nothing"}
+
+
+def test_s3_evaluation_uses_the_frozen_prompt_set():
+    """The default config must be the W10 frozen set (with its SHA-256), not the editable desk.json."""
+    from src.evaluation.s3_detection_eval import DEFAULT_CONFIG, frozen_config
+
+    assert DEFAULT_CONFIG.exists()
+    cfg = frozen_config()
+    assert cfg.get("name") == "desk_v1" and cfg.get("sha256")

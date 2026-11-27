@@ -175,3 +175,24 @@ def test_latency_stats_and_log(run_result, tmp_path):
     assert summary["p95_latency_ms"] == st["total"]["p95"] and summary["fps_at_p95"] > 0
     rows = pipe.write_latency_log(tmp_path / "lat.csv").read_text().strip().splitlines()
     assert rows[0].startswith("frame,timestamp,n_objects") and len(rows) == summary["n_frames"] + 1
+
+
+def test_final_demo_script_runs_all_12_steps(tmp_path):
+    from scripts.final_demo import run_demo
+
+    steps = run_demo(out=str(tmp_path / "demo"), blocked="glass", unseen="multimeter", parser="rules")
+    assert [s["step"] for s in steps] == ["1", "2", "3–4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    shown = {s["step"]: s["shown"] for s in steps}
+    assert shown["8"] and shown["9"] and shown["10"] and shown["11"] and shown["12"]
+    assert (tmp_path / "demo" / "final_demo_log.md").exists()
+
+
+def test_freeze_manifest_detects_a_changed_config():
+    import sys
+    sys.path.insert(0, "tools")
+    import freeze_manifest as fm
+
+    m = fm.build()
+    assert m["files"] and not fm.check(m)
+    m["files"][0]["sha256"] = "0" * 64
+    assert fm.check(m)[0].startswith("changed after the freeze")

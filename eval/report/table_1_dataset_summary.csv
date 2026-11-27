@@ -1,0 +1,9 @@
+family,planned,recorded,easy/medium/hard,with_ground_truth,duration_s_total
+A calibration_reference,3,0,0/0/0,0,0
+B static_known,6,0,0/0/0,0,0
+C difficult_depth,6,0,0/0/0,0,0
+D unseen_objects,6,0,0/0/0,0,0
+E motion_relocation,6,0,0/0/0,0,0
+F occlusion_reentry,6,0,0/0/0,0,0
+G similar_crossing,4,0,0/0/0,0,0
+H language_action,8,0,0/0/0,0,0

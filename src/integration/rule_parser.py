@@ -24,6 +24,9 @@ _NEG = re.compile(r"\b(?:not|isn't|isnt|never|without being)\s+(?:the\s+)?(near|
 _FAR = re.compile(r"\bfar\s+from\s+(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)(?=$|\s+(?:and|but|that|which)\b)")
 _REL = re.compile(r"\b(on top of|on|under|below|beneath|inside|in)\s+(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)"
                   r"(?=$|\s+(?:and|but|that|which)\b)")
+# W13 fix (found by the S5 evaluation): a time clause such as "before it moved" is not an object
+_TIME = re.compile(r"\b(?:before|after|since|until)\s+(?:it|they|he|she|someone|we|you)\s+(?:was\s+|were\s+|got\s+)?"
+                   r"(?:moved|picked up|placed|put down|relocated|taken|touched|hidden)\b")
 _CLOSEST = re.compile(r"\b(?:closest|nearest)\s+(?:to\s+)?(?:the\s+|a\s+|an\s+)?([a-z][a-z ]*?)"
                       r"(?=$|\s+(?:and|but|that|which)\b)")
 
@@ -31,6 +34,8 @@ _CLOSEST = re.compile(r"\b(?:closest|nearest)\s+(?:to\s+)?(?:the\s+|a\s+|an\s+)?
 def parse_query(question: str, model=None) -> dict:
     text = re.sub(r"[^a-z' ]", " ", question.lower())
     text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", _TIME.sub(" ", text)).strip()
+    text = re.sub(r"\s+(?:on|in|under|inside|at)$", "", text)     # "what was the mug on (before it moved)"
     parsed = {"intent": "find_object", "target": "", "reference": "", "relations": [],
               "positive_constraints": [], "negative_constraints": []}
 
