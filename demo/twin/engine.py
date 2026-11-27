@@ -26,6 +26,7 @@ import copy
 import io
 import json
 import math
+import re
 import shutil
 import threading
 import time
@@ -45,6 +46,20 @@ TRANSPARENT = ("glass", "transparent_suspected", "no_depth")
 PALETTE = {"laptop": (70, 70, 78), "mug": (200, 60, 50), "cup": (200, 60, 50), "book": (40, 90, 170),
            "glass": (190, 215, 225), "bottle": (60, 140, 90), "multimeter": (235, 190, 30),
            "keyboard": (40, 40, 44), "mouse": (90, 90, 96)}
+
+
+def robot_visual_request(question: str) -> str:
+    """Classify only the *visual* G1 gesture. S5 still resolves the object; S6 still validates its own path."""
+    text = question.lower()
+    if re.search(r"\b(release|drop|put\s+(?:it\s+)?down)\b", text):
+        return "release"
+    if re.search(r"\b(before|previously|earlier)\b", text):
+        return "none"
+    if re.search(r"\b(take|pick|grab|grasp|lift|hold|bring)\b", text):
+        return "take"
+    if re.search(r"\bmove\b", text) and not re.search(r"\bmove\s+(?:to|toward|towards)\b", text):
+        return "take"
+    return "point"
 
 
 def _b64_jpeg(img: np.ndarray | Image.Image, size=(480, 360), quality=72) -> str:
@@ -106,10 +121,15 @@ def load_run(run_dir: str | Path) -> dict:
                     idx = np.random.default_rng(0).choice(len(pts), 40000, replace=False)
                     pts, col = pts[idx], col[idx]
                 cloud = {"xyz": np.round(pts, 4).ravel().tolist(), "rgb": col.astype(int).ravel().tolist()}
-    T = (summary.get("camera_tf") or {}).get("T_map_camera")          # measured from the desk on import
+    camera_tf = summary.get("camera_tf") or {}
+    T = camera_tf.get("T_map_camera")          # measured from the desk on import
+    if T is None and (frame_dir / "frame_meta.json").exists():
+        T = json.loads((frame_dir / "frame_meta.json").read_text(encoding="utf-8")).get("T_map_camera")
+        if T is not None:
+            camera_tf = {"method": "frame_metadata", "T_map_camera": T}
     return {"run": run_dir, "name": summary.get("dataset") or run_dir.name, "frame": best["frame"],
             "objects": objs["objects"], "rgb": rgb, "cloud": cloud, "frame_dir": frame_dir, "T_map_camera": T,
-            "session_meta": summary.get("session_meta", {})}
+            "camera_tf": camera_tf, "session_meta": summary.get("session_meta", {})}
 
 
 def _colour(obj: dict, rgb: Optional[np.ndarray], frame_dir: Optional[Path] = None) -> tuple:
@@ -708,6 +728,7 @@ class Twin:
             if self.last_query:
                 r, g = self.last_query["reasoning_result"], self.last_query["action_goal"]
                 q = {"question": self.last_query["question"], "answer": r.get("final_answer"),
+                     "robot_request": robot_visual_request(self.last_query["question"]),
                      "verified": r.get("verification_status"), "warnings": r.get("warnings", []),
                      "parsed": r.get("llm_parsed_query"), "parser": self.last_query.get("parser"),
                      "target": g.get("target_object_id"), "validated": g.get("validated"),
@@ -729,10 +750,25 @@ class Twin:
 
     def source_info(self) -> dict:
         src = self.source
+        camera_tf = src.get("camera_tf") or {}
+        intrinsics = None
+        intrinsics_file = src["frame_dir"] / "camera_intrinsics.yaml"
+        if intrinsics_file.exists():
+            from src.preprocessing.intrinsics import load_intrinsics
+
+            intrinsics = load_intrinsics(intrinsics_file).to_dict()
+        recorded_camera = {
+            "T_map_camera": src.get("T_map_camera"), "intrinsics": intrinsics,
+            "method": camera_tf.get("method"), "height_m": camera_tf.get("camera_height_m"),
+            "pitch_deg": camera_tf.get("pitch_below_horizontal_deg"),
+            # A desk plane gives height and pitch but cannot determine camera x/y/yaw.
+            "horizontal_pose_known": bool(camera_tf.get("method") in ("bag_tf", "measured", "calibrated_tf")
+                                          and src.get("T_map_camera")),
+        }
         return {"name": src["name"], "frame": src["frame"], "run": src["run"].name, "photos": self.photos,
                 "n_objects": len(src["objects"]),
                 "rgb": _b64_jpeg(src["rgb"]) if src["rgb"] is not None else None,
-                "cloud": src["cloud"],
+                "cloud": src["cloud"], "recorded_camera": recorded_camera,
                 "measured": [{"name": o.get("persistent_id") or o["object_id"], "label": o.get("semantic_label"),
                               "center": (o.get("box_map") or {}).get("center") or o.get("centroid_map")}
                              for o in src["objects"]]}
