@@ -106,10 +106,15 @@ def load_run(run_dir: str | Path) -> dict:
                     idx = np.random.default_rng(0).choice(len(pts), 40000, replace=False)
                     pts, col = pts[idx], col[idx]
                 cloud = {"xyz": np.round(pts, 4).ravel().tolist(), "rgb": col.astype(int).ravel().tolist()}
-    T = (summary.get("camera_tf") or {}).get("T_map_camera")          # measured from the desk on import
+    camera_tf = summary.get("camera_tf") or {}
+    T = camera_tf.get("T_map_camera")          # measured from the desk on import
+    if T is None and (frame_dir / "frame_meta.json").exists():
+        T = json.loads((frame_dir / "frame_meta.json").read_text(encoding="utf-8")).get("T_map_camera")
+        if T is not None:
+            camera_tf = {"method": "frame_metadata", "T_map_camera": T}
     return {"run": run_dir, "name": summary.get("dataset") or run_dir.name, "frame": best["frame"],
             "objects": objs["objects"], "rgb": rgb, "cloud": cloud, "frame_dir": frame_dir, "T_map_camera": T,
-            "session_meta": summary.get("session_meta", {})}
+            "camera_tf": camera_tf, "session_meta": summary.get("session_meta", {})}
 
 
 def _colour(obj: dict, rgb: Optional[np.ndarray], frame_dir: Optional[Path] = None) -> tuple:
@@ -729,10 +734,25 @@ class Twin:
 
     def source_info(self) -> dict:
         src = self.source
+        camera_tf = src.get("camera_tf") or {}
+        intrinsics = None
+        intrinsics_file = src["frame_dir"] / "camera_intrinsics.yaml"
+        if intrinsics_file.exists():
+            from src.preprocessing.intrinsics import load_intrinsics
+
+            intrinsics = load_intrinsics(intrinsics_file).to_dict()
+        recorded_camera = {
+            "T_map_camera": src.get("T_map_camera"), "intrinsics": intrinsics,
+            "method": camera_tf.get("method"), "height_m": camera_tf.get("camera_height_m"),
+            "pitch_deg": camera_tf.get("pitch_below_horizontal_deg"),
+            # A desk plane gives height and pitch but cannot determine camera x/y/yaw.
+            "horizontal_pose_known": bool(camera_tf.get("method") in ("bag_tf", "measured", "calibrated_tf")
+                                          and src.get("T_map_camera")),
+        }
         return {"name": src["name"], "frame": src["frame"], "run": src["run"].name, "photos": self.photos,
                 "n_objects": len(src["objects"]),
                 "rgb": _b64_jpeg(src["rgb"]) if src["rgb"] is not None else None,
-                "cloud": src["cloud"],
+                "cloud": src["cloud"], "recorded_camera": recorded_camera,
                 "measured": [{"name": o.get("persistent_id") or o["object_id"], "label": o.get("semantic_label"),
                               "center": (o.get("box_map") or {}).get("center") or o.get("centroid_map")}
                              for o in src["objects"]]}

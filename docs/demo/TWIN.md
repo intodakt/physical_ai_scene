@@ -2,8 +2,7 @@
 
 `demo/twin/` builds a virtual copy of the recorded desk from what the pipeline measured, lets you
 **move, hide and turn objects** on it in the browser, and sends every change through the **real
-pipeline code**. Then you ask questions and a virtual robot drives the path S6 allowed, or stays put
-when S6 refuses.
+pipeline code**. The table-mounted G1 upper body stays fixed while S6's allowed path is shown on the desk.
 
 ## What is real and what is simulated
 
@@ -13,7 +12,7 @@ when S6 refuses.
 | S3 detection + masks | real YOLO-World + SAM 2 output | exact masks from the renderer |
 | S2 3D fusion, S6 tracking, S4 scene graph | team code | **same team code** (`src/integration/pipeline.Pipeline`) |
 | S5 reasoning, S6 ActionGoal, twin simulation | team code | **same team code** |
-| Robot | virtual: follows S6's 2D path (mobile robot), or an arm that reaches along it (visual only) | same |
+| Robot | official Unitree G1 upper-body mesh on a simulated fixed pedestal; no recorded robot pose | same visual model; reach preview is separate from S6 execution |
 
 The twin is built from the frame of the run with the most objects: each S2 object is placed at its
 measured position, size and rotation, coloured from its S3 mask. The renderer that makes the twin's camera
@@ -104,7 +103,10 @@ Control** (or a school/company policy) blocks unsigned files downloaded from the
   the robot may cross every other object. S6's code is the same; only its config differs. The robot
   starts at the front edge, at the spot with clear straight lines to the most objects.
 * **Planner**: *Straight* refuses a path through an exclusion zone (`PATH_BLOCKED`); *Detour* plans around it.
-* **Robot**: mobile robot (default), arm, or off.
+* **Robot**: a fixed G1 upper body with articulated hands. *Preview reach* moves an arm toward a selected object if it is within the visual arm workspace, then returns to rest. The base never walks or follows S6's path; S6's 2D path is a separate overlay.
+* **Views**: table, recorded camera, robot overview, front, left, right, rear, top, and saved user views. The side label means the camera is on that side of the robot, relative to the robot's heading. The front arrow shows the robot's facing direction.
+* **Recorded camera** uses S1's optical transform and intrinsics. Desk-plane calibration estimates height and pitch only, so this view says *horizontal pose unknown* until measured camera X, Y, and yaw are entered under *View controls*. Those values are saved in this browser for the selected recording. The camera frustum is shown in other views.
+* **Coordinates**: the optional 10 cm XY grid and selected-object panel show the current twin X/Y/Z in metres and yaw. The panel also shows S4's latest measured centre. Mount X/Y and nearest-object clearance are in *View controls*. The mount is chosen at a clear table edge and can be adjusted there.
 * **Pipeline's 3D boxes** shows S4's nodes (dashed yellow = occluded, remembered position).
 * **Backup scenarios**: slide the mug, hide the book, move the glass past the laptop, and **block the
   path** (an object is slid onto the robot's line to a target that was reachable), each followed by its question.
@@ -119,6 +121,9 @@ Control** (or a school/company policy) blocks unsigned files downloaded from the
 |---|---|
 | `demo/twin/engine.py` | `Twin`: run → twin, edits, rendering, pipeline, questions, presets |
 | `demo/twin/server.py` | local web server (standard library) and JSON API |
-| `demo/twin/static/index.html` | 3D page (three.js r128, bundled in `static/vendor/`, MIT licence) |
+| `demo/twin/static/index.html` | 3D page, camera views, orientation and coordinate controls |
+| `demo/twin/static/g1-robot.js` | fixed pedestal, articulated G1 joint preview and mount placement |
+| `demo/twin/static/assets/g1/` | derived official Unitree mesh, license and source attribution |
+| `tools/build_g1_upper_body.py` | rebuilds the GLB from Unitree's G1 URDF and STL meshes |
 | `G1_Twin.bat`, `G1_Twin.command` | one-click start on Windows / macOS |
 | `tests/test_twin.py` | twin from a pipeline run: move, hide, presets, API |

@@ -91,10 +91,14 @@ def test_http_api(run_dir, tmp_path):
     base = f"http://127.0.0.1:{srv.server_address[1]}/"
     try:
         page = urllib.request.urlopen(base).read().decode("utf-8")
-        assert "G1 Virtual Table" in page and "vendor/three.min.js" in page
+        assert "Scene Studio" in page and "vendor/three.min.js" in page
         assert urllib.request.urlopen(base + "vendor/three.min.js").status == 200
+        assert urllib.request.urlopen(base + "assets/g1/g1-upper-body.glb").status == 200
+        joints = json.loads(urllib.request.urlopen(base + "assets/g1/g1-upper-body.json").read())["joints"]
+        assert "right_hand_palm_joint" in joints and "left_elbow_joint" in joints
         src = json.loads(urllib.request.urlopen(base + "api/source").read())
         assert src["n_objects"] >= 4 and src["cloud"]
+        assert src["recorded_camera"]["intrinsics"]["fy"] > 0
         req = urllib.request.Request(base + "api/ask", data=json.dumps({"question": "Where is the mug?"}).encode(),
                                      headers={"Content-Type": "application/json"})
         st = json.loads(urllib.request.urlopen(req).read())
@@ -134,6 +138,9 @@ def test_import_measures_the_camera_from_the_desk(tmp_path, monkeypatch):
     summary = json.loads((runs.RUNS / name / "run_summary.json").read_text(encoding="utf-8"))
     assert abs(summary["camera_tf"]["camera_height_m"] - 0.6) < 0.02                 # mock camera: 0.6 m, 45 deg
     assert abs(summary["camera_tf"]["pitch_below_horizontal_deg"] - 45) < 2
+    loaded = engine.load_run(runs.RUNS / name)
+    assert loaded["camera_tf"]["method"] == "desk_plane_ransac"
+    assert loaded["T_map_camera"] == summary["camera_tf"]["T_map_camera"]
     last = summary["frames"][-1]["frame"]
     objs = json.loads((runs.RUNS / name / "objects" / f"{last}_objects.json").read_text(encoding="utf-8"))["objects"]
     assert objs and all(o["box_map"]["center"][2] < 0.15 for o in objs)              # on the desk, not floating

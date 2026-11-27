@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene Studio — light UI concept</title>
+<style>
+  :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202a35;background:#f5f7f8}
+  *{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}
+  .shell{min-height:100vh;display:flex;flex-direction:column}.top{height:66px;display:flex;align-items:center;gap:28px;padding:0 26px;background:#fff;border-bottom:1px solid #dde4e8}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:18px;white-space:nowrap;letter-spacing:-.035em}
+  .brandmark{display:grid;place-items:center;width:31px;height:31px;background:#226a77;color:#fff;border-radius:8px;font-size:13px;letter-spacing:-.05em}
+  .nav{display:flex;align-self:stretch;align-items:center;gap:22px;margin-left:18px}.nav span{height:100%;display:flex;align-items:center;color:#73818b;font-size:13px;font-weight:600}
+  .nav .active{color:#245765;border-bottom:2px solid #2c7180}.spacer{flex:1}.status{display:flex;align-items:center;gap:7px;color:#4a6972;font-size:12px;font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;background:#3d9773}.source{border:1px solid #dce4e7;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;color:#475761;background:#fff;white-space:nowrap}
+  .sub{height:51px;display:flex;align-items:center;gap:11px;padding:0 26px;border-bottom:1px solid #e4e9ec;background:#fbfcfc;font-size:12px;color:#687782}
+  .sub b{color:#34444e;font-size:14px}.sub .sep{height:14px;border-left:1px solid #d8e0e4}.sub .count{margin-left:auto;font-variant-numeric:tabular-nums}
+  .workspace{display:grid;grid-template-columns:234px minmax(500px,1fr) 298px;gap:0;min-height:calc(100vh - 117px)}
+  .left{background:#fff;border-right:1px solid #e1e7ea;padding:22px 14px 16px 18px;display:flex;flex-direction:column;gap:20px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.section-head h2{margin:0;font-size:12px;letter-spacing:.015em;text-transform:uppercase;color:#74838c;font-weight:700}.small-count{font-size:11px;color:#89969e}
+  .objects{display:flex;flex-direction:column;gap:3px}.obj{display:flex;gap:10px;align-items:center;min-height:43px;padding:7px 9px;border-radius:8px;color:#52616b;font-size:13px}
+  .obj.on{background:#eaf3f4;color:#174c58;font-weight:700}.sw{height:9px;width:9px;border-radius:3px;flex:0 0 auto}.obj em{margin-left:auto;font-size:10px;color:#96a2a9;font-style:normal;font-weight:500}
+  .object-actions{display:flex;gap:7px;padding:5px 0 0 1px}.ghost{border:1px solid #d9e2e6;background:#fff;color:#52626b;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:600}
+  .divider{border-top:1px solid #ebeff1}.scenario{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;border-radius:7px;text-align:left;padding:9px 8px;color:#51626b;font-size:12px}.scenario:hover{background:#f5f8f9}.scenario i{font-style:normal;color:#a3aeb4}
+  .left-foot{margin-top:auto;color:#8c99a0;font-size:11px;line-height:1.5;padding:0 8px}
+  .center{padding:18px;min-width:0}.scene-card{background:#fff;border:1px solid #dfe6e9;border-radius:12px;box-shadow:0 2px 8px #22343d08;overflow:hidden}
+  .scene-toolbar{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #e4e9eb}.scene-toolbar strong{font-size:13px;font-weight:700}.views{margin-left:auto;display:flex;align-items:center;background:#f1f4f5;border:1px solid #e1e7e9;border-radius:7px;padding:3px;gap:2px}
+  .views span{font-size:11px;font-weight:600;color:#78868e;padding:5px 9px;border-radius:5px}.views .selected{background:#fff;color:#1e5966;box-shadow:0 1px 3px #18354014}.iconbtn{height:28px;width:28px;display:grid;place-items:center;border:1px solid #dfe6e8;border-radius:6px;background:#fff;color:#6d7a82;font-size:17px;line-height:1}
+  .viewport{height:540px;position:relative;background:radial-gradient(circle at 50% 39%,#fafbfa 0%,#f0f3f3 60%,#e9eeef 100%);overflow:hidden}
+  .viewport:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#dfe7e87c 1px,transparent 1px),linear-gradient(90deg,#dfe7e87c 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(to bottom,transparent,#000 75%);opacity:.48}
+  .scene-svg{position:absolute;width:min(90%,780px);height:96%;left:50%;top:50%;transform:translate(-50%,-48%)}
+  .float-label{position:absolute;top:17px;left:18px;color:#596b74;background:#fff;border:1px solid #e0e7e9;border-radius:6px;padding:7px 9px;font-size:11px;font-weight:600;box-shadow:0 2px 6px #22343d0c}
+  .float-label b{color:#2a6d78}.view-tools{position:absolute;right:16px;bottom:15px;display:flex;gap:5px}.view-tools span{display:grid;place-items:center;height:28px;width:28px;border-radius:6px;border:1px solid #d6e0e4;background:#fff;color:#6f808a;font-size:15px;font-weight:700}
+  .scene-hint{height:43px;display:flex;align-items:center;gap:7px;padding:0 16px;color:#78858d;font-size:11px;border-top:1px solid #e4e9eb}.scene-hint .flex{flex:1}.scene-hint .link{color:#296a76;font-weight:700}
+  .bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.mini{background:#fff;border:1px solid #dfe6e9;border-radius:10px;padding:13px 15px;min-height:128px}.mini h3{margin:0 0 9px;font-size:12px;color:#3e4e58}
+  .mini-row{display:flex;gap:11px;align-items:center}.thumb{width:105px;height:72px;border-radius:6px;border:1px solid #e2e7e9;background:#d9d6c9;position:relative;overflow:hidden;transform:translateZ(0)}
+  .thumb:before{content:"";position:absolute;left:16px;top:13px;width:46px;height:32px;background:#494f53;transform:rotate(-8deg);border-radius:3px}.thumb:after{content:"";position:absolute;left:70px;top:17px;width:23px;height:23px;background:#b85537;border-radius:50%}
+  .mini-meta{display:flex;flex-direction:column;gap:5px;color:#788791;font-size:11px}.mini-meta b{color:#344853;font-size:12px}.activity{display:flex;flex-direction:column;gap:8px;color:#61727b;font-size:11px}.activity div{display:flex;justify-content:space-between;gap:12px}.activity b{color:#3b535d;font-weight:600}.activity span{color:#a0acb1}
+  .right{background:#fff;border-left:1px solid #e1e7ea;padding:22px 18px;display:flex;flex-direction:column;gap:19px}.right h2{margin:0 0 12px;font-size:14px;letter-spacing:-.015em}.query{height:40px;width:100%;padding:10px 11px;border:1px solid #d8e1e5;border-radius:7px;color:#475d67;background:#fff;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.askrow{display:flex;gap:7px;margin-top:8px}.askrow .prompt{flex:1;border:0;background:#f2f6f7;color:#49707a;border-radius:7px;padding:8px;font-size:10px;text-align:left}.primary{border:0;background:#256d7b;color:#fff;border-radius:7px;padding:8px 15px;font-size:11px;font-weight:700}
+  .answer{border-top:1px solid #e9eef0;padding-top:18px}.answer .verify{font-size:10px;color:#237752;font-weight:700;letter-spacing:.02em}.answer .result{font-size:27px;font-weight:700;letter-spacing:-.05em;margin:8px 0 1px}.answer .distance{font-size:12px;color:#70818b}.answer .distance b{color:#275b67;font-weight:700}
+  .action{display:flex;gap:9px;align-items:flex-start;margin-top:18px;padding:11px;background:#faf5ed;border:1px solid #eee2cf;border-radius:8px;color:#8a6427}.action .sign{width:15px;height:15px;border-radius:50%;background:#d99a35;color:#fff;display:grid;place-items:center;font-size:10px;flex:0 0 auto}.action b{display:block;font-size:11px;color:#72511f}.action small{display:block;margin-top:2px;color:#977c57;font-size:10px}
+  .inspect{border-top:1px solid #e9eef0;padding-top:17px}.inspect .tabs{display:flex;gap:17px;border-bottom:1px solid #e9eef0;margin-bottom:12px}.tabs span{padding:0 0 10px;font-size:11px;font-weight:700;color:#87959c}.tabs .sel{color:#296d79;border-bottom:2px solid #296d79}.field{display:flex;justify-content:space-between;margin:10px 0;font-size:11px;color:#7a8991}.field b{color:#3d4e58;font-weight:600}.details{margin-top:auto;border-top:1px solid #e9eef0;padding-top:13px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#6c7b83}.details b{font-weight:600;color:#52646e}
+  .concept{position:fixed;right:18px;bottom:13px;color:#9aa6ad;font-size:10px;letter-spacing:.02em}
+  @media(max-width:1120px){.workspace{grid-template-columns:205px minmax(400px,1fr)}.right{grid-column:1/-1;border-left:0;border-top:1px solid #e1e7ea;display:grid;grid-template-columns:1fr 1fr 1fr}.right .details{grid-column:1/-1}.viewport{height:470px}}
+  @media(max-width:700px){.top{padding:0 15px;gap:12px}.nav,.status{display:none}.sub{padding:0 15px}.workspace{display:flex;flex-direction:column}.left{order:2;border-right:0;border-top:1px solid #e1e7ea}.center{order:1;padding:10px}.right{order:3;display:block}.viewport{height:360px}.bottom{grid-template-columns:1fr}.source{margin-left:auto}.concept{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top"><div class="brand"><span class="brandmark">G1</span>Scene Studio</div><nav class="nav"><span class="active">Twin</span><span>Recording</span><span>Results</span></nav><div class="spacer"></div><div class="status"><span class="dot"></span>Ready</div><div class="source">my_old_recording ▾</div></header>
+  <div class="sub"><b>Virtual table</b><span class="sep"></span><span>40 frames</span><span>·</span><span>7 objects</span><span class="count">Source: ZED Mini recording</span></div>
+  <div class="workspace">
+    <aside class="left">
+      <div><div class="section-head"><h2>Objects</h2><span class="small-count">7</span></div><div class="objects">
+        <div class="obj"><span class="sw" style="background:#bd684b"></span>Apple <em>01</em></div>
+        <div class="obj on"><span class="sw" style="background:#7b8687"></span>Book <em>01</em></div>
+        <div class="obj"><span class="sw" style="background:#303b46"></span>Smartphone <em>01</em></div>
+        <div class="obj"><span class="sw" style="background:#52636b"></span>Smartphone <em>02</em></div>
+        <div class="obj"><span class="sw" style="background:#4a5861"></span>Keyboard <em>01</em></div>
+        <div class="obj"><span class="sw" style="background:#8f7663"></span>Remote control <em>01</em></div>
+        <div class="obj"><span class="sw" style="background:#adb4b4"></span>Mouse pad <em>01</em></div>
+      </div><div class="object-actions"><button class="ghost">Hide</button><button class="ghost">Rotate</button><button class="ghost">Rename</button></div></div>
+      <div class="divider"></div><div><div class="section-head"><h2>Scenarios</h2></div><button class="scenario">Hide book <i>›</i></button><button class="scenario">Block path <i>›</i></button><button class="scenario">Reset table <i>›</i></button></div>
+      <div class="left-foot">Select an object to inspect or move it.</div>
+    </aside>
+    <main class="center"><div class="scene-card">
+      <div class="scene-toolbar"><strong>Scene</strong><div class="views"><span>Photo</span><span class="selected">Stylised</span></div><button class="iconbtn" aria-label="Fit view">⌗</button></div>
+      <div class="viewport"><div class="float-label">Selected · <b>Book 01</b></div>
+        <svg class="scene-svg" viewBox="0 0 790 540" role="img" aria-label="Isometric view of a desk with a selected book, an apple, a phone, a keyboard, and other objects">
+          <defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="15"/></filter><pattern id="grain" width="55" height="55" patternUnits="userSpaceOnUse"><path d="M0 12H55M0 36H55" stroke="#dbcab0" stroke-width=".7" opacity=".45"/></pattern></defs>
+          <ellipse cx="395" cy="412" rx="322" ry="63" fill="#60727b" opacity=".18" filter="url(#shadow)"/>
+          <path d="M66 231 423 82 735 240 380 408Z" fill="#e4d8c5" stroke="#bcae98" stroke-width="2"/>
+          <path d="M380 408 735 240 735 266 380 435Z" fill="#b9ab96"/>
+          <path d="M66 231 380 408 380 435 66 258Z" fill="#c8baa4"/>
+          <path d="M66 231 423 82 735 240 380 408Z" fill="url(#grain)" opacity=".9"/>
+          <path d="M98 247 423 110 701 244 378 381Z" fill="none" stroke="#b6aa98" opacity=".3"/>
+          <path d="M244 231 416 158 546 221 374 294Z" fill="#4b5559" stroke="#29353a" stroke-width="2"/>
+          <path d="M244 231 374 294 374 304 244 241Z" fill="#303c43"/><path d="M374 294 546 221 546 230 374 304Z" fill="#3a464b"/>
+          <g opacity=".45" stroke="#b6c0c2" stroke-width="1"><path d="M265 230 415 166M276 236 426 172M287 242 437 178M299 249 449 184M310 255 461 190M322 261 473 196M335 268 485 202M348 274 497 208M361 280 509 214"/><path d="M288 214 416 277M309 205 438 268M331 196 460 259M353 187 482 250M375 178 504 241"/></g>
+          <path d="M306 327 453 261 536 300 389 367Z" fill="#253f4a" opacity=".17" filter="url(#shadow)"/>
+          <path d="M302 312 450 246 533 286 386 353Z" fill="#e4e8e7" stroke="#608b95" stroke-width="3"/>
+          <path d="M302 312 386 353 386 363 302 322Z" fill="#b8c3c4"/><path d="M386 353 533 286 533 295 386 363Z" fill="#d0d8d8"/>
+          <path d="M320 311 450 254 513 284 384 344Z" fill="#eff2ed" opacity=".85"/>
+          <path d="M289 303 452 229 551 277 386 352Z" fill="none" stroke="#287786" stroke-width="2.5" stroke-dasharray="7 5" opacity=".85"/>
+          <path d="M547 185 600 163 639 182 586 205Z" fill="#303b42" stroke="#182b35" stroke-width="2"/><path d="M547 185 586 205 586 211 547 191Z" fill="#202d34"/>
+          <path d="M589 307 630 289 646 297 606 315Z" fill="#4d5b5e"/><path d="M170 290 226 267 256 281 200 305Z" fill="#8f7b69"/>
+          <ellipse cx="625" cy="238" rx="27" ry="13" fill="#384c54" opacity=".12"/>
+          <circle cx="623" cy="216" r="24" fill="#b86b4a" stroke="#9a5037" stroke-width="2"/><path d="M623 192q4-12 14-12" fill="none" stroke="#5d6941" stroke-width="3"/><ellipse cx="608" cy="202" rx="7" ry="3" fill="#e9aa8a" opacity=".5"/>
+          <path d="M262 347 304 330 325 340 282 358Z" fill="#899798"/><path d="M263 347 282 358 282 361 263 350Z" fill="#6d7d81"/>
+          <circle cx="387" cy="308" r="3" fill="#267180"/>
+        </svg>
+        <div class="view-tools"><span>−</span><span>+</span><span>⌖</span></div>
+      </div><div class="scene-hint"><span>Drag to move · Scroll to zoom</span><span class="flex"></span><span class="link">View controls ▾</span></div>
+    </div><div class="bottom"><div class="mini"><h3>Camera frame</h3><div class="mini-row"><div class="thumb"></div><div class="mini-meta"><b>Frame 034</b><span>Recorded source</span><span>7 detected objects</span></div></div></div><div class="mini"><h3>Activity</h3><div class="activity"><div><b>Book 01 selected</b><span>Now</span></div><div><b>Scene ready</b><span>40 frames</span></div><div><b>Contracts passed</b><span>0 errors</span></div></div></div></div></main>
+    <aside class="right"><div><h2>Ask the scene</h2><div class="query">What is closest to the apple?</div><div class="askrow"><button class="prompt">Try: Where is the book?</button><button class="primary">Ask</button></div></div>
+      <div class="answer"><div class="verify">● VERIFIED ANSWER</div><div class="result">Book 01</div><div class="distance"><b>0.17 m</b> from Apple 01</div><div class="action"><span class="sign">!</span><div><b>Path blocked</b><small>The robot will stay in place.</small></div></div></div>
+      <div class="inspect"><h2>Selected object</h2><div class="tabs"><span class="sel">Overview</span><span>Geometry</span><span>History</span></div><div class="field"><span>Name</span><b>Book 01</b></div><div class="field"><span>State</span><b>Visible</b></div><div class="field"><span>Confidence</span><b>0.91</b></div></div>
+      <div class="details"><b>Technical details</b><span>JSON · S1–S7 ›</span></div>
+    </aside>
+  </div>
+</div>
+<div class="concept">UI concept · proposed layout</div>
+</body>
+</html>

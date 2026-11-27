@@ -3,194 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>G1 Virtual Table</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
-<style>
-/* Control-room layout: table controls left, 3D twin centre, pipeline read-out right. One dark look for the projector. */
-:root{
-  --bg:#0e1320; --panel:#151c2c; --panel2:#1b2436; --line:#2a3550; --fg:#e6ebf5; --muted:#93a0bb;
-  --accent:#f2a33a; --sim:#7cc4ff; --real:#9be39b; --ok:#5fd38d; --bad:#ff6b6b; --warn:#f2c94c;
-  --f-display:"Space Grotesk",system-ui,"Segoe UI",sans-serif; --f-body:"Inter",system-ui,"Segoe UI",sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,Consolas,Menlo,monospace; color-scheme:dark;
-}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--fg)}
-body{font-family:var(--f-body);font-size:14px;line-height:1.45;padding:12px 16px 24px}
-h1,h2,h3{font-family:var(--f-display);margin:0}
-button{font:inherit}
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:12px}
-.top h1{font-size:21px}
-.chip{display:inline-flex;align-items:center;gap:6px;font:500 11px/1 var(--f-mono);letter-spacing:.5px;text-transform:uppercase;
-  padding:5px 8px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
-.chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.c-sim{color:var(--sim)} .c-real{color:var(--real)} .c-ok{color:var(--ok)} .c-bad{color:var(--bad)} .c-warn{color:var(--warn)} .c-muted{color:var(--muted)}
-.spacer{flex:1}
-.grid{display:grid;grid-template-columns:270px minmax(0,1fr) 350px;gap:12px;align-items:start}
-@media (max-width:1250px){.grid{grid-template-columns:250px minmax(0,1fr)} .right{grid-column:1/-1;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}
-@media (max-width:800px){.grid{grid-template-columns:minmax(0,1fr)}}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;min-width:0}
-.sec{padding:12px 14px;display:grid;gap:8px;align-content:start}
-.eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
-.left,.right{display:grid;gap:12px;min-width:0}
-.btn{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);padding:7px 10px;font-size:13px}
-.btn:hover:not(:disabled){border-color:#40507a}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1205;font-weight:600}
-.btn.small{padding:4px 8px;font-size:12px}
-.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.src img{width:100%;border-radius:5px;display:block}
-.objs{display:grid;gap:6px}
-.obj{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;padding:7px 8px;border-radius:6px;border:1px solid transparent;cursor:pointer}
-.obj:hover{background:var(--panel2)}
-.obj.sel{border-color:var(--accent);background:var(--panel2)}
-.obj .sw{width:12px;height:12px;border-radius:3px}
-.obj .nm{font:500 13px var(--f-mono)}
-.obj .st{font-size:11.5px;color:var(--muted)}
-.obj .acts{display:flex;gap:4px}
-.presets{display:grid;gap:6px}
-.presets .btn{text-align:left}
-/* viewport */
-.view{overflow:hidden}
-.stage{position:relative}
-#c{display:block;width:100%;height:min(64vh,620px);min-height:360px;border-radius:8px 8px 0 0;background:radial-gradient(120% 90% at 50% 15%,#1c2740 0%,#0b0f19 70%);touch-action:none}
-.hud{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:8px;pointer-events:none;max-width:calc(100% - 260px)}
-.hud .chip{background:rgba(14,19,32,.8)}
-.hint{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--muted);background:rgba(14,19,32,.75);padding:6px 9px;border-radius:5px;pointer-events:none}
-.busy{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:rgba(14,19,32,.92);
-  border:1px solid var(--sim);color:var(--fg);padding:9px 14px;border-radius:8px;font-size:13px}
-.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--sim);border-radius:50%;animation:sp .8s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#3a1d22;border:1px solid var(--bad);color:var(--fg);padding:9px 14px;border-radius:8px;font-size:13px;max-width:90%}
-.ask{display:grid;gap:8px;padding:12px;border-top:1px solid var(--line)}
-.askrow{display:flex;gap:8px}
-.askrow input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:9px 11px;font-size:14px}
-.sugg{display:flex;flex-wrap:wrap;gap:6px}
-.sugg .btn{font-size:12px;padding:4px 8px;color:var(--muted)}
-.opts{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:0 12px 12px;color:var(--muted);font-size:12.5px}
-.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.seg button{all:unset;cursor:pointer;padding:4px 9px;font-size:12px;color:var(--muted)}
-.seg button[aria-pressed="true"]{background:var(--panel2);color:var(--fg)}
-.seg button:focus-visible{outline:2px solid var(--accent)}
-/* read-out */
-.frameimg{width:100%;border-radius:5px;display:block}
-.bar{display:grid;grid-template-columns:78px 1fr 54px;gap:8px;align-items:center;font:11.5px var(--f-mono);color:var(--muted)}
-.bar div{height:7px;border-radius:4px;background:var(--panel2);overflow:hidden}
-.bar div i{display:block;height:100%;background:var(--sim)}
-.bar span:last-child{text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
-.events{display:flex;flex-wrap:wrap;gap:6px}
-.ev{font:500 11px var(--f-mono);padding:4px 7px;border-radius:4px;background:var(--panel2);border:1px solid var(--line)}
-.ev.MOVED{color:var(--accent);border-color:var(--accent)} .ev.OCCLUDED{color:var(--warn);border-color:var(--warn)}
-.ev.REAPPEARED,.ev.APPEARED{color:var(--real)} .ev.REMOVED{color:var(--bad)}
-.log{display:grid;gap:6px;max-height:190px;overflow:auto;font-size:12.5px}
-.log div{display:grid;gap:3px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
-.log b{font-weight:600}
-.rels{font:12px var(--f-mono);color:var(--muted);display:grid;gap:3px;max-height:170px;overflow:auto}
-.rels b{color:var(--fg);font-weight:500}
-.q{font:500 14px var(--f-display);padding:9px 12px;border-radius:6px;background:var(--panel2);border-left:3px solid var(--accent)}
-.verdict{display:flex;flex-wrap:wrap;gap:6px}
-.reason{font-size:12.5px;color:var(--muted)}
-details summary{cursor:pointer;color:var(--muted);font-size:12px}
-pre{font:11.5px var(--f-mono);background:var(--panel2);padding:8px;border-radius:5px;overflow-x:auto;margin:6px 0 0;white-space:pre-wrap}
-.muted{color:var(--muted)} .note{font-size:12px;color:var(--muted);margin:0}
-select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12.5px;max-width:220px}
-@media (prefers-reduced-motion:reduce){.spin{animation:none}}
-</style>
+<title>Scene Studio · G1</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="scene-studio.css">
+
 </head>
 <body>
 <header class="top">
-  <h1>G1 Virtual Table</h1>
-  <span class="chip c-sim"><span class="dot"></span>Digital twin</span>
-  <span class="chip c-muted" id="parserChip">S5 parser: …</span>
-  <span class="chip c-muted" id="contractChip">contracts</span>
+  <div class="brand"><span class="brandmark">G1</span><h1>Scene Studio</h1></div>
+  <span class="top-view" aria-current="page">Twin</span>
   <span class="spacer"></span>
-  <label class="muted" for="srcSel" style="font-size:12.5px">Recording</label>
-  <select id="srcSel" aria-label="Recording the twin is built from"></select>
+  <span class="chip c-muted" id="parserChip">S5 · …</span>
+  <span class="chip c-muted" id="contractChip">Loading…</span>
+  <label class="recording-select" for="srcSel">Recording
+    <select id="srcSel" aria-label="Recording the twin is built from"></select>
+  </label>
 </header>
 
 <div class="grid">
   <aside class="left">
-    <div class="panel sec src">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <span class="eyebrow">Built from this recording</span><span class="chip c-real"><span class="dot"></span>Real</span>
-      </div>
-      <img id="srcImg" alt="Camera frame from the recording">
-      <p class="note" id="srcNote"></p>
-    </div>
-    <div class="panel sec">
-      <span class="eyebrow">Objects on the table</span>
+    <section class="side-section">
+      <div class="section-heading"><h2>Objects</h2><span id="objCount"></span></div>
       <div class="objs" id="objs"></div>
-      <p class="note">Drag an object on the table to move it. Every change becomes new camera frames that run through S2 → S6 → S4.</p>
-    </div>
-    <div class="panel sec">
-      <span class="eyebrow">Table</span>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn" id="waitBtn" title="Render one still frame (hidden objects age in S6's memory)">Let time pass</button>
-        <button class="btn" id="resetBtn">Reset to recording</button>
-      </div>
-    </div>
-    <div class="panel sec">
-      <span class="eyebrow">Backup scenarios</span>
+    </section>
+    <section class="side-section scenarios">
+      <div class="section-heading"><h2>Scenarios</h2></div>
       <div class="presets" id="presets"></div>
+    </section>
+    <div class="table-actions">
+      <button class="btn" id="waitBtn" title="Advance one frame">Next frame</button>
+      <button class="btn" id="resetBtn">Reset table</button>
     </div>
   </aside>
 
-  <main class="panel view">
-    <div class="stage">
-      <canvas id="c" aria-label="3D virtual table. Drag objects to move them."></canvas>
-      <div class="hud" id="hud"></div>
-      <div class="busy" id="busy" hidden><span class="spin"></span><span id="busyText">Working…</span></div>
-      <div class="toast" id="toast" hidden></div>
-      <div class="hint" id="hint">Drag objects to move · drag empty space to orbit · scroll to zoom</div>
-    </div>
-    <div class="ask">
-      <div class="askrow">
-        <input id="qIn" placeholder="Ask the robot, e.g. “Go to the mug”" autocomplete="off" aria-label="Question">
-        <button class="btn primary" id="askBtn">Ask</button>
+  <main class="center">
+    <section class="panel view">
+      <div class="scene-toolbar">
+        <h2>Scene</h2>
+        <select id="viewSel" aria-label="Camera view"><option value="table">Table overview</option><option value="recorded">Recorded camera</option><option value="robot">Robot overview</option><option value="front">Robot front</option><option value="left">Robot left</option><option value="right">Robot right</option><option value="rear">Robot rear</option><option value="top">Top view</option></select>
+        <button class="btn" id="saveViewBtn" title="Save this camera angle for this recording">Save view</button>
+        <span class="seg" id="lookSeg" aria-label="Scene look"><button data-v="photo" aria-pressed="true" title="Real camera image of each object">Photo</button><button data-v="stylised" aria-pressed="false">Stylised</button></span>
       </div>
-      <div class="sugg" id="sugg"></div>
-    </div>
-    <div class="opts">
-      <span>Look <span class="seg" id="lookSeg"><button data-v="photo" aria-pressed="true" title="Real camera image of each object">Photo</button><button data-v="stylised" aria-pressed="false">Stylised</button></span></span>
-      <span>Robot <span class="seg" id="robotSeg"><button data-v="rover" aria-pressed="true">Mobile robot</button><button data-v="arm" aria-pressed="false">Arm</button><button data-v="none" aria-pressed="false">Off</button></span></span>
-      <span>Obstacles <span class="seg" id="obsSeg"><button data-v="all" aria-pressed="true" title="Every object except the target is an exclusion zone">All objects</button><button data-v="config" aria-pressed="false" title="Team config: only objects listed in exclusion_labels (the laptop)">Laptop only</button></span></span>
-      <span>Planner <span class="seg" id="planSeg"><button data-v="straight" aria-pressed="true">Straight</button><button data-v="detour" aria-pressed="false">Detour</button></span></span>
-      <label><input type="checkbox" id="tBoxes" checked> Pipeline's 3D boxes</label>
-      <label><input type="checkbox" id="tCloud"> Recording point cloud</label>
-      <label><input type="checkbox" id="tTwin" checked> Twin objects</label>
+      <div class="stage">
+        <canvas id="c" aria-label="3D virtual table. Drag objects to move them."></canvas>
+        <div class="hud" id="hud"></div>
+        <div class="orientation" id="orientation" aria-live="polite"></div>
+        <div class="busy" id="busy" hidden><span class="spin"></span><span id="busyText">Working…</span></div>
+        <div class="toast" id="toast" role="alert" hidden></div>
+      </div>
+      <div class="scene-footer"><span id="hint">Drag to move · scroll to zoom</span><span class="spacer"></span><span>Orbit: drag empty space</span></div>
+      <details class="controls-disclosure">
+        <summary>View controls</summary>
+        <div class="opts">
+          <div class="control-group"><span>Robot</span><span class="seg" id="robotSeg"><button data-v="g1" aria-pressed="true">Mounted G1</button><button data-v="none" aria-pressed="false">Off</button></span><button class="btn" id="reachBtn" title="Preview a simulated arm reach to the selected object">Preview reach</button></div>
+          <div class="control-group"><span>Mount position (map m)</span><div class="mount-fields"><label>X <input id="mountX" type="number" step="0.01" min="0.05" max="1.35"></label><label>Y <input id="mountY" type="number" step="0.01" min="-0.55" max="0.55"></label></div><button class="btn" id="mountAuto">Find clear mount</button><span class="mount-note" id="mountGap"></span></div>
+          <div class="control-group"><span>Measured camera pose (map)</span><div class="mount-fields"><label>X <input id="camX" type="number" step="0.01"></label><label>Y <input id="camY" type="number" step="0.01"></label><label>Yaw° <input id="camYaw" type="number" step="1"></label></div><button class="btn" id="applyCamPose">Use measured pose</button><span class="mount-note" id="camPoseNote"></span></div>
+          <div class="control-group"><span>Obstacles</span><span class="seg" id="obsSeg"><button data-v="all" aria-pressed="true" title="Every object except the target is an exclusion zone">All</button><button data-v="config" aria-pressed="false" title="Team config: only configured object classes">Configured</button></span></div>
+          <div class="control-group"><span>Planner</span><span class="seg" id="planSeg"><button data-v="straight" aria-pressed="true">Straight</button><button data-v="detour" aria-pressed="false">Detour</button></span></div>
+          <div class="layer-controls"><label><input type="checkbox" id="tBoxes" checked> 3D boxes</label><label><input type="checkbox" id="tCloud"> Point cloud</label><label><input type="checkbox" id="tTwin" checked> Twin objects</label><label><input type="checkbox" id="tCoords" checked> XY grid</label></div>
+        </div>
+      </details>
+    </section>
+    <div class="below-scene">
+      <section class="panel source-card">
+        <h3>Source image</h3>
+        <div class="source-content"><img id="srcImg" alt="Camera frame from the recording"><p class="note" id="srcNote"></p></div>
+      </section>
+      <section class="panel activity-card">
+        <h3>Activity</h3>
+        <div class="events" id="events"></div>
+        <div class="activity-summary" id="activitySummary">Ready</div>
+      </section>
     </div>
   </main>
 
-  <section class="right">
-    <div class="panel sec" id="qaSec">
-      <h3>S5 answer → S6 action</h3>
-      <div id="qa"><p class="note">Ask a question to see the verified answer and the robot's action.</p></div>
-    </div>
-    <div class="panel sec">
-      <div style="display:flex;justify-content:space-between;align-items:center"><h3>What the pipeline saw</h3><span class="eyebrow" id="fname"></span></div>
-      <img class="frameimg" id="frameImg" alt="Latest rendered camera frame processed by the pipeline">
-      <div id="lat" style="display:grid;gap:5px"></div>
-    </div>
-    <div class="panel sec">
-      <h3>S6 tracking</h3>
-      <div class="events" id="events"></div>
-      <div class="log" id="log"></div>
-    </div>
-    <div class="panel sec">
-      <h3>S4 scene graph</h3>
-      <div class="rels" id="rels"></div>
-    </div>
-  </section>
+  <aside class="right">
+    <section class="right-section" id="qaSec">
+      <h2>Ask the scene</h2>
+      <div class="ask">
+        <div class="askrow"><input id="qIn" placeholder="Ask about an object…" autocomplete="off" aria-label="Question"><button class="btn primary" id="askBtn">Ask</button></div>
+        <details class="examples"><summary>Example questions</summary><div class="sugg" id="sugg"></div></details>
+      </div>
+      <div id="qa"><p class="note">Ask a question to see the answer and action.</p></div>
+    </section>
+    <section class="right-section selected-section">
+      <h2>Selected object</h2>
+      <div id="selectedInfo" class="note">Select an object in the scene or list.</div>
+    </section>
+    <details class="technical">
+      <summary>Technical details</summary>
+      <div class="technical-content">
+        <section><div class="section-heading"><h3>Rendered frame</h3><span id="fname"></span></div><img class="frameimg" id="frameImg" alt="Latest rendered camera frame processed by the pipeline"><div id="lat"></div></section>
+        <section><h3>Tracking log</h3><div class="log" id="log"></div></section>
+        <section><h3>Scene graph</h3><div class="rels" id="rels"></div></section>
+      </div>
+    </details>
+  </aside>
 </div>
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="g1-robot.js"></script>
 <script>
 (async function(){
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let ST=null, SRC=null, busy=false, selected=null, robotMode="rover", lookMode="photo";
+let ST=null, SRC=null, busy=false, selected=null, robotMode="g1", lookMode="photo", viewMode="table";
 const texCache={}; const billboards=[];
 function tex(key, uri){ if(!texCache[key]){ const t=new THREE.TextureLoader().load(uri); t.encoding=THREE.sRGBEncoding; t.anisotropy=4; texCache[key]=t; } return texCache[key]; }
 
@@ -227,43 +146,91 @@ const canvas=$("c");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.86;
 const scene=new THREE.Scene();
-const cam=new THREE.PerspectiveCamera(40,1,0.01,20);
-cam.position.copy(M(-0.25,-0.95,1.0));
+const cam=new THREE.PerspectiveCamera(45,1,0.01,20);
+cam.position.copy(M(-.62,.85,1.14));
 const controls=new THREE.OrbitControls(cam,canvas);
-controls.target.copy(M(0.65,0,0.05)); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.48; controls.minDistance=0.4; controls.maxDistance=3.5;
-scene.add(new THREE.HemisphereLight(0xcfe0ff,0x1a1410,0.6));
-const key=new THREE.DirectionalLight(0xfff1dd,1.05); key.position.copy(M(0.3,-0.9,1.7)); key.castShadow=true;
+controls.target.copy(M(.58,0,.18)); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.48; controls.minDistance=0.4; controls.maxDistance=3.5;
+scene.add(new THREE.HemisphereLight(0xffffff,0xb9b4a8,0.75));
+const key=new THREE.DirectionalLight(0xfff1dd,0.85); key.position.copy(M(0.3,-0.9,1.7)); key.castShadow=true;
 key.shadow.mapSize.set(2048,2048); Object.assign(key.shadow.camera,{left:-1.3,right:1.3,top:1.3,bottom:-1.3,near:0.1,far:5});
 key.target.position.copy(M(0.7,0,0)); scene.add(key,key.target);
-const rim=new THREE.DirectionalLight(0x7cc4ff,0.35); rim.position.copy(M(1.7,1.0,0.8)); scene.add(rim);
+const rim=new THREE.DirectionalLight(0xe9f3f4,0.3); rim.position.copy(M(1.7,1.0,0.8)); scene.add(rim);
 
 function woodTex(){const c=document.createElement("canvas");c.width=512;c.height=512;const g=c.getContext("2d");
-  g.fillStyle="#5b3a24";g.fillRect(0,0,512,512);
-  for(let i=0;i<220;i++){g.strokeStyle=`rgba(${30+Math.random()*40},${18+Math.random()*20},10,${0.08+Math.random()*0.12})`;g.lineWidth=1+Math.random()*2.5;
+  g.fillStyle="#cfb997";g.fillRect(0,0,512,512);
+  for(let i=0;i<220;i++){g.strokeStyle=`rgba(114,88,59,${0.04+Math.random()*0.08})`;g.lineWidth=1+Math.random()*2.5;
     g.beginPath();let y=Math.random()*512;g.moveTo(0,y);for(let x=0;x<=512;x+=32){y+=(Math.random()-.5)*6;g.lineTo(x,y);}g.stroke();}
   const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;}
 const desk=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.035,1.4),new THREE.MeshStandardMaterial({map:woodTex(),roughness:0.55,metalness:0.05}));
 desk.position.copy(M(0.7,0,-0.0175)); desk.receiveShadow=true; scene.add(desk);
 const legMat=new THREE.MeshStandardMaterial({color:0x22262e,roughness:0.4,metalness:0.6});
 for(const [x,y] of [[0.05,0.56],[0.05,-0.56],[1.35,0.56],[1.35,-0.56]]){const l=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.72,0.04),legMat);l.position.copy(M(x,y,-0.395));scene.add(l);}
-const grid=new THREE.GridHelper(6,60,0x2a3550,0x1a2236); grid.position.y=-0.755; scene.add(grid);
+const grid=new THREE.GridHelper(6,60,0xc9d5d9,0xdfe7e9); grid.position.y=-0.755; scene.add(grid);
+const coordG=new THREE.Group();scene.add(coordG);
+for(let i=1;i<=13;i++){
+  const x=i/10,ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(x,-.55,.001),M(x,.55,.001)]),new THREE.LineBasicMaterial({color:0x8a9aa0,transparent:true,opacity:i%5===0?.47:.2}));coordG.add(ln);
+  if(i%2===0){const l=labelSprite(`${x.toFixed(1)} X`,"#647680");l.scale.set(.18,.024,1);l.position.copy(M(x,-.52,.003));coordG.add(l);}
+}
+for(let i=-5;i<=5;i++){
+  const y=i/10,ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(.05,y,.001),M(1.35,y,.001)]),new THREE.LineBasicMaterial({color:0x8a9aa0,transparent:true,opacity:i===0?.52:.2}));coordG.add(ln);
+  if(i%2===0){const l=labelSprite(`${y.toFixed(1)} Y`,"#647680");l.scale.set(.18,.024,1);l.position.copy(M(.08,y,.003));coordG.add(l);}
+}
+const origin=new THREE.Mesh(new THREE.SphereGeometry(.007,10,8),new THREE.MeshBasicMaterial({color:0x256d7b}));origin.position.copy(M(0,0,.005));coordG.add(origin);
+const originLabel=labelSprite("0,0","#256d7b");originLabel.scale.set(.14,.022,1);originLabel.position.copy(M(0,0,.03));coordG.add(originLabel);
+coordG.add(new THREE.ArrowHelper(M(.1,0,0).normalize(),M(0,0,.006),.1,0x256d7b,.022,.012));
+coordG.add(new THREE.ArrowHelper(M(0,.1,0).normalize(),M(0,0,.006),.1,0x8a641f,.022,.012));
+const scaleLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(1.1,-.48,.003),M(1.2,-.48,.003)]),new THREE.LineBasicMaterial({color:0x294751}));coordG.add(scaleLine);
+const scaleLabel=labelSprite("10 cm","#294751");scaleLabel.scale.set(.16,.022,1);scaleLabel.position.copy(M(1.15,-.45,.004));coordG.add(scaleLabel);
 const dragPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 
 // virtual camera that renders the twin frames
 const vcam=new THREE.Group();
 vcam.add(new THREE.Mesh(new THREE.BoxGeometry(0.124,0.031,0.036),new THREE.MeshStandardMaterial({color:0x30333a,roughness:0.35,metalness:0.4})));
 for(const s of [-1,1]){const lens=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.004,24),new THREE.MeshStandardMaterial({color:0x0a0a0a,metalness:0.9,roughness:0.15}));lens.rotation.x=Math.PI/2;lens.position.set(s*0.032,0,-0.019);vcam.add(lens);}
-scene.add(vcam);
+scene.add(vcam);vcam.visible=false;
 
 function labelSprite(text,color){
   const c=document.createElement("canvas");c.width=512;c.height=64;const g=c.getContext("2d");
-  g.font="500 26px JetBrains Mono, Consolas, monospace";const w=Math.min(512,g.measureText(text).width+24);
-  g.fillStyle="rgba(14,19,32,.85)";g.fillRect(0,8,w,44);g.fillStyle=color;g.fillText(text,12,39);
+  g.font="600 29px JetBrains Mono, Consolas, monospace";const w=Math.min(512,g.measureText(text).width+24);
+  g.fillStyle="rgba(255,255,255,.94)";g.fillRect(0,8,w,44);g.fillStyle=color;g.fillText(text,12,39);
   const t=new THREE.CanvasTexture(c);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}));
-  s.scale.set(0.32,0.04,1);s.center.set(w/512/2,0);s.renderOrder=10;return s;
+  s.scale.set(0.42,0.054,1);s.center.set(w/512/2,0);s.renderOrder=10;return s;
+}
+const sourceCameraG=new THREE.Group();scene.add(sourceCameraG);
+function cameraPoseKey(){return `g1-camera-pose:${SRC?.run||"default"}`;}
+function manualCameraPose(){try{return JSON.parse(localStorage.getItem(cameraPoseKey())||"null");}catch{return null;}}
+function cameraPoseKnown(){return !!(manualCameraPose()||SRC?.recorded_camera?.horizontal_pose_known);}
+function sourceCameraT(){
+  const base=SRC?.recorded_camera?.T_map_camera,manual=manualCameraPose();if(!base)return null;
+  if(!manual)return base;
+  const heading=Math.atan2(base[1][2],base[0][2]),delta=THREE.MathUtils.degToRad(manual.yaw)-heading;
+  const co=Math.cos(delta),si=Math.sin(delta),T=base.map(row=>row.slice());
+  for(let j=0;j<3;j++){T[0][j]=co*base[0][j]-si*base[1][j];T[1][j]=si*base[0][j]+co*base[1][j];}
+  T[0][3]=manual.x;T[1][3]=manual.y;return T;
+}
+function syncCameraPoseControls(){
+  const p=manualCameraPose(),T=SRC?.recorded_camera?.T_map_camera;
+  $("camX").value=(p?.x??T?.[0]?.[3]??0).toFixed(2);$("camY").value=(p?.y??T?.[1]?.[3]??0).toFixed(2);
+  $("camYaw").value=(p?.yaw??(T?THREE.MathUtils.radToDeg(Math.atan2(T[1][2],T[0][2])):0)).toFixed(0);
+  $("camPoseNote").textContent=p?"User entered pose · stored in this browser":SRC?.recorded_camera?.horizontal_pose_known?"Pose from recording":"Desk estimate · X/Y/yaw unknown";
+}
+function updateSourceCameraMarker(){
+  sourceCameraG.clear();const c=SRC?.recorded_camera,T=sourceCameraT();
+  if(!T){sourceCameraG.visible=false;return;}
+  const col=j=>M(T[0][j],T[1][j],T[2][j]);
+  sourceCameraG.position.copy(M(T[0][3],T[1][3],T[2][3]));
+  sourceCameraG.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(col(0),col(1).negate(),col(2).negate()));
+  const intr=c.intrinsics||{width:640,height:360,fx:400,fy:400,cx:320,cy:180},depth=.23;
+  const corner=(u,v)=>new THREE.Vector3((u-intr.cx)*depth/intr.fx,(intr.cy-v)*depth/intr.fy,-depth);
+  const corners=[corner(0,0),corner(intr.width,0),corner(intr.width,intr.height),corner(0,intr.height)];
+  const points=[];for(let i=0;i<4;i++)points.push(new THREE.Vector3(),corners[i],corners[i],corners[(i+1)%4]);
+  sourceCameraG.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x567f89,transparent:true,opacity:.65})));
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.043,.029,.024),new THREE.MeshStandardMaterial({color:0x34444d,metalness:.4,roughness:.48}));sourceCameraG.add(body);
+  const lab=labelSprite(cameraPoseKnown()?"SOURCE CAMERA":"CAMERA · EST.","#456b75");lab.scale.set(.22,.028,1);lab.position.set(0,.045,0);sourceCameraG.add(lab);
+  sourceCameraG.visible=viewMode!=="recorded";
 }
 const std=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.45,metalness:0.1},o));
 // colours come from the recording (median of each object's mask); lift them a little for the stylised look
@@ -402,67 +369,24 @@ function wireBox(n,color,dashed){
 const twinG=new THREE.Group(), beliefG=new THREE.Group(), actionG=new THREE.Group(); scene.add(twinG,beliefG,actionG);
 let cloud=null;
 
-// ---------------------------------------------------------------- robots (visual; S6 plans a 2D path on the desk)
-const rover=new THREE.Group();
-{ const body=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.048,0.028,32),std(0xe9edf3,{roughness:0.35,metalness:0.3}));body.position.y=0.026;rover.add(body);
-  const top=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.012,32),std(0x2a2f38,{metalness:0.6,roughness:0.3}));top.position.y=0.046;rover.add(top);
-  const lidar=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.012,20),std(0x111111,{metalness:0.8,roughness:0.2}));lidar.position.y=0.058;rover.add(lidar);
-  const eye=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.008,0.004),new THREE.MeshBasicMaterial({color:0xf2a33a}));eye.position.set(0,0.03,-0.047);rover.add(eye);
-  for(const s of [-1,1]){const w=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.008,20),std(0x1a1a1a));w.rotation.z=Math.PI/2;w.position.set(s*0.047,0.014,0);rover.add(w);}
-  rover.traverse(m=>{if(m.isMesh)m.castShadow=true;}); }
-scene.add(rover);
-const arm=new THREE.Group(); scene.add(arm);
-const L1=0.46,L2=0.44,SH=0.13;
-const aMat=std(0xe9edf3,{roughness:0.35,metalness:0.3}), jMat=std(0xf2a33a,{roughness:0.4,metalness:0.2});
-const armBaseM=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.04,32),std(0x2a2f38,{metalness:0.6,roughness:0.3}));armBaseM.position.y=0.02;arm.add(armBaseM);
-const yawG=new THREE.Group();yawG.position.y=0.04;arm.add(yawG);
-const col=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.035,SH-0.04,24),aMat);col.position.y=(SH-0.04)/2;yawG.add(col);
-const sh=new THREE.Group();sh.position.y=SH-0.04;yawG.add(sh);sh.add(new THREE.Mesh(new THREE.SphereGeometry(0.034,24,16),jMat));
-const up=new THREE.Mesh(new THREE.BoxGeometry(0.04,L1,0.04),aMat);up.position.y=L1/2;sh.add(up);
-const el=new THREE.Group();el.position.y=L1;sh.add(el);el.add(new THREE.Mesh(new THREE.SphereGeometry(0.028,24,16),jMat));
-const fo=new THREE.Mesh(new THREE.BoxGeometry(0.032,L2,0.032),aMat);fo.position.y=L2/2;el.add(fo);
-const wr=new THREE.Group();wr.position.y=L2;el.add(wr);wr.add(new THREE.Mesh(new THREE.BoxGeometry(0.05,0.012,0.022),jMat));
-for(const s of [-1,1]){const f=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.04,0.016),aMat);f.position.set(s*0.02,0.022,0);wr.add(f);}
-arm.traverse(m=>{if(m.isMesh)m.castShadow=true;});
-let agentStart=[0.25,0];
-function armReach(mx,my,mz){
-  const b=M(agentStart[0],agentStart[1],0);arm.position.copy(b);
-  const t=M(mx,my,mz);const dx=t.x-b.x,dz=t.z-b.z;
-  yawG.rotation.y=Math.atan2(-dx,-dz);
-  const r=Math.min(Math.hypot(dx,dz),L1+L2-0.01),h=mz-SH,d=Math.min(Math.hypot(r,h),L1+L2-0.005);
-  const a2=Math.acos(THREE.MathUtils.clamp((d*d-L1*L1-L2*L2)/(2*L1*L2),-1,1));
-  const a1=Math.atan2(r,h)-Math.atan2(L2*Math.sin(a2),L1+L2*Math.cos(a2));
-  sh.rotation.x=-a1;el.rotation.x=-a2;wr.rotation.x=-(Math.PI-a1-a2);
-}
-function robotsHome(){
-  rover.position.copy(M(agentStart[0],agentStart[1],0)); rover.rotation.y=Math.PI/2*0; // faces +map x (three -Z)
-  armReach(agentStart[0]+0.28,agentStart[1],0.32);
-  rover.visible=robotMode==="rover"; arm.visible=robotMode==="arm";
-}
-let anim=null;
-function dense(path,step){const out=[];for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1];const n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/step));for(let k=0;k<n;k++)out.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]);}out.push(path[path.length-1]);return out;}
-function drive(path,targetH){
-  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let pts=dense(path,0.005);
-  // the mobile robot stops in front of the object; the arm reaches over it
-  const stopAt=0.07; let acc=0, cut=pts.length-1;
-  for(let i=pts.length-1;i>0;i--){acc+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); if(acc>=stopAt){cut=i;break;}}
-  const roverPts=pts.slice(0,cut+1);
-  const armPts=pts.filter(p=>Math.hypot(p[0]-agentStart[0],p[1]-agentStart[1])>0.2);
-  const T0=performance.now(), len=pts.length*0.005, dur=reduce?1:Math.max(1600,len/0.25*1000);
+// ---------------------------------------------------------------- fixed G1 asset; S6 path stays a table overlay
+const g1=new G1Robot(scene);
+const frontArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,.13,-.09),.17,0x256d7b,.035,.018);
+g1.root.add(frontArrow);
+const frontLabel=labelSprite("FRONT","#256d7b");frontLabel.scale.set(.19,.026,1);frontLabel.position.set(0,.12,-.29);g1.root.add(frontLabel);
+g1.load().then(()=>{ if(ST){g1.autoPlace(ST);g1.placedFor=SRC?.run||"current";syncMountControls();renderOrientation();} }).catch(e=>toast("G1 model could not load: "+e.message));
+let anim=null, pathMarker=null;
+function animatePath(path){
+  if(pathMarker){actionG.remove(pathMarker);pathMarker=null;}
+  const marker=new THREE.Mesh(new THREE.SphereGeometry(.009,12,10),new THREE.MeshBasicMaterial({color:0x256d7b}));
+  actionG.add(marker);pathMarker=marker;
+  const lengths=[0];for(let i=1;i<path.length;i++) lengths.push(lengths[i-1]+Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1]));
+  const total=lengths[lengths.length-1],start=performance.now(),duration=matchMedia("(prefers-reduced-motion: reduce)").matches?1:Math.max(1400,total/0.25*1000);
   anim=now=>{
-    const u=Math.max(0,Math.min(1,(now-T0)/dur));
-    if(robotMode==="rover"&&roverPts.length>1){
-      const i=Math.min(roverPts.length-1,Math.floor(u*(roverPts.length-1))); const p=roverPts[i], q=roverPts[Math.min(roverPts.length-1,i+1)];
-      rover.position.copy(M(p[0],p[1],0));
-      if(q!==p){const a=M(p[0],p[1]),b=M(q[0],q[1]);rover.rotation.y=Math.atan2(-(b.x-a.x),-(b.z-a.z));}
-    }
-    if(robotMode==="arm"&&armPts.length>1){
-      const i=Math.min(armPts.length-1,Math.floor(u*(armPts.length-1)));const p=armPts[i];
-      const hover=0.06+targetH; const z=u<0.85?hover+0.05*Math.sin(Math.PI*u):hover-0.04*((u-0.85)/0.15);
-      armReach(p[0],p[1],Math.max(targetH+0.015,z));
-    }
-    if(u>=1)anim=null;
+    const d=Math.min(1,(now-start)/duration)*total;let i=1;while(i<lengths.length-1&&lengths[i]<d)i++;
+    const u=(d-lengths[i-1])/(lengths[i]-lengths[i-1]||1),a=path[i-1],b=path[i];
+    marker.position.copy(M(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,.012));
+    if(d>=total)anim=null;
   };
 }
 function polyLine(pts,color,dashed,h=0.004){
@@ -476,73 +400,156 @@ function tube(pts,color){
   return new THREE.Mesh(new THREE.TubeGeometry(curve,160,0.004,8,false),new THREE.MeshBasicMaterial({color}));
 }
 
+// The selected view is a camera pose. The robot stays fixed on the table.
+function syncMountControls(){
+  $("mountX").value=g1.mount.x.toFixed(2);$("mountY").value=g1.mount.y.toFixed(2);
+  $("mountGap").textContent=`Nearest object: ${Math.max(0,g1.mount.gap*100).toFixed(0)} cm clear`;
+  $("mountGap").classList.toggle("too-close",g1.mount.gap<.08);
+}
+function savedKey(){return `g1-scene-views:${SRC?.run||"default"}`;}
+function savedViews(){try{return JSON.parse(localStorage.getItem(savedKey())||"[]");}catch{return [];}}
+function refreshSavedViews(){
+  $("viewSel").querySelectorAll("option[data-saved]").forEach(o=>o.remove());
+  savedViews().forEach((v,i)=>{const o=new Option(v.name,`saved:${i}`);o.dataset.saved="1";$("viewSel").add(o);});
+  if(!$("viewSel").querySelector('option[value="custom"]'))$("viewSel").add(new Option("Custom angle","custom"));
+}
+function setView(mode){
+  if(mode==="custom"){viewMode=mode;$("viewSel").value=mode;renderOrientation();return;}
+  viewMode=mode;cam.up.set(0,1,0);cam.fov=45;
+  const mount=g1.mount,f=[Math.cos(mount.yaw),Math.sin(mount.yaw)],r=[Math.sin(mount.yaw),-Math.cos(mount.yaw)];
+  const at=[mount.x+f[0]*.17,mount.y+f[1]*.17,.28];
+  const point=(forward,right,z)=>M(at[0]+f[0]*forward+r[0]*right,at[1]+f[1]*forward+r[1]*right,z);
+  if(mode==="table"){cam.position.copy(M(-.62,.85,1.14));controls.target.copy(M(.58,0,.18));}
+  else if(mode==="top"){cam.position.copy(M(.7,0,1.65));controls.target.copy(M(.7,0,.03));}
+  else if(mode==="robot"){cam.position.copy(point(-.82,.72,.82));controls.target.copy(M(.72,0,.13));}
+  else if(["front","left","right","rear"].includes(mode)){
+    const offsets={front:[.9,0],left:[0,-.9],right:[0,.9],rear:[-.9,0]};
+    cam.position.copy(point(...offsets[mode],.48));controls.target.copy(M(...at));
+  } else if(mode==="recorded"){
+    const c=SRC?.recorded_camera,T=sourceCameraT();
+    if(!T){toast("This recording has no saved camera transform.");return setView("table");}
+    const col=j=>M(T[0][j],T[1][j],T[2][j]);
+    const right=col(0),up=col(1).negate(),back=col(2).negate();
+    cam.position.copy(M(T[0][3],T[1][3],T[2][3]));cam.up.copy(up);
+    cam.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right,up,back));
+    controls.target.copy(cam.position).addScaledVector(back,-.85);
+    const intr=c.intrinsics;if(intr?.fy&&intr?.height)cam.fov=THREE.MathUtils.radToDeg(2*Math.atan(intr.height/(2*intr.fy)));
+  } else if(mode.startsWith("saved:")){
+    const v=savedViews()[Number(mode.slice(6))];if(!v)return setView("table");
+    cam.position.fromArray(v.position);controls.target.fromArray(v.target);cam.up.fromArray(v.up);cam.fov=v.fov;
+  }
+  cam.updateProjectionMatrix();controls.update();$("viewSel").value=viewMode;
+  sourceCameraG.visible=mode!=="recorded"&&!!SRC?.recorded_camera?.T_map_camera;
+  beliefG.children.filter(o=>o.isSprite).forEach(o=>o.scale.set(mode==="recorded"?.15:["front","left","right","rear"].includes(mode)?.26:.42,mode==="recorded"?.019:["front","left","right","rear"].includes(mode)?.034:.054,1));
+  renderOrientation();
+}
+function renderOrientation(){
+  if(!ST)return;
+  const m=g1.mount,[x,y]=toMap(cam.position),dx=x-m.x,dy=y-m.y;
+  const front=dx*Math.cos(m.yaw)+dy*Math.sin(m.yaw),right=dx*Math.sin(m.yaw)-dy*Math.cos(m.yaw);
+  let side=cam.position.y>.95&&Math.hypot(dx,dy)<.55?"Top":Math.abs(front)>Math.abs(right)?front>=0?"Front":"Rear":right>=0?"Right":"Left";
+  const estimated=viewMode==="recorded"&&!cameraPoseKnown();
+  if(estimated)side="Side unverified";
+  const heading=((THREE.MathUtils.radToDeg(m.yaw)%360)+360)%360;
+  $("orientation").innerHTML=`<strong>${esc(side)} view</strong><span>G1 front ${heading.toFixed(0)}° · mount (${m.x.toFixed(2)}, ${m.y.toFixed(2)}) m</span>${viewMode==="recorded"?`<small>Recorded camera${estimated?" · horizontal pose unknown":manualCameraPose()?" · user entered pose":""}</small>`:""}`;
+}
+
 // ---------------------------------------------------------------- drawing state
 let lastQueryKey=null;
 function render(){
   if(!ST) return;
   // scene: twin objects
   twinG.clear(); beliefG.clear();
-  for(const o of ST.twin){ if(!o.hidden){ const g=dressed(o); if(o.name===selected){g.traverse(m=>{if(m.isMesh&&m.material.emissive){m.material=m.material.clone();m.material.emissive.setHex(0x3a2a10);}});} twinG.add(g);} }
+  for(const o of ST.twin){ if(!o.hidden){ const g=dressed(o); if(o.name===selected){g.traverse(m=>{if(m.isMesh&&m.material.emissive){m.material=m.material.clone();m.material.emissive.setHex(0x173c43);}});} twinG.add(g);} }
   twinG.visible=$("tTwin").checked;
   // pipeline belief: S4 nodes
   for(const n of ST.nodes){
     const occ=n.state==="occluded";
-    if($("tBoxes").checked||occ) beliefG.add(wireBox(n, occ?0xf2c94c:0x7cc4ff, occ));
+    if($("tBoxes").checked||occ) beliefG.add(wireBox(n, occ?0xb7822e:0x287786, occ));
     const warn=n.depth_status&&n.depth_status!=="ok";
-    const lab=labelSprite(n.id+(occ?" · occluded (remembered)":"")+(warn?" · "+n.depth_status:""), occ?"#f2c94c":warn?"#7cc4ff":"#e6ebf5");
+    const lab=labelSprite(friendly(n.id)+(occ?" · Occluded":""), occ?"#8a641f":warn?"#256d7b":"#344c56");
+    if(viewMode==="recorded")lab.scale.set(.15,.019,1);
+    else if(["front","left","right","rear"].includes(viewMode))lab.scale.set(.26,.034,1);
     const p=M(n.pose[0],n.pose[1],0); lab.position.set(p.x,n.pose[2]+n.size[2]/2+0.03,p.z); beliefG.add(lab);
   }
   // virtual camera
   const [cx,cy,cz]=ST.camera.xyz, pitch=ST.camera.rpy[1];
   vcam.position.copy(M(cx,cy,cz)); vcam.rotation.set(-pitch,0,0);
-  agentStart=ST.agent_start;
+  if(g1.ready){
+    if(!g1.placedFor) {g1.autoPlace(ST);g1.placedFor=SRC?.run||"current";syncMountControls();}
+    g1.mount.gap=G1Robot.gapAt(g1.mount.x,g1.mount.y,ST.twin);
+    syncMountControls();
+  }
   // action overlay (only when the question changes)
   const q=ST.query, key=q?JSON.stringify([q.question,q.code,q.path,ST.n_frames]):null;
   if(key!==lastQueryKey){
-    lastQueryKey=key; actionG.clear(); anim=null; robotsHome();
+    lastQueryKey=key; actionG.clear(); anim=null; pathMarker=null; g1.home();
     if(q){
       for(const z of q.zones){
         const shape=new THREE.Shape(z.map(p=>{const v=M(p[0],p[1]);return new THREE.Vector2(v.x,-v.z);}));
-        const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshBasicMaterial({color:0xff6b6b,transparent:true,opacity:0.25,side:THREE.DoubleSide,depthWrite:false}));
-        mesh.rotation.x=-Math.PI/2;mesh.position.y=0.003;actionG.add(mesh);actionG.add(polyLine([...z,z[0]],0xff6b6b,false,0.004));
+        const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshBasicMaterial({color:0xa94440,transparent:true,opacity:0.22,side:THREE.DoubleSide,depthWrite:false}));
+        mesh.rotation.x=-Math.PI/2;mesh.position.y=0.003;actionG.add(mesh);actionG.add(polyLine([...z,z[0]],0xa94440,false,0.004));
       }
       const tn=ST.nodes.find(n=>n.id===q.target);
-      if(q.validated&&q.path&&q.path.length>1){ actionG.add(tube(q.path,0xf2a33a)); drive(q.path, tn?tn.size[2]:0.08); }
+      if(q.validated&&q.path&&q.path.length>1){ actionG.add(tube(q.path,0x256d7b)); animatePath(q.path); }
       else{
-        if(q.path&&q.path.length>1) actionG.add(polyLine(q.path,0xff6b6b,true,0.006));
-        if(tn){const x=labelSprite("✕ "+(q.code||"rejected"),"#ff6b6b");x.position.copy(M(tn.pose[0],tn.pose[1],tn.pose[2]+tn.size[2]/2+0.09));actionG.add(x);}
+        if(q.path&&q.path.length>1) actionG.add(polyLine(q.path,0xa94440,true,0.006));
+        if(tn){const x=labelSprite("✕ "+(q.code||"rejected"),"#a94440");x.position.copy(M(tn.pose[0],tn.pose[1],tn.pose[2]+tn.size[2]/2+0.09));actionG.add(x);}
       }
     }
   }
-  rover.visible=robotMode==="rover"; arm.visible=robotMode==="arm";
+  g1.show(robotMode==="g1");
+  renderOrientation();
   renderPanels();
+}
+function friendly(name){return String(name||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());}
+function activityEvent(event){
+  const [kind,...rest]=event.split(" ");
+  return `${friendly(rest.join(" "))} · ${kind.charAt(0)+kind.slice(1).toLowerCase()}`;
 }
 function renderPanels(){
   const nodes=Object.fromEntries(ST.nodes.map(n=>[n.id,n]));
-  $("parserChip").textContent="S5 parser: "+ST.parser; $("parserChip").className="chip "+(ST.parser==="ollama"?"c-ok":"c-warn");
-  $("contractChip").textContent=`${ST.n_frames} frames · ${ST.contract_errors} contract errors`;
+  $("parserChip").textContent="S5 · "+ST.parser;
+  $("parserChip").className="chip "+(ST.parser==="ollama"?"c-ok":"c-warn");
+  $("contractChip").textContent=ST.contract_errors?`${ST.contract_errors} errors`:`${ST.n_frames} frames · Ready`;
   $("contractChip").className="chip "+(ST.contract_errors?"c-bad":"c-muted");
-  $("hud").innerHTML=`<span class="chip c-sim"><span class="dot"></span>Simulated frames · real pipeline</span>`+(ST.query?`<span class="chip ${ST.query.validated?"c-ok":"c-bad"}">${esc(ST.query.code)}</span>`:"");
-  // objects list
+  $("hud").innerHTML='<span class="chip c-sim">Twin view</span>'+(ST.query?`<span class="chip ${ST.query.validated?"c-ok":"c-warn"}">${esc(ST.query.code)}</span>`:"");
+  $("objCount").textContent=ST.twin.length;
   $("objs").innerHTML=ST.twin.map(o=>{
-    const n=nodes[o.name], st=(o.hidden?(n?`hidden · S6: ${n.state}`:"hidden · forgotten"):(n?`${n.state} · conf ${(n.confidence??0).toFixed(2)}`:"not detected"))+(o.renamed_from?` · renamed (S3: ${o.renamed_from})`:"");
-    return `<div class="obj ${o.name===selected?"sel":""}" data-n="${esc(o.name)}" tabindex="0">
-      <span class="sw" style="background:rgb(${o.color.join(",")});${o.hidden?"opacity:.35":""}"></span>
-      <span><div class="nm">${esc(o.name)}</div><div class="st">${esc(st)}</div></span>
-      <span class="acts">${o.hidden?`<button class="btn small" data-a="show" data-n="${esc(o.name)}">Put back</button>`
-        :`<button class="btn small" data-a="hide" data-n="${esc(o.name)}">Hide</button><button class="btn small" data-a="rotate" data-n="${esc(o.name)}" title="Turn 45°">⟳</button>`}<button class="btn small" data-a="rename" data-n="${esc(o.name)}" data-l="${esc(o.label)}" title="Correct the label S3 gave">✎</button></span></div>`;}).join("");
-  $("objs").querySelectorAll(".obj").forEach(el=>el.onclick=e=>{ if(e.target.closest("button"))return; selected=el.dataset.n===selected?null:el.dataset.n; render(); });
+    const n=nodes[o.name];
+    const status=o.hidden?"Hidden":!n?"Last seen":n.confidence!=null&&n.confidence<0.6?"Low confidence":"";
+    const picked=o.name===selected;
+    return `<div class="obj ${picked?"sel":""}"><button class="obj-select" data-n="${esc(o.name)}" aria-pressed="${picked}" aria-label="${esc(friendly(o.name))}">
+      <span class="sw" style="background:rgb(${o.color.join(",")});${o.hidden?"opacity:.4":""}"></span>
+      <span><span class="nm">${esc(friendly(o.name))}</span>${status?`<span class="st"> · ${esc(status)}</span>`:""}</span></button>
+      <span class="acts">${o.hidden?`<button class="btn small" data-a="show" data-n="${esc(o.name)}">Show</button>`
+        :`<button class="btn small" data-a="hide" data-n="${esc(o.name)}">Hide</button><button class="btn small" data-a="rotate" data-n="${esc(o.name)}">Rotate</button>`}<button class="btn small" data-a="rename" data-n="${esc(o.name)}" data-l="${esc(o.label)}">Rename</button></span></div>`;
+  }).join("");
+  $("objs").querySelectorAll(".obj-select").forEach(el=>{
+    el.onclick=()=>{selected=el.dataset.n===selected?null:el.dataset.n;render();};
+  });
   $("objs").querySelectorAll("button[data-a]").forEach(b=>b.onclick=()=>{
     const n=b.dataset.n, a=b.dataset.a;
-    if(a==="hide") act(`Hiding ${n}: rendering → S2 → S6 → S4`,"hide",{name:n});
-    if(a==="show") act(`Putting ${n} back: rendering → S2 → S6 → S4`,"show",{name:n});
-    if(a==="rotate") act(`Turning ${n}: rendering → S2 → S6 → S4`,"rotate",{name:n,degrees:45});
-    if(a==="rename"){ const l=prompt(`Correct the label of ${n} (S3 said "${b.dataset.l}"):`, b.dataset.l); if(l&&l.trim()&&l.trim()!==b.dataset.l){ selected=null; act(`Renaming to "${l.trim()}" and rebuilding the twin`,"rename",{name:n,label:l.trim()}).then(()=>loadSource()); } }
+    if(a==="hide") act(`Hiding ${friendly(n)}`,"hide",{name:n});
+    if(a==="show") act(`Showing ${friendly(n)}`,"show",{name:n});
+    if(a==="rotate") act(`Rotating ${friendly(n)}`,"rotate",{name:n,degrees:45});
+    if(a==="rename"){
+      const l=prompt(`New label for ${friendly(n)}:`,b.dataset.l);
+      if(l&&l.trim()&&l.trim()!==b.dataset.l){selected=null;act(`Renaming ${friendly(n)}`,"rename",{name:n,label:l.trim()}).then(()=>loadSource());}
+    }
   });
-  // presets
-  $("presets").innerHTML=ST.presets.map(p=>`<button class="btn" data-p="${esc(p.id)}">${esc(p.title)} <span class="muted">→ “${esc(p.question)}”</span></button>`).join("")||'<p class="note">No backup scenario fits these objects.</p>';
-  $("presets").querySelectorAll("button").forEach(b=>b.onclick=()=>act("Running scenario: frames → S2 → S6 → S4 → S5 → S6","preset",{id:b.dataset.p}));
-  // suggestions
+  const selectedObject=ST.twin.find(o=>o.name===selected), selectedNode=selected?nodes[selected]:null;
+  const objectHeight=o=>o.kind==="cylinder"?o.size[1]:o.size[2];
+  $("selectedInfo").innerHTML=selectedObject?`<div class="selection-name">${esc(friendly(selectedObject.name))}</div>
+    <div class="selection-row"><span>State</span><b>${esc(selectedObject.hidden?"Hidden":selectedNode?.state||"Last seen")}</b></div>
+    <div class="coord-readout"><span>Map position · metres</span><b>X ${(+selectedObject.xy[0]).toFixed(3)} &nbsp; Y ${(+selectedObject.xy[1]).toFixed(3)} &nbsp; Z ${(objectHeight(selectedObject)/2).toFixed(3)}</b></div>
+    <div class="selection-row"><span>Yaw from +X</span><b>${(+selectedObject.yaw).toFixed(0)}°</b></div>
+    ${selectedNode?`<div class="selection-row"><span>S4 measured centre</span><b>${selectedNode.pose.map(v=>(+v).toFixed(3)).join(", ")}</b></div>`:""}
+    <div class="selection-row"><span>Confidence</span><b>${selectedNode?.confidence!=null?selectedNode.confidence.toFixed(2):"—"}</b></div>
+    ${selectedObject.renamed_from?`<div class="selection-row"><span>Original label</span><b>${esc(selectedObject.renamed_from)}</b></div>`:""}`:
+    '<p class="note">Select an object in the scene or list.</p>';
+  $("presets").innerHTML=ST.presets.map(p=>`<button class="btn" data-p="${esc(p.id)}" title="${esc(p.question)}">${esc(p.title)} <span aria-hidden="true">›</span></button>`).join("")||'<p class="note">No scenarios for this recording.</p>';
+  $("presets").querySelectorAll("button").forEach(b=>b.onclick=()=>act("Running scenario","preset",{id:b.dataset.p}));
   const labels=[...new Set(ST.twin.map(o=>o.label))];
   const lap=labels.find(l=>/laptop/.test(l)), first=labels.find(l=>!/laptop/.test(l))||labels[0], second=labels.find(l=>l!==first&&!/laptop/.test(l));
   const sug=[`Go to the ${first}`,`Where is the ${second||first}?`];
@@ -551,39 +558,36 @@ function renderPanels(){
   sug.push(`Where was the ${first} before?`);
   $("sugg").innerHTML=sug.map(s=>`<button class="btn" data-q="${esc(s)}">${esc(s)}</button>`).join("");
   $("sugg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("qIn").value=b.dataset.q;ask();});
-  // planner seg
   $("planSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ST.planner)));
   $("obsSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ST.obstacles)));
-  // Q&A
   const q=ST.query;
   if(q){
     const sim=q.simulation||{};
+    const target=q.verified?(q.target?friendly(q.target):"Answer verified"):"Cannot determine";
     $("qa").innerHTML=`<div class="q">“${esc(q.question)}”</div>
-      <div><b>S5:</b> ${esc(q.answer)}</div>
-      ${q.warnings&&q.warnings.length?`<div class="reason">⚠ ${q.warnings.map(esc).join(" · ")}</div>`:""}
-      <div class="verdict"><span class="chip ${q.validated?"c-ok":"c-bad"}"><span class="dot"></span>${q.validated?"Action allowed":"Action refused"}</span><span class="chip ${q.validated?"c-ok":"c-bad"}">${esc(q.code)}</span>
-      ${sim.executed?`<span class="chip ${sim.success?"c-ok":"c-bad"}">twin run ${sim.success?"reached":"failed"} · ${(sim.final_error_m*100).toFixed(1)} cm · ${sim.collisions} collisions</span>`:""}</div>
-      <div class="reason">S6: ${esc(q.reason)}${q.goal_warnings&&q.goal_warnings.length?" · "+q.goal_warnings.map(esc).join(" · "):""}</div>
-      <div class="note">parser: ${esc(q.parser)} · ${q.seconds}s</div>
-      <details><summary>What the language model understood (S5 JSON)</summary><pre>${esc(JSON.stringify(q.parsed,null,1))}</pre></details>`;
-  } else $("qa").innerHTML='<p class="note">Ask a question to see the verified answer and the robot\'s action.</p>';
-  // frame
+      <div class="answer-label ${q.verified?"":"unverified"}">${q.verified?"Verified answer":"Unverified answer"}</div>
+      <div class="answer-target">${esc(target)}</div>
+      <p class="answer-text">${esc(q.answer)}</p>
+      ${q.warnings?.length?`<p class="answer-warnings">${q.warnings.map(esc).join(" · ")}</p>`:""}
+      <div class="action-result ${q.validated?"":"refused"}"><strong>${q.validated?"Action allowed":"Action refused"} · ${esc(q.code)}</strong>
+        <span>${esc(q.reason)}</span>${q.goal_warnings?.length?`<span>${q.goal_warnings.map(esc).join(" · ")}</span>`:""}</div>
+      <div class="query-meta">${esc(q.parser)} · ${q.seconds}s${sim.executed?` · ${sim.success?"reached":"failed"} · ${sim.collisions} collisions`:""}</div>
+      <details><summary>Parsed question</summary><pre>${esc(JSON.stringify(q.parsed,null,1))}</pre></details>`;
+  } else $("qa").innerHTML='<p class="note">Ask a question to see the answer and action.</p>';
   const f=ST.frame;
   if(f){
     $("frameImg").src=f.rgb; $("fname").textContent=f.name;
     const ms=f.timings_ms, st=[["S1 load","s1_load"],["S3 masks","s3_perception"],["S2 fusion","s2_fusion"],["S6 track","s6_tracking"],["S4 graph","s4_graph"]];
     const mx=Math.max(...st.map(x=>ms[x[1]]||0),1);
-    $("lat").innerHTML=st.map(([l,k])=>`<div class="bar"><span>${l}</span><div><i style="width:${(100*(ms[k]||0)/mx).toFixed(1)}%"></i></div><span>${(ms[k]||0).toFixed(0)} ms</span></div>`).join("")
-      +`<p class="note">S1 and S3 are replaced by the renderer in twin frames; S2, S6 and S4 are the team's code.</p>`;
+    $("lat").innerHTML=st.map(([l,k])=>`<div class="bar"><span>${l}</span><div><i style="width:${(100*(ms[k]||0)/mx).toFixed(1)}%"></i></div><span>${(ms[k]||0).toFixed(0)} ms</span></div>`).join("");
   }
-  // events + log
   const lastLog=ST.log[ST.log.length-1];
-  $("events").innerHTML=lastLog&&lastLog.events.length?lastLog.events.map(e=>`<span class="ev ${esc(e.split(" ")[0])}">${esc(e)}</span>`).join(""):'<span class="note">No new tracking events from the last change.</span>';
+  $("events").innerHTML=lastLog?.events.length?lastLog.events.map(e=>`<span class="ev ${esc(e.split(" ")[0])}">${esc(activityEvent(e))}</span>`).join(""):"";
+  $("activitySummary").textContent=lastLog?`${friendly(lastLog.action)} · ${lastLog.seconds}s`:"Ready";
   $("log").innerHTML=ST.log.slice().reverse().map(l=>`<div><b>${esc(l.action)}</b><span class="muted">${l.frames.length} frame(s) · ${l.seconds}s${l.events.length?" · "+l.events.map(esc).join(", "):""}</span></div>`).join("");
-  // relations
   const rel=ST.edges.filter(e=>e.p!=="on");
   $("rels").innerHTML=rel.slice(0,16).map(e=>`<span><b>${esc(e.s)}</b> ${esc(e.p)} <b>${esc(e.t)}</b>${e.distance_m!=null?` · ${(+e.distance_m).toFixed(2)} m`:""}</span>`).join("")
-    +`<span>+ ${ST.edges.length-rel.length} × “on desk_01”</span>`;
+    +`<span>+ ${ST.edges.length-rel.length} on desk</span>`;
 }
 
 // ---------------------------------------------------------------- interaction: drag objects on the desk
@@ -608,7 +612,7 @@ canvas.addEventListener("pointermove",ev=>{
   const np=p.add(drag.off); drag.g.position.set(np.x,0,np.z);
   if(drag.line) actionG.remove(drag.line);
   const a=toMap(drag.start), b=toMap(drag.g.position);
-  drag.line=polyLine([a,b],0xf2a33a,true,0.005); actionG.add(drag.line);
+  drag.line=polyLine([a,b],0x256d7b,true,0.005); actionG.add(drag.line);
   $("hint").textContent=`${drag.name}: ${(Math.hypot(b[0]-a[0],b[1]-a[1])*100).toFixed(0)} cm · release to place`;
 });
 function endDrag(ev,cancel){
@@ -641,16 +645,46 @@ $("lookSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
 });
 $("robotSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
   robotMode=b.dataset.v; $("robotSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
-  lastQueryKey=null; render();
+  render();
 });
+$("viewSel").onchange=()=>setView($("viewSel").value);
+$("saveViewBtn").onclick=()=>{
+  const name=prompt("Name this camera view:",`View ${savedViews().length+1}`)?.trim();if(!name)return;
+  const views=savedViews();views.push({name:name.slice(0,30),position:cam.position.toArray(),target:controls.target.toArray(),up:cam.up.toArray(),fov:cam.fov});
+  localStorage.setItem(savedKey(),JSON.stringify(views.slice(-5)));refreshSavedViews();setView(`saved:${savedViews().length-1}`);toast("View saved for this recording.");
+};
+$("mountAuto").onclick=()=>{if(!ST)return;g1.autoPlace(ST);syncMountControls();renderOrientation();toast("Mount moved to the clearest reachable table edge.");};
+$("applyCamPose").onclick=()=>{
+  if(!SRC?.recorded_camera?.T_map_camera){toast("This recording has no camera transform to calibrate.");return;}
+  const x=Number($("camX").value),y=Number($("camY").value),yaw=Number($("camYaw").value);
+  if(![x,y,yaw].every(Number.isFinite)||Math.abs(x)>3||Math.abs(y)>3||Math.abs(yaw)>360){toast("Enter camera X/Y within 3 m and yaw within ±360°.");return;}
+  localStorage.setItem(cameraPoseKey(),JSON.stringify({x,y,yaw}));syncCameraPoseControls();updateSourceCameraMarker();if(viewMode==="recorded")setView("recorded");else renderOrientation();
+  toast("Camera pose saved for this recording.");
+};
+for(const id of ["mountX","mountY"])$(id).onchange=()=>{
+  if(!ST)return;
+  const x=Number($("mountX").value),y=Number($("mountY").value),d=ST.desk;
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<d.x[0]+.055||x>d.x[1]-.055||y<d.y[0]+.055||y>d.y[1]-.055){toast("Mount centre must stay inside the table edge.");syncMountControls();return;}
+  const gap=G1Robot.gapAt(x,y,ST.twin);if(gap<.035){toast("Mount would overlap an object.");syncMountControls();return;}
+  const visible=ST.twin.filter(o=>!o.hidden),cx=visible.reduce((s,o)=>s+o.xy[0],0)/(visible.length||1),cy=visible.reduce((s,o)=>s+o.xy[1],0)/(visible.length||1);
+  g1.setMount(x,y,Math.atan2(cy-y,cx-x));g1.mount.gap=gap;g1.home();syncMountControls();renderOrientation();
+};
+$("reachBtn").onclick=()=>{
+  const o=ST?.twin.find(v=>v.name===selected);if(!o||o.hidden){toast("Select a visible object to preview a reach.");return;}
+  const h=o.kind==="cylinder"?o.size[1]:o.size[2],result=g1.reachTo(o.xy[0],o.xy[1],h+.03);
+  toast(result.ok?`Simulated ${result.side} arm reach · hand returns to rest.`:result.reason);
+};
 for(const id of ["tBoxes","tTwin"]) $(id).onchange=()=>render();
+$("tCoords").onchange=()=>{coordG.visible=$("tCoords").checked;};
 $("tCloud").onchange=()=>{ if(cloud) cloud.visible=$("tCloud").checked; };
-$("srcSel").onchange=()=>{selected=null;act("Building a new twin from that recording","load",{run:$("srcSel").value}).then(loadSource);};
+$("srcSel").onchange=()=>{selected=null;viewMode="table";act("Building a new twin from that recording","load",{run:$("srcSel").value}).then(loadSource);};
 
 async function loadSource(){
   SRC=await api("source"); for(const k in texCache){ texCache[k].dispose(); delete texCache[k]; }
+  syncCameraPoseControls();updateSourceCameraMarker();
+  refreshSavedViews();
   if(SRC.rgb) $("srcImg").src=SRC.rgb; else $("srcImg").hidden=true;
-  $("srcNote").textContent=`${SRC.name} · frame ${SRC.frame} · ${SRC.n_objects} objects measured by S2. The twin puts each one exactly there.`;
+  $("srcNote").textContent=`Frame ${String(SRC.frame).replace(/^frame_/,"")} · ${SRC.n_objects} objects`;
   if(cloud){scene.remove(cloud);cloud=null;}
   if(SRC.cloud){
     const xyz=SRC.cloud.xyz, rgb=SRC.cloud.rgb, n=xyz.length/3, pos=new Float32Array(n*3), colr=new Float32Array(n*3);
@@ -658,7 +692,7 @@ async function loadSource(){
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(colr,3));
     cloud=new THREE.Points(g,new THREE.PointsMaterial({size:0.006,vertexColors:true}));cloud.visible=$("tCloud").checked;scene.add(cloud);
   } else { $("tCloud").disabled=true; $("tCloud").parentElement.title="This recording has no saved point cloud"; }
-  if(ST) render();
+  if(ST){if(g1.ready&&g1.placedFor!==SRC.run){g1.autoPlace(ST);g1.placedFor=SRC.run;syncMountControls();}render();setView(viewMode);}
   const srcs=await api("sources");
   $("srcSel").innerHTML=srcs.map(s=>`<option value="${esc(s.run)}" ${s.current?"selected":""}>${esc(s.name)}</option>`).join("");
 }
@@ -667,11 +701,14 @@ function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setS
 new ResizeObserver(resize).observe(canvas); resize();
 const _wp=new THREE.Vector3();
 function loop(now){requestAnimationFrame(loop); if(anim)anim(now); controls.update();
+  g1.update(now);
   twinG.children.forEach(g=>{const b=g.userData.billboard; if(b){g.getWorldPosition(_wp); b.rotation.y=Math.atan2(cam.position.x-_wp.x,cam.position.z-_wp.z)-g.rotation.y;}});
   renderer.render(scene,cam);}
 requestAnimationFrame(loop);
+controls.addEventListener("end",()=>{if(!drag&&viewMode!=="custom")setView("custom");renderOrientation();});
+controls.addEventListener("change",renderOrientation);
 // test hook: screen position of a map point (used by the automated UI test)
-window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST};
+window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST, robot:()=>g1, view:()=>viewMode, camera:()=>({position:cam.position.toArray(),target:controls.target.toArray()})};
 try{ await loadSource(); ST=await api("state"); render(); }
 catch(e){ toast("Could not reach the twin server: "+e.message); }
 })();
