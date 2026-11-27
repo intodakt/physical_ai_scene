@@ -104,7 +104,7 @@ def run_dataset(name: str, parser: str = "auto", query: Optional[str] = None, pr
             est = measure_camera_tf(todo)
             T = est["T_map_camera"]
             tf_info = {k: est[k] for k in ("method", "camera_height_m", "pitch_below_horizontal_deg",
-                                           "height_spread_m", "n_frames")}
+                                           "height_spread_m", "n_frames", "T_map_camera")}
             _say(progress, f"{name}: camera {est['camera_height_m']:.3f} m above the desk, "
                            f"{est['pitch_below_horizontal_deg']:.1f} deg below horizontal", 0.04)
         except Exception as e:      # no desk plane found: keep the bag / configured TF

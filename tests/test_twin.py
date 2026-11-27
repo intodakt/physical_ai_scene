@@ -137,3 +137,26 @@ def test_import_measures_the_camera_from_the_desk(tmp_path, monkeypatch):
     last = summary["frames"][-1]["frame"]
     objs = json.loads((runs.RUNS / name / "objects" / f"{last}_objects.json").read_text(encoding="utf-8"))["objects"]
     assert objs and all(o["box_map"]["center"][2] < 0.15 for o in objs)              # on the desk, not floating
+
+
+def test_flat_objects_get_their_size_from_the_mask(twin):
+    """Synthetic desk truth: book 0.22 x 0.15 m, multimeter 0.15 x 0.08 m (mock_data.OBJECTS)."""
+    sizes = {s["label"]: s["size"] for s in twin.base if s.get("geometry") == "mask_plane_flat"}
+    assert abs(sizes["book"][0] - 0.22) < 0.02 and abs(sizes["book"][1] - 0.15) < 0.02
+    assert abs(sizes["multimeter"][0] - 0.15) < 0.02 and abs(sizes["multimeter"][1] - 0.08) < 0.02
+    mug = next(s for s in twin.base if s["label"] == "mug")
+    assert abs(mug["size"][1] - 0.10) < 0.02                      # height, not depth (S2 box order W, H, D)
+    looks = {s["label"]: twin.photos[s["name"]]["look"] for s in twin.base}
+    assert looks["book"] == "top" and looks["mug"] == "cutout"
+
+
+def test_rename_corrects_the_label_everywhere(run_dir, tmp_path):
+    twin = engine.Twin(run_dir, workdir=tmp_path / "twin", parser="rules", obstacles="config")
+    try:
+        st = twin.rename("multimeter_01", "calculator")
+        names = {o["name"] for o in st["twin"]}
+        assert "calculator_01" in names and "multimeter_01" not in names
+        assert "calculator_01" in {n["id"] for n in st["nodes"]}
+        assert twin.ask("Where is the calculator?")["query"]["target"] == "calculator_01"
+    finally:
+        (run_dir / "twin_labels.json").unlink(missing_ok=True)

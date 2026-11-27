@@ -152,6 +152,7 @@ select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);bor
       <div class="sugg" id="sugg"></div>
     </div>
     <div class="opts">
+      <span>Look <span class="seg" id="lookSeg"><button data-v="photo" aria-pressed="true" title="Real camera image of each object">Photo</button><button data-v="stylised" aria-pressed="false">Stylised</button></span></span>
       <span>Robot <span class="seg" id="robotSeg"><button data-v="rover" aria-pressed="true">Mobile robot</button><button data-v="arm" aria-pressed="false">Arm</button><button data-v="none" aria-pressed="false">Off</button></span></span>
       <span>Obstacles <span class="seg" id="obsSeg"><button data-v="all" aria-pressed="true" title="Every object except the target is an exclusion zone">All objects</button><button data-v="config" aria-pressed="false" title="Team config: only objects listed in exclusion_labels (the laptop)">Laptop only</button></span></span>
       <span>Planner <span class="seg" id="planSeg"><button data-v="straight" aria-pressed="true">Straight</button><button data-v="detour" aria-pressed="false">Detour</button></span></span>
@@ -189,7 +190,9 @@ select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);bor
 (async function(){
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let ST=null, SRC=null, busy=false, selected=null, robotMode="rover";
+let ST=null, SRC=null, busy=false, selected=null, robotMode="rover", lookMode="photo";
+const texCache={}; const billboards=[];
+function tex(key, uri){ if(!texCache[key]){ const t=new THREE.TextureLoader().load(uri); t.encoding=THREE.sRGBEncoding; t.anisotropy=4; texCache[key]=t; } return texCache[key]; }
 
 // ---------------------------------------------------------------- API
 async function api(path, body){
@@ -330,9 +333,31 @@ function realShape(o,g,col){
     const n=new THREE.Mesh(new THREE.CylinderGeometry(r*0.4,r,h*0.25,24),std(col,{roughness:0.2}));n.position.y=h*0.875;g.add(n);return true;}
   return false;
 }
+function photoShape(o,g,col){
+  const ph=SRC&&SRC.photos&&SRC.photos[o.name];
+  if(lookMode!=="photo"||!ph||o.kind==="laptop") return false;   // the laptop keeps its hinged shape
+  if(ph.look==="top"&&o.kind==="box"){
+    const [sx,sy,sz]=o.size;
+    const side=std(col,{roughness:0.55});
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(sy,sz,sx),side); slab.position.y=sz/2; g.add(slab);
+    const top=new THREE.Mesh(new THREE.PlaneGeometry(sy,sx),new THREE.MeshStandardMaterial({map:tex(o.name+"-top",ph.texture),roughness:0.5}));
+    top.rotation.x=-Math.PI/2; top.position.y=sz+0.0006; g.add(top);
+    return true;
+  }
+  if(ph.png){
+    const h=o.kind==="cylinder"?o.size[1]:o.size[2], w=Math.max(0.02,h*ph.aspect);
+    const shadow=new THREE.Mesh(new THREE.CircleGeometry(0.5,32),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.28,depthWrite:false}));
+    shadow.rotation.x=-Math.PI/2; shadow.scale.set(w*0.9,Math.max(w,h)*0.35,1); shadow.position.y=0.001; g.add(shadow);
+    const card=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex(o.name+"-cut",ph.png),transparent:true,alphaTest:0.4,side:THREE.DoubleSide}));
+    card.position.y=h/2; g.add(card); g.userData.billboard=card;
+    return true;
+  }
+  return false;
+}
 function dressed(o){
   const g=new THREE.Group(); const lab=o.label; const col=rgbHex(o.color);
-  if(realShape(o,g,col)){ /* stylised real object */ }
+  if(photoShape(o,g,col)){ /* real camera image */ }
+  else if(realShape(o,g,col)){ /* stylised real object */ }
   else if(o.kind==="laptop"){
     const [depth,width]=o.size;
     const metal=std(0x9aa0aa,{metalness:0.7,roughness:0.3});
@@ -365,7 +390,7 @@ function dressed(o){
   }
   g.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;m.userData.root=g;}});
   g.position.copy(M(o.xy[0],o.xy[1],0)); g.rotation.y=(o.yaw||0)*Math.PI/180;
-  g.userData={name:o.name,root:true};
+  g.userData=Object.assign({name:o.name,root:true},g.userData.billboard?{billboard:g.userData.billboard}:{});
   return g;
 }
 function wireBox(n,color,dashed){
@@ -500,18 +525,19 @@ function renderPanels(){
   $("hud").innerHTML=`<span class="chip c-sim"><span class="dot"></span>Simulated frames · real pipeline</span>`+(ST.query?`<span class="chip ${ST.query.validated?"c-ok":"c-bad"}">${esc(ST.query.code)}</span>`:"");
   // objects list
   $("objs").innerHTML=ST.twin.map(o=>{
-    const n=nodes[o.name], st=o.hidden?(n?`hidden · S6: ${n.state}`:"hidden · forgotten"):(n?`${n.state} · conf ${(n.confidence??0).toFixed(2)}`:"not detected");
+    const n=nodes[o.name], st=(o.hidden?(n?`hidden · S6: ${n.state}`:"hidden · forgotten"):(n?`${n.state} · conf ${(n.confidence??0).toFixed(2)}`:"not detected"))+(o.renamed_from?` · renamed (S3: ${o.renamed_from})`:"");
     return `<div class="obj ${o.name===selected?"sel":""}" data-n="${esc(o.name)}" tabindex="0">
       <span class="sw" style="background:rgb(${o.color.join(",")});${o.hidden?"opacity:.35":""}"></span>
       <span><div class="nm">${esc(o.name)}</div><div class="st">${esc(st)}</div></span>
       <span class="acts">${o.hidden?`<button class="btn small" data-a="show" data-n="${esc(o.name)}">Put back</button>`
-        :`<button class="btn small" data-a="hide" data-n="${esc(o.name)}">Hide</button><button class="btn small" data-a="rotate" data-n="${esc(o.name)}" title="Turn 45°">⟳</button>`}</span></div>`;}).join("");
+        :`<button class="btn small" data-a="hide" data-n="${esc(o.name)}">Hide</button><button class="btn small" data-a="rotate" data-n="${esc(o.name)}" title="Turn 45°">⟳</button>`}<button class="btn small" data-a="rename" data-n="${esc(o.name)}" data-l="${esc(o.label)}" title="Correct the label S3 gave">✎</button></span></div>`;}).join("");
   $("objs").querySelectorAll(".obj").forEach(el=>el.onclick=e=>{ if(e.target.closest("button"))return; selected=el.dataset.n===selected?null:el.dataset.n; render(); });
   $("objs").querySelectorAll("button[data-a]").forEach(b=>b.onclick=()=>{
     const n=b.dataset.n, a=b.dataset.a;
     if(a==="hide") act(`Hiding ${n}: rendering → S2 → S6 → S4`,"hide",{name:n});
     if(a==="show") act(`Putting ${n} back: rendering → S2 → S6 → S4`,"show",{name:n});
     if(a==="rotate") act(`Turning ${n}: rendering → S2 → S6 → S4`,"rotate",{name:n,degrees:45});
+    if(a==="rename"){ const l=prompt(`Correct the label of ${n} (S3 said "${b.dataset.l}"):`, b.dataset.l); if(l&&l.trim()&&l.trim()!==b.dataset.l){ selected=null; act(`Renaming to "${l.trim()}" and rebuilding the twin`,"rename",{name:n,label:l.trim()}).then(()=>loadSource()); } }
   });
   // presets
   $("presets").innerHTML=ST.presets.map(p=>`<button class="btn" data-p="${esc(p.id)}">${esc(p.title)} <span class="muted">→ “${esc(p.question)}”</span></button>`).join("")||'<p class="note">No backup scenario fits these objects.</p>';
@@ -610,6 +636,9 @@ $("obsSeg").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
   await act("Switching obstacles","obstacles",{mode:b.dataset.v});
   if(ST&&ST.query) act("Asking again with the new obstacles","ask",{question:ST.query.question});
 });
+$("lookSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  lookMode=b.dataset.v; $("lookSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); render();
+});
 $("robotSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
   robotMode=b.dataset.v; $("robotSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
   lastQueryKey=null; render();
@@ -619,7 +648,7 @@ $("tCloud").onchange=()=>{ if(cloud) cloud.visible=$("tCloud").checked; };
 $("srcSel").onchange=()=>{selected=null;act("Building a new twin from that recording","load",{run:$("srcSel").value}).then(loadSource);};
 
 async function loadSource(){
-  SRC=await api("source");
+  SRC=await api("source"); for(const k in texCache){ texCache[k].dispose(); delete texCache[k]; }
   if(SRC.rgb) $("srcImg").src=SRC.rgb; else $("srcImg").hidden=true;
   $("srcNote").textContent=`${SRC.name} · frame ${SRC.frame} · ${SRC.n_objects} objects measured by S2. The twin puts each one exactly there.`;
   if(cloud){scene.remove(cloud);cloud=null;}
@@ -629,13 +658,17 @@ async function loadSource(){
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(colr,3));
     cloud=new THREE.Points(g,new THREE.PointsMaterial({size:0.006,vertexColors:true}));cloud.visible=$("tCloud").checked;scene.add(cloud);
   } else { $("tCloud").disabled=true; $("tCloud").parentElement.title="This recording has no saved point cloud"; }
+  if(ST) render();
   const srcs=await api("sources");
   $("srcSel").innerHTML=srcs.map(s=>`<option value="${esc(s.run)}" ${s.current?"selected":""}>${esc(s.name)}</option>`).join("");
 }
 
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(canvas); resize();
-function loop(now){requestAnimationFrame(loop); if(anim)anim(now); controls.update(); renderer.render(scene,cam);}
+const _wp=new THREE.Vector3();
+function loop(now){requestAnimationFrame(loop); if(anim)anim(now); controls.update();
+  twinG.children.forEach(g=>{const b=g.userData.billboard; if(b){g.getWorldPosition(_wp); b.rotation.y=Math.atan2(cam.position.x-_wp.x,cam.position.z-_wp.z)-g.rotation.y;}});
+  renderer.render(scene,cam);}
 requestAnimationFrame(loop);
 // test hook: screen position of a map point (used by the automated UI test)
 window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST};
