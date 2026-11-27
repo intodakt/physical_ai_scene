@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G1 Virtual Table</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Control-room layout: table controls left, 3D twin centre, pipeline read-out right. One dark look for the projector. */
+:root{
+  --bg:#0e1320; --panel:#151c2c; --panel2:#1b2436; --line:#2a3550; --fg:#e6ebf5; --muted:#93a0bb;
+  --accent:#f2a33a; --sim:#7cc4ff; --real:#9be39b; --ok:#5fd38d; --bad:#ff6b6b; --warn:#f2c94c;
+  --f-display:"Space Grotesk",system-ui,"Segoe UI",sans-serif; --f-body:"Inter",system-ui,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,Menlo,monospace; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:14px;line-height:1.45;padding:12px 16px 24px}
+h1,h2,h3{font-family:var(--f-display);margin:0}
+button{font:inherit}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:12px}
+.top h1{font-size:21px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 11px/1 var(--f-mono);letter-spacing:.5px;text-transform:uppercase;
+  padding:5px 8px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.c-sim{color:var(--sim)} .c-real{color:var(--real)} .c-ok{color:var(--ok)} .c-bad{color:var(--bad)} .c-warn{color:var(--warn)} .c-muted{color:var(--muted)}
+.spacer{flex:1}
+.grid{display:grid;grid-template-columns:270px minmax(0,1fr) 350px;gap:12px;align-items:start}
+@media (max-width:1250px){.grid{grid-template-columns:250px minmax(0,1fr)} .right{grid-column:1/-1;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}
+@media (max-width:800px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;min-width:0}
+.sec{padding:12px 14px;display:grid;gap:8px;align-content:start}
+.eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.left,.right{display:grid;gap:12px;min-width:0}
+.btn{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);padding:7px 10px;font-size:13px}
+.btn:hover:not(:disabled){border-color:#40507a}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1205;font-weight:600}
+.btn.small{padding:4px 8px;font-size:12px}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.src img{width:100%;border-radius:5px;display:block}
+.objs{display:grid;gap:6px}
+.obj{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;padding:7px 8px;border-radius:6px;border:1px solid transparent;cursor:pointer}
+.obj:hover{background:var(--panel2)}
+.obj.sel{border-color:var(--accent);background:var(--panel2)}
+.obj .sw{width:12px;height:12px;border-radius:3px}
+.obj .nm{font:500 13px var(--f-mono)}
+.obj .st{font-size:11.5px;color:var(--muted)}
+.obj .acts{display:flex;gap:4px}
+.presets{display:grid;gap:6px}
+.presets .btn{text-align:left}
+/* viewport */
+.view{overflow:hidden}
+.stage{position:relative}
+#c{display:block;width:100%;height:min(64vh,620px);min-height:360px;border-radius:8px 8px 0 0;background:radial-gradient(120% 90% at 50% 15%,#1c2740 0%,#0b0f19 70%);touch-action:none}
+.hud{position:absolute;left:12px;top:12px;display:flex;flex-wrap:wrap;gap:8px;pointer-events:none;max-width:calc(100% - 260px)}
+.hud .chip{background:rgba(14,19,32,.8)}
+.hint{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--muted);background:rgba(14,19,32,.75);padding:6px 9px;border-radius:5px;pointer-events:none}
+.busy{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;background:rgba(14,19,32,.92);
+  border:1px solid var(--sim);color:var(--fg);padding:9px 14px;border-radius:8px;font-size:13px}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--sim);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#3a1d22;border:1px solid var(--bad);color:var(--fg);padding:9px 14px;border-radius:8px;font-size:13px;max-width:90%}
+.ask{display:grid;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.askrow{display:flex;gap:8px}
+.askrow input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:9px 11px;font-size:14px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px}
+.sugg .btn{font-size:12px;padding:4px 8px;color:var(--muted)}
+.opts{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:0 12px 12px;color:var(--muted);font-size:12.5px}
+.opts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:4px 9px;font-size:12px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel2);color:var(--fg)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+/* read-out */
+.frameimg{width:100%;border-radius:5px;display:block}
+.bar{display:grid;grid-template-columns:78px 1fr 54px;gap:8px;align-items:center;font:11.5px var(--f-mono);color:var(--muted)}
+.bar div{height:7px;border-radius:4px;background:var(--panel2);overflow:hidden}
+.bar div i{display:block;height:100%;background:var(--sim)}
+.bar span:last-child{text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
+.events{display:flex;flex-wrap:wrap;gap:6px}
+.ev{font:500 11px var(--f-mono);padding:4px 7px;border-radius:4px;background:var(--panel2);border:1px solid var(--line)}
+.ev.MOVED{color:var(--accent);border-color:var(--accent)} .ev.OCCLUDED{color:var(--warn);border-color:var(--warn)}
+.ev.REAPPEARED,.ev.APPEARED{color:var(--real)} .ev.REMOVED{color:var(--bad)}
+.log{display:grid;gap:6px;max-height:190px;overflow:auto;font-size:12.5px}
+.log div{display:grid;gap:3px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.log b{font-weight:600}
+.rels{font:12px var(--f-mono);color:var(--muted);display:grid;gap:3px;max-height:170px;overflow:auto}
+.rels b{color:var(--fg);font-weight:500}
+.q{font:500 14px var(--f-display);padding:9px 12px;border-radius:6px;background:var(--panel2);border-left:3px solid var(--accent)}
+.verdict{display:flex;flex-wrap:wrap;gap:6px}
+.reason{font-size:12.5px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--muted);font-size:12px}
+pre{font:11.5px var(--f-mono);background:var(--panel2);padding:8px;border-radius:5px;overflow-x:auto;margin:6px 0 0;white-space:pre-wrap}
+.muted{color:var(--muted)} .note{font-size:12px;color:var(--muted);margin:0}
+select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12.5px;max-width:220px}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>G1 Virtual Table</h1>
+  <span class="chip c-sim"><span class="dot"></span>Digital twin</span>
+  <span class="chip c-muted" id="parserChip">S5 parser: …</span>
+  <span class="chip c-muted" id="contractChip">contracts</span>
+  <span class="spacer"></span>
+  <label class="muted" for="srcSel" style="font-size:12.5px">Recording</label>
+  <select id="srcSel" aria-label="Recording the twin is built from"></select>
+</header>
+
+<div class="grid">
+  <aside class="left">
+    <div class="panel sec src">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span class="eyebrow">Built from this recording</span><span class="chip c-real"><span class="dot"></span>Real</span>
+      </div>
+      <img id="srcImg" alt="Camera frame from the recording">
+      <p class="note" id="srcNote"></p>
+    </div>
+    <div class="panel sec">
+      <span class="eyebrow">Objects on the table</span>
+      <div class="objs" id="objs"></div>
+      <p class="note">Drag an object on the table to move it. Every change becomes new camera frames that run through S2 → S6 → S4.</p>
+    </div>
+    <div class="panel sec">
+      <span class="eyebrow">Table</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn" id="waitBtn" title="Render one still frame (hidden objects age in S6's memory)">Let time pass</button>
+        <button class="btn" id="resetBtn">Reset to recording</button>
+      </div>
+    </div>
+    <div class="panel sec">
+      <span class="eyebrow">Backup scenarios</span>
+      <div class="presets" id="presets"></div>
+    </div>
+  </aside>
+
+  <main class="panel view">
+    <div class="stage">
+      <canvas id="c" aria-label="3D virtual table. Drag objects to move them."></canvas>
+      <div class="hud" id="hud"></div>
+      <div class="busy" id="busy" hidden><span class="spin"></span><span id="busyText">Working…</span></div>
+      <div class="toast" id="toast" hidden></div>
+      <div class="hint" id="hint">Drag objects to move · drag empty space to orbit · scroll to zoom</div>
+    </div>
+    <div class="ask">
+      <div class="askrow">
+        <input id="qIn" placeholder="Ask the robot, e.g. “Go to the mug”" autocomplete="off" aria-label="Question">
+        <button class="btn primary" id="askBtn">Ask</button>
+      </div>
+      <div class="sugg" id="sugg"></div>
+    </div>
+    <div class="opts">
+      <span>Robot <span class="seg" id="robotSeg"><button data-v="rover" aria-pressed="true">Mobile robot</button><button data-v="arm" aria-pressed="false">Arm</button><button data-v="none" aria-pressed="false">Off</button></span></span>
+      <span>Planner <span class="seg" id="planSeg"><button data-v="straight" aria-pressed="true">Straight</button><button data-v="detour" aria-pressed="false">Detour</button></span></span>
+      <label><input type="checkbox" id="tBoxes" checked> Pipeline's 3D boxes</label>
+      <label><input type="checkbox" id="tCloud"> Recording point cloud</label>
+      <label><input type="checkbox" id="tTwin" checked> Twin objects</label>
+    </div>
+  </main>
+
+  <section class="right">
+    <div class="panel sec" id="qaSec">
+      <h3>S5 answer → S6 action</h3>
+      <div id="qa"><p class="note">Ask a question to see the verified answer and the robot's action.</p></div>
+    </div>
+    <div class="panel sec">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3>What the pipeline saw</h3><span class="eyebrow" id="fname"></span></div>
+      <img class="frameimg" id="frameImg" alt="Latest rendered camera frame processed by the pipeline">
+      <div id="lat" style="display:grid;gap:5px"></div>
+    </div>
+    <div class="panel sec">
+      <h3>S6 tracking</h3>
+      <div class="events" id="events"></div>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="panel sec">
+      <h3>S4 scene graph</h3>
+      <div class="rels" id="rels"></div>
+    </div>
+  </section>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script>
+(async function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let ST=null, SRC=null, busy=false, selected=null, robotMode="rover";
+
+// ---------------------------------------------------------------- API
+async function api(path, body){
+  const r=await fetch("api/"+path, body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({error:"server did not answer"}));
+  if(!r.ok) throw new Error(j.error||r.statusText);
+  return j;
+}
+let toastT=null;
+function toast(msg){$("toast").textContent=msg;$("toast").hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>$("toast").hidden=true,5000);}
+async function act(label, path, body){
+  if(busy) return;
+  busy=true; setBusy(label);
+  try{ ST=await api(path, body); render(); return ST; }
+  catch(e){ toast(e.message); render(); }
+  finally{ busy=false; setBusy(null); }
+}
+let busyT0=0, busyTimer=null;
+function setBusy(label){
+  const b=$("busy");
+  document.querySelectorAll("button,input,select").forEach(el=>{ if(el.id!=="tBoxes"&&el.id!=="tCloud"&&el.id!=="tTwin") el.disabled=!!label; });
+  if(!label){b.hidden=true;clearInterval(busyTimer);return;}
+  b.hidden=false; busyT0=performance.now();
+  const upd=()=>{$("busyText").textContent=`${label} · ${((performance.now()-busyT0)/1000).toFixed(1)} s`;};
+  upd(); clearInterval(busyTimer); busyTimer=setInterval(upd,100);
+}
+
+// ---------------------------------------------------------------- three.js scene; map (x fwd, y left, z up) -> three (X=-y, Y=z, Z=-x)
+const M=(x,y,z=0)=>new THREE.Vector3(-y,z,-x);
+const toMap=v=>[-v.z,-v.x];
+const canvas=$("c");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping;
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(40,1,0.01,20);
+cam.position.copy(M(-0.25,-0.95,1.0));
+const controls=new THREE.OrbitControls(cam,canvas);
+controls.target.copy(M(0.65,0,0.05)); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.48; controls.minDistance=0.4; controls.maxDistance=3.5;
+scene.add(new THREE.HemisphereLight(0xcfe0ff,0x1a1410,0.6));
+const key=new THREE.DirectionalLight(0xfff1dd,1.05); key.position.copy(M(0.3,-0.9,1.7)); key.castShadow=true;
+key.shadow.mapSize.set(2048,2048); Object.assign(key.shadow.camera,{left:-1.3,right:1.3,top:1.3,bottom:-1.3,near:0.1,far:5});
+key.target.position.copy(M(0.7,0,0)); scene.add(key,key.target);
+const rim=new THREE.DirectionalLight(0x7cc4ff,0.35); rim.position.copy(M(1.7,1.0,0.8)); scene.add(rim);
+
+function woodTex(){const c=document.createElement("canvas");c.width=512;c.height=512;const g=c.getContext("2d");
+  g.fillStyle="#5b3a24";g.fillRect(0,0,512,512);
+  for(let i=0;i<220;i++){g.strokeStyle=`rgba(${30+Math.random()*40},${18+Math.random()*20},10,${0.08+Math.random()*0.12})`;g.lineWidth=1+Math.random()*2.5;
+    g.beginPath();let y=Math.random()*512;g.moveTo(0,y);for(let x=0;x<=512;x+=32){y+=(Math.random()-.5)*6;g.lineTo(x,y);}g.stroke();}
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;}
+const desk=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.035,1.4),new THREE.MeshStandardMaterial({map:woodTex(),roughness:0.55,metalness:0.05}));
+desk.position.copy(M(0.7,0,-0.0175)); desk.receiveShadow=true; scene.add(desk);
+const legMat=new THREE.MeshStandardMaterial({color:0x22262e,roughness:0.4,metalness:0.6});
+for(const [x,y] of [[0.05,0.56],[0.05,-0.56],[1.35,0.56],[1.35,-0.56]]){const l=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.72,0.04),legMat);l.position.copy(M(x,y,-0.395));scene.add(l);}
+const grid=new THREE.GridHelper(6,60,0x2a3550,0x1a2236); grid.position.y=-0.755; scene.add(grid);
+const dragPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+
+// virtual camera that renders the twin frames
+const vcam=new THREE.Group();
+vcam.add(new THREE.Mesh(new THREE.BoxGeometry(0.124,0.031,0.036),new THREE.MeshStandardMaterial({color:0x30333a,roughness:0.35,metalness:0.4})));
+for(const s of [-1,1]){const lens=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.004,24),new THREE.MeshStandardMaterial({color:0x0a0a0a,metalness:0.9,roughness:0.15}));lens.rotation.x=Math.PI/2;lens.position.set(s*0.032,0,-0.019);vcam.add(lens);}
+scene.add(vcam);
+
+function labelSprite(text,color){
+  const c=document.createElement("canvas");c.width=512;c.height=64;const g=c.getContext("2d");
+  g.font="500 26px JetBrains Mono, Consolas, monospace";const w=Math.min(512,g.measureText(text).width+24);
+  g.fillStyle="rgba(14,19,32,.85)";g.fillRect(0,8,w,44);g.fillStyle=color;g.fillText(text,12,39);
+  const t=new THREE.CanvasTexture(c);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}));
+  s.scale.set(0.32,0.04,1);s.center.set(w/512/2,0);s.renderOrder=10;return s;
+}
+const std=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.45,metalness:0.1},o));
+// colours come from the recording (median of each object's mask); lift them a little for the stylised look
+const rgbHex=c=>{const k=Math.min(1.45,230/Math.max(1,...c));return (Math.min(255,c[0]*k)<<16)|(Math.min(255,c[1]*k)<<8)|Math.min(255,c[2]*k);};
+function dressed(o){
+  const g=new THREE.Group(); const lab=o.label; const col=rgbHex(o.color);
+  if(o.kind==="laptop"){
+    const [depth,width]=o.size;
+    const metal=std(0x9aa0aa,{metalness:0.7,roughness:0.3});
+    const base=new THREE.Mesh(new THREE.BoxGeometry(width,0.018,depth),metal);base.position.y=0.009;g.add(base);
+    const kb=new THREE.Mesh(new THREE.BoxGeometry(width*0.86,0.002,depth*0.5),std(0x1c1f25));kb.position.set(0,0.019,depth*0.08);g.add(kb);
+    const hinge=new THREE.Group();hinge.position.set(0,0.018,-depth/2);
+    const sh=0.17;
+    const scr=new THREE.Mesh(new THREE.BoxGeometry(width,sh,0.008),metal);scr.position.y=sh/2;hinge.add(scr);
+    const panel=new THREE.Mesh(new THREE.PlaneGeometry(width*0.9,sh*0.85),new THREE.MeshBasicMaterial({color:0x2d4a7a}));panel.position.set(0,sh/2,0.0045);hinge.add(panel);
+    hinge.rotation.x=-0.26;g.add(hinge);
+  } else if(o.kind==="cylinder"){
+    const [r,h]=o.size;
+    if(o.transparent){
+      const m=new THREE.MeshPhysicalMaterial({color:0xdff3ff,roughness:0.05,transmission:0.6,transparent:true,opacity:0.55,side:THREE.DoubleSide});
+      const b=new THREE.Mesh(new THREE.CylinderGeometry(r,r*0.85,h,40,1,true),m);b.position.y=h/2;g.add(b);
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(r*0.9,r*0.82,h*0.55,40),new THREE.MeshPhysicalMaterial({color:0x8fd0ff,transparent:true,opacity:0.35,roughness:0}));w.position.y=h*0.28;g.add(w);
+      const e=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(r,r*0.85,h,24)),new THREE.LineBasicMaterial({color:0xbfe8ff,transparent:true,opacity:0.7}));e.position.y=h/2;g.add(e);
+    } else {
+      const body=new THREE.Mesh(new THREE.CylinderGeometry(r,r*0.94,h,40),std(col,{roughness:0.3}));body.position.y=h/2;g.add(body);
+      if(/mug|cup/.test(lab)){
+        const top=new THREE.Mesh(new THREE.CircleGeometry(r*0.9,40),std(0x3b2414,{roughness:0.1}));top.rotation.x=-Math.PI/2;top.position.y=h*0.85;g.add(top);
+        const handle=new THREE.Mesh(new THREE.TorusGeometry(h*0.27,0.006,12,24,Math.PI),std(col,{roughness:0.3}));handle.rotation.z=-Math.PI/2;handle.position.set(r,h*0.52,0);g.add(handle);
+      }
+    }
+  } else {
+    const [sx,sy,sz]=o.size;
+    const body=new THREE.Mesh(new THREE.BoxGeometry(sy,sz,sx),std(col,{roughness:0.6}));body.position.y=sz/2;g.add(body);
+    if(/book/.test(lab)){const p=new THREE.Mesh(new THREE.BoxGeometry(sy*0.97,sz*0.8,sx*0.96),std(0xf1ead8,{roughness:0.9}));p.position.set(0.004,sz/2,0);g.add(p);}
+    if(/multimeter|remote|phone|calculator/.test(lab)){const d=new THREE.Mesh(new THREE.BoxGeometry(sy*0.7,0.002,sx*0.3),std(0x7f9a6b,{roughness:0.2}));d.position.set(0,sz+0.001,-sx*0.22);g.add(d);}
+  }
+  g.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;m.userData.root=g;}});
+  g.position.copy(M(o.xy[0],o.xy[1],0)); g.rotation.y=(o.yaw||0)*Math.PI/180;
+  g.userData={name:o.name,root:true};
+  return g;
+}
+function wireBox(n,color,dashed){
+  const [sx,sy,sz]=n.size;const geo=new THREE.EdgesGeometry(new THREE.BoxGeometry(sy,sz,sx));
+  const l=new THREE.LineSegments(geo,dashed?new THREE.LineDashedMaterial({color,dashSize:0.012,gapSize:0.008}):new THREE.LineBasicMaterial({color,transparent:true,opacity:0.75}));
+  if(dashed)l.computeLineDistances();
+  const p=M(n.pose[0],n.pose[1],0);l.position.set(p.x,n.pose[2],p.z);l.rotation.y=n.yaw||0;return l;
+}
+const twinG=new THREE.Group(), beliefG=new THREE.Group(), actionG=new THREE.Group(); scene.add(twinG,beliefG,actionG);
+let cloud=null;
+
+// ---------------------------------------------------------------- robots (visual; S6 plans a 2D path on the desk)
+const rover=new THREE.Group();
+{ const body=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.048,0.028,32),std(0xe9edf3,{roughness:0.35,metalness:0.3}));body.position.y=0.026;rover.add(body);
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.012,32),std(0x2a2f38,{metalness:0.6,roughness:0.3}));top.position.y=0.046;rover.add(top);
+  const lidar=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.012,20),std(0x111111,{metalness:0.8,roughness:0.2}));lidar.position.y=0.058;rover.add(lidar);
+  const eye=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.008,0.004),new THREE.MeshBasicMaterial({color:0xf2a33a}));eye.position.set(0,0.03,-0.047);rover.add(eye);
+  for(const s of [-1,1]){const w=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.008,20),std(0x1a1a1a));w.rotation.z=Math.PI/2;w.position.set(s*0.047,0.014,0);rover.add(w);}
+  rover.traverse(m=>{if(m.isMesh)m.castShadow=true;}); }
+scene.add(rover);
+const arm=new THREE.Group(); scene.add(arm);
+const L1=0.46,L2=0.44,SH=0.13;
+const aMat=std(0xe9edf3,{roughness:0.35,metalness:0.3}), jMat=std(0xf2a33a,{roughness:0.4,metalness:0.2});
+const armBaseM=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.04,32),std(0x2a2f38,{metalness:0.6,roughness:0.3}));armBaseM.position.y=0.02;arm.add(armBaseM);
+const yawG=new THREE.Group();yawG.position.y=0.04;arm.add(yawG);
+const col=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.035,SH-0.04,24),aMat);col.position.y=(SH-0.04)/2;yawG.add(col);
+const sh=new THREE.Group();sh.position.y=SH-0.04;yawG.add(sh);sh.add(new THREE.Mesh(new THREE.SphereGeometry(0.034,24,16),jMat));
+const up=new THREE.Mesh(new THREE.BoxGeometry(0.04,L1,0.04),aMat);up.position.y=L1/2;sh.add(up);
+const el=new THREE.Group();el.position.y=L1;sh.add(el);el.add(new THREE.Mesh(new THREE.SphereGeometry(0.028,24,16),jMat));
+const fo=new THREE.Mesh(new THREE.BoxGeometry(0.032,L2,0.032),aMat);fo.position.y=L2/2;el.add(fo);
+const wr=new THREE.Group();wr.position.y=L2;el.add(wr);wr.add(new THREE.Mesh(new THREE.BoxGeometry(0.05,0.012,0.022),jMat));
+for(const s of [-1,1]){const f=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.04,0.016),aMat);f.position.set(s*0.02,0.022,0);wr.add(f);}
+arm.traverse(m=>{if(m.isMesh)m.castShadow=true;});
+let agentStart=[0.25,0];
+function armReach(mx,my,mz){
+  const b=M(agentStart[0],agentStart[1],0);arm.position.copy(b);
+  const t=M(mx,my,mz);const dx=t.x-b.x,dz=t.z-b.z;
+  yawG.rotation.y=Math.atan2(-dx,-dz);
+  const r=Math.min(Math.hypot(dx,dz),L1+L2-0.01),h=mz-SH,d=Math.min(Math.hypot(r,h),L1+L2-0.005);
+  const a2=Math.acos(THREE.MathUtils.clamp((d*d-L1*L1-L2*L2)/(2*L1*L2),-1,1));
+  const a1=Math.atan2(r,h)-Math.atan2(L2*Math.sin(a2),L1+L2*Math.cos(a2));
+  sh.rotation.x=-a1;el.rotation.x=-a2;wr.rotation.x=-(Math.PI-a1-a2);
+}
+function robotsHome(){
+  rover.position.copy(M(agentStart[0],agentStart[1],0)); rover.rotation.y=Math.PI/2*0; // faces +map x (three -Z)
+  armReach(agentStart[0]+0.28,agentStart[1],0.32);
+  rover.visible=robotMode==="rover"; arm.visible=robotMode==="arm";
+}
+let anim=null;
+function dense(path,step){const out=[];for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1];const n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/step));for(let k=0;k<n;k++)out.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]);}out.push(path[path.length-1]);return out;}
+function drive(path,targetH){
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let pts=dense(path,0.005);
+  // the mobile robot stops in front of the object; the arm reaches over it
+  const stopAt=0.07; let acc=0, cut=pts.length-1;
+  for(let i=pts.length-1;i>0;i--){acc+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); if(acc>=stopAt){cut=i;break;}}
+  const roverPts=pts.slice(0,cut+1);
+  const armPts=pts.filter(p=>Math.hypot(p[0]-agentStart[0],p[1]-agentStart[1])>0.2);
+  const T0=performance.now(), len=pts.length*0.005, dur=reduce?1:Math.max(1600,len/0.25*1000);
+  anim=now=>{
+    const u=Math.max(0,Math.min(1,(now-T0)/dur));
+    if(robotMode==="rover"&&roverPts.length>1){
+      const i=Math.min(roverPts.length-1,Math.floor(u*(roverPts.length-1))); const p=roverPts[i], q=roverPts[Math.min(roverPts.length-1,i+1)];
+      rover.position.copy(M(p[0],p[1],0));
+      if(q!==p){const a=M(p[0],p[1]),b=M(q[0],q[1]);rover.rotation.y=Math.atan2(-(b.x-a.x),-(b.z-a.z));}
+    }
+    if(robotMode==="arm"&&armPts.length>1){
+      const i=Math.min(armPts.length-1,Math.floor(u*(armPts.length-1)));const p=armPts[i];
+      const hover=0.06+targetH; const z=u<0.85?hover+0.05*Math.sin(Math.PI*u):hover-0.04*((u-0.85)/0.15);
+      armReach(p[0],p[1],Math.max(targetH+0.015,z));
+    }
+    if(u>=1)anim=null;
+  };
+}
+function polyLine(pts,color,dashed,h=0.004){
+  const g=new THREE.BufferGeometry().setFromPoints(pts.map(p=>M(p[0],p[1],h)));
+  const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.02,gapSize:0.014}):new THREE.LineBasicMaterial({color});
+  const l=new THREE.Line(g,m);if(dashed)l.computeLineDistances();return l;
+}
+function tube(pts,color){
+  const curve=new THREE.CurvePath();
+  for(let i=0;i<pts.length-1;i++)curve.add(new THREE.LineCurve3(M(pts[i][0],pts[i][1],0.006),M(pts[i+1][0],pts[i+1][1],0.006)));
+  return new THREE.Mesh(new THREE.TubeGeometry(curve,160,0.004,8,false),new THREE.MeshBasicMaterial({color}));
+}
+
+// ---------------------------------------------------------------- drawing state
+let lastQueryKey=null;
+function render(){
+  if(!ST) return;
+  // scene: twin objects
+  twinG.clear(); beliefG.clear();
+  for(const o of ST.twin){ if(!o.hidden){ const g=dressed(o); if(o.name===selected){g.traverse(m=>{if(m.isMesh&&m.material.emissive){m.material=m.material.clone();m.material.emissive.setHex(0x3a2a10);}});} twinG.add(g);} }
+  twinG.visible=$("tTwin").checked;
+  // pipeline belief: S4 nodes
+  for(const n of ST.nodes){
+    const occ=n.state==="occluded";
+    if($("tBoxes").checked||occ) beliefG.add(wireBox(n, occ?0xf2c94c:0x7cc4ff, occ));
+    const warn=n.depth_status&&n.depth_status!=="ok";
+    const lab=labelSprite(n.id+(occ?" · occluded (remembered)":"")+(warn?" · "+n.depth_status:""), occ?"#f2c94c":warn?"#7cc4ff":"#e6ebf5");
+    const p=M(n.pose[0],n.pose[1],0); lab.position.set(p.x,n.pose[2]+n.size[2]/2+0.03,p.z); beliefG.add(lab);
+  }
+  // virtual camera
+  const [cx,cy,cz]=ST.camera.xyz, pitch=ST.camera.rpy[1];
+  vcam.position.copy(M(cx,cy,cz)); vcam.rotation.set(-pitch,0,0);
+  agentStart=ST.agent_start;
+  // action overlay (only when the question changes)
+  const q=ST.query, key=q?JSON.stringify([q.question,q.code,q.path,ST.n_frames]):null;
+  if(key!==lastQueryKey){
+    lastQueryKey=key; actionG.clear(); anim=null; robotsHome();
+    if(q){
+      for(const z of q.zones){
+        const shape=new THREE.Shape(z.map(p=>{const v=M(p[0],p[1]);return new THREE.Vector2(v.x,-v.z);}));
+        const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshBasicMaterial({color:0xff6b6b,transparent:true,opacity:0.25,side:THREE.DoubleSide,depthWrite:false}));
+        mesh.rotation.x=-Math.PI/2;mesh.position.y=0.003;actionG.add(mesh);actionG.add(polyLine([...z,z[0]],0xff6b6b,false,0.004));
+      }
+      const tn=ST.nodes.find(n=>n.id===q.target);
+      if(q.validated&&q.path&&q.path.length>1){ actionG.add(tube(q.path,0xf2a33a)); drive(q.path, tn?tn.size[2]:0.08); }
+      else{
+        if(q.path&&q.path.length>1) actionG.add(polyLine(q.path,0xff6b6b,true,0.006));
+        if(tn){const x=labelSprite("✕ "+(q.code||"rejected"),"#ff6b6b");x.position.copy(M(tn.pose[0],tn.pose[1],tn.pose[2]+tn.size[2]/2+0.09));actionG.add(x);}
+      }
+    }
+  }
+  rover.visible=robotMode==="rover"; arm.visible=robotMode==="arm";
+  renderPanels();
+}
+function renderPanels(){
+  const nodes=Object.fromEntries(ST.nodes.map(n=>[n.id,n]));
+  $("parserChip").textContent="S5 parser: "+ST.parser; $("parserChip").className="chip "+(ST.parser==="ollama"?"c-ok":"c-warn");
+  $("contractChip").textContent=`${ST.n_frames} frames · ${ST.contract_errors} contract errors`;
+  $("contractChip").className="chip "+(ST.contract_errors?"c-bad":"c-muted");
+  $("hud").innerHTML=`<span class="chip c-sim"><span class="dot"></span>Simulated frames · real pipeline</span>`+(ST.query?`<span class="chip ${ST.query.validated?"c-ok":"c-bad"}">${esc(ST.query.code)}</span>`:"");
+  // objects list
+  $("objs").innerHTML=ST.twin.map(o=>{
+    const n=nodes[o.name], st=o.hidden?(n?`hidden · S6: ${n.state}`:"hidden · forgotten"):(n?`${n.state} · conf ${(n.confidence??0).toFixed(2)}`:"not detected");
+    return `<div class="obj ${o.name===selected?"sel":""}" data-n="${esc(o.name)}" tabindex="0">
+      <span class="sw" style="background:rgb(${o.color.join(",")});${o.hidden?"opacity:.35":""}"></span>
+      <span><div class="nm">${esc(o.name)}</div><div class="st">${esc(st)}</div></span>
+      <span class="acts">${o.hidden?`<button class="btn small" data-a="show" data-n="${esc(o.name)}">Put back</button>`
+        :`<button class="btn small" data-a="hide" data-n="${esc(o.name)}">Hide</button><button class="btn small" data-a="rotate" data-n="${esc(o.name)}" title="Turn 45°">⟳</button>`}</span></div>`;}).join("");
+  $("objs").querySelectorAll(".obj").forEach(el=>el.onclick=e=>{ if(e.target.closest("button"))return; selected=el.dataset.n===selected?null:el.dataset.n; render(); });
+  $("objs").querySelectorAll("button[data-a]").forEach(b=>b.onclick=()=>{
+    const n=b.dataset.n, a=b.dataset.a;
+    if(a==="hide") act(`Hiding ${n}: rendering → S2 → S6 → S4`,"hide",{name:n});
+    if(a==="show") act(`Putting ${n} back: rendering → S2 → S6 → S4`,"show",{name:n});
+    if(a==="rotate") act(`Turning ${n}: rendering → S2 → S6 → S4`,"rotate",{name:n,degrees:45});
+  });
+  // presets
+  $("presets").innerHTML=ST.presets.map(p=>`<button class="btn" data-p="${esc(p.id)}">${esc(p.title)} <span class="muted">→ “${esc(p.question)}”</span></button>`).join("")||'<p class="note">No backup scenario fits these objects.</p>';
+  $("presets").querySelectorAll("button").forEach(b=>b.onclick=()=>act("Running scenario: frames → S2 → S6 → S4 → S5 → S6","preset",{id:b.dataset.p}));
+  // suggestions
+  const labels=[...new Set(ST.twin.map(o=>o.label))];
+  const lap=labels.find(l=>/laptop/.test(l)), first=labels.find(l=>!/laptop/.test(l))||labels[0], second=labels.find(l=>l!==first&&!/laptop/.test(l));
+  const sug=[`Go to the ${first}`,`Where is the ${second||first}?`];
+  if(lap) sug.push(`What is closest to the ${lap}?`, `Find the ${first} that is not near the ${lap}`);
+  sug.push(`Where was the ${first} before?`);
+  $("sugg").innerHTML=sug.map(s=>`<button class="btn" data-q="${esc(s)}">${esc(s)}</button>`).join("");
+  $("sugg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("qIn").value=b.dataset.q;ask();});
+  // planner seg
+  $("planSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ST.planner)));
+  // Q&A
+  const q=ST.query;
+  if(q){
+    const sim=q.simulation||{};
+    $("qa").innerHTML=`<div class="q">“${esc(q.question)}”</div>
+      <div><b>S5:</b> ${esc(q.answer)}</div>
+      ${q.warnings&&q.warnings.length?`<div class="reason">⚠ ${q.warnings.map(esc).join(" · ")}</div>`:""}
+      <div class="verdict"><span class="chip ${q.validated?"c-ok":"c-bad"}"><span class="dot"></span>${q.validated?"Action allowed":"Action refused"}</span><span class="chip ${q.validated?"c-ok":"c-bad"}">${esc(q.code)}</span>
+      ${sim.executed?`<span class="chip ${sim.success?"c-ok":"c-bad"}">twin run ${sim.success?"reached":"failed"} · ${(sim.final_error_m*100).toFixed(1)} cm · ${sim.collisions} collisions</span>`:""}</div>
+      <div class="reason">S6: ${esc(q.reason)}${q.goal_warnings&&q.goal_warnings.length?" · "+q.goal_warnings.map(esc).join(" · "):""}</div>
+      <div class="note">parser: ${esc(q.parser)} · ${q.seconds}s</div>
+      <details><summary>What the language model understood (S5 JSON)</summary><pre>${esc(JSON.stringify(q.parsed,null,1))}</pre></details>`;
+  } else $("qa").innerHTML='<p class="note">Ask a question to see the verified answer and the robot\'s action.</p>';
+  // frame
+  const f=ST.frame;
+  if(f){
+    $("frameImg").src=f.rgb; $("fname").textContent=f.name;
+    const ms=f.timings_ms, st=[["S1 load","s1_load"],["S3 masks","s3_perception"],["S2 fusion","s2_fusion"],["S6 track","s6_tracking"],["S4 graph","s4_graph"]];
+    const mx=Math.max(...st.map(x=>ms[x[1]]||0),1);
+    $("lat").innerHTML=st.map(([l,k])=>`<div class="bar"><span>${l}</span><div><i style="width:${(100*(ms[k]||0)/mx).toFixed(1)}%"></i></div><span>${(ms[k]||0).toFixed(0)} ms</span></div>`).join("")
+      +`<p class="note">S1 and S3 are replaced by the renderer in twin frames; S2, S6 and S4 are the team's code.</p>`;
+  }
+  // events + log
+  const lastLog=ST.log[ST.log.length-1];
+  $("events").innerHTML=lastLog&&lastLog.events.length?lastLog.events.map(e=>`<span class="ev ${esc(e.split(" ")[0])}">${esc(e)}</span>`).join(""):'<span class="note">No new tracking events from the last change.</span>';
+  $("log").innerHTML=ST.log.slice().reverse().map(l=>`<div><b>${esc(l.action)}</b><span class="muted">${l.frames.length} frame(s) · ${l.seconds}s${l.events.length?" · "+l.events.map(esc).join(", "):""}</span></div>`).join("");
+  // relations
+  const rel=ST.edges.filter(e=>e.p!=="on");
+  $("rels").innerHTML=rel.slice(0,16).map(e=>`<span><b>${esc(e.s)}</b> ${esc(e.p)} <b>${esc(e.t)}</b>${e.distance_m!=null?` · ${(+e.distance_m).toFixed(2)} m`:""}</span>`).join("")
+    +`<span>+ ${ST.edges.length-rel.length} × “on desk_01”</span>`;
+}
+
+// ---------------------------------------------------------------- interaction: drag objects on the desk
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+let drag=null;
+function pick(ev){
+  const r=canvas.getBoundingClientRect(); ptr.set(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ptr,cam);
+}
+canvas.addEventListener("pointerdown",ev=>{
+  if(busy||!$("tTwin").checked) return;
+  pick(ev); const hit=ray.intersectObjects(twinG.children,true)[0];
+  if(!hit) return;
+  const root=hit.object.userData.root; if(!root) return;
+  const p=new THREE.Vector3(); ray.ray.intersectPlane(dragPlane,p);
+  drag={name:root.userData.name, g:root, start:root.position.clone(), off:root.position.clone().sub(p), line:null};
+  controls.enabled=false; canvas.setPointerCapture(ev.pointerId); selected=drag.name;
+});
+canvas.addEventListener("pointermove",ev=>{
+  if(!drag) return;
+  pick(ev); const p=new THREE.Vector3(); if(!ray.ray.intersectPlane(dragPlane,p)) return;
+  const np=p.add(drag.off); drag.g.position.set(np.x,0,np.z);
+  if(drag.line) actionG.remove(drag.line);
+  const a=toMap(drag.start), b=toMap(drag.g.position);
+  drag.line=polyLine([a,b],0xf2a33a,true,0.005); actionG.add(drag.line);
+  $("hint").textContent=`${drag.name}: ${(Math.hypot(b[0]-a[0],b[1]-a[1])*100).toFixed(0)} cm · release to place`;
+});
+function endDrag(ev,cancel){
+  if(!drag) return;
+  const d=drag; drag=null; controls.enabled=true; if(d.line) actionG.remove(d.line);
+  $("hint").textContent="Drag objects to move · drag empty space to orbit · scroll to zoom";
+  const [x,y]=toMap(d.g.position), [x0,y0]=toMap(d.start);
+  if(cancel||Math.hypot(x-x0,y-y0)<0.01){ d.g.position.copy(d.start); render(); return; }
+  act(`Moving ${d.name} ${(Math.hypot(x-x0,y-y0)*100).toFixed(0)} cm: rendering frames → S2 → S6 → S4`,"move",{name:d.name,x,y});
+}
+canvas.addEventListener("pointerup",ev=>endDrag(ev,false));
+canvas.addEventListener("pointercancel",ev=>endDrag(ev,true));
+addEventListener("keydown",e=>{ if(e.key==="Escape") endDrag(e,true); });
+
+// ---------------------------------------------------------------- controls
+function ask(){ const q=$("qIn").value.trim(); if(!q){toast("Type a question first.");return;} act(`Asking: S5 (${ST?ST.parser:"…"}) → verifier → S6 action`,"ask",{question:q}); }
+$("askBtn").onclick=ask; $("qIn").addEventListener("keydown",e=>{if(e.key==="Enter")ask();});
+$("waitBtn").onclick=()=>act("Still frame: rendering → S2 → S6 → S4","wait",{frames:1});
+$("resetBtn").onclick=()=>{selected=null;act("Rebuilding the twin from the recording","reset",{});};
+$("planSeg").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
+  await act("Switching planner","planner",{planner:b.dataset.v});
+  if(ST&&ST.query) act(`Asking again with the ${b.dataset.v} planner`,"ask",{question:ST.query.question});
+});
+$("robotSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  robotMode=b.dataset.v; $("robotSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  lastQueryKey=null; render();
+});
+for(const id of ["tBoxes","tTwin"]) $(id).onchange=()=>render();
+$("tCloud").onchange=()=>{ if(cloud) cloud.visible=$("tCloud").checked; };
+$("srcSel").onchange=()=>{selected=null;act("Building a new twin from that recording","load",{run:$("srcSel").value}).then(loadSource);};
+
+async function loadSource(){
+  SRC=await api("source");
+  if(SRC.rgb) $("srcImg").src=SRC.rgb; else $("srcImg").hidden=true;
+  $("srcNote").textContent=`${SRC.name} · frame ${SRC.frame} · ${SRC.n_objects} objects measured by S2. The twin puts each one exactly there.`;
+  if(cloud){scene.remove(cloud);cloud=null;}
+  if(SRC.cloud){
+    const xyz=SRC.cloud.xyz, rgb=SRC.cloud.rgb, n=xyz.length/3, pos=new Float32Array(n*3), colr=new Float32Array(n*3);
+    for(let i=0;i<n;i++){pos[3*i]=-xyz[3*i+1];pos[3*i+1]=xyz[3*i+2];pos[3*i+2]=-xyz[3*i];colr[3*i]=rgb[3*i]/255;colr[3*i+1]=rgb[3*i+1]/255;colr[3*i+2]=rgb[3*i+2]/255;}
+    const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(colr,3));
+    cloud=new THREE.Points(g,new THREE.PointsMaterial({size:0.006,vertexColors:true}));cloud.visible=$("tCloud").checked;scene.add(cloud);
+  } else { $("tCloud").disabled=true; $("tCloud").parentElement.title="This recording has no saved point cloud"; }
+  const srcs=await api("sources");
+  $("srcSel").innerHTML=srcs.map(s=>`<option value="${esc(s.run)}" ${s.current?"selected":""}>${esc(s.name)}</option>`).join("");
+}
+
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(canvas); resize();
+function loop(now){requestAnimationFrame(loop); if(anim)anim(now); controls.update(); renderer.render(scene,cam);}
+requestAnimationFrame(loop);
+// test hook: screen position of a map point (used by the automated UI test)
+window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST};
+try{ await loadSource(); ST=await api("state"); render(); }
+catch(e){ toast("Could not reach the twin server: "+e.message); }
+})();
+</script>
+</body>
+</html>
