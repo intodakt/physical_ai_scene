@@ -28,6 +28,15 @@ def _events(state):
     return state["log"][-1]["events"]
 
 
+def test_robot_visual_request_is_separate_from_s5_and_s6():
+    assert engine.robot_visual_request("find an apple") == "point"
+    assert engine.robot_visual_request("take the apple") == "take"
+    assert engine.robot_visual_request("move the apple") == "take"
+    assert engine.robot_visual_request("move to the apple") == "point"
+    assert engine.robot_visual_request("put it down") == "release"
+    assert engine.robot_visual_request("where was the apple before?") == "none"
+
+
 def test_twin_matches_the_measured_objects(twin):
     st = twin.state()
     names = {o["name"] for o in st["twin"]}

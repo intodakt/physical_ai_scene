@@ -26,6 +26,7 @@ import copy
 import io
 import json
 import math
+import re
 import shutil
 import threading
 import time
@@ -45,6 +46,20 @@ TRANSPARENT = ("glass", "transparent_suspected", "no_depth")
 PALETTE = {"laptop": (70, 70, 78), "mug": (200, 60, 50), "cup": (200, 60, 50), "book": (40, 90, 170),
            "glass": (190, 215, 225), "bottle": (60, 140, 90), "multimeter": (235, 190, 30),
            "keyboard": (40, 40, 44), "mouse": (90, 90, 96)}
+
+
+def robot_visual_request(question: str) -> str:
+    """Classify only the *visual* G1 gesture. S5 still resolves the object; S6 still validates its own path."""
+    text = question.lower()
+    if re.search(r"\b(release|drop|put\s+(?:it\s+)?down)\b", text):
+        return "release"
+    if re.search(r"\b(before|previously|earlier)\b", text):
+        return "none"
+    if re.search(r"\b(take|pick|grab|grasp|lift|hold|bring)\b", text):
+        return "take"
+    if re.search(r"\bmove\b", text) and not re.search(r"\bmove\s+(?:to|toward|towards)\b", text):
+        return "take"
+    return "point"
 
 
 def _b64_jpeg(img: np.ndarray | Image.Image, size=(480, 360), quality=72) -> str:
@@ -713,6 +728,7 @@ class Twin:
             if self.last_query:
                 r, g = self.last_query["reasoning_result"], self.last_query["action_goal"]
                 q = {"question": self.last_query["question"], "answer": r.get("final_answer"),
+                     "robot_request": robot_visual_request(self.last_query["question"]),
                      "verified": r.get("verification_status"), "warnings": r.get("warnings", []),
                      "parsed": r.get("llm_parsed_query"), "parser": self.last_query.get("parser"),
                      "target": g.get("target_object_id"), "validated": g.get("validated"),

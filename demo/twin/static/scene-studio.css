@@ -124,6 +124,7 @@ select { min-width: 160px; max-width: 240px; min-height: 36px; padding: 6px 10px
   border-radius: 8px; background: #fff8f6; color: var(--bad); font-size: 12px; box-shadow: 0 3px 13px #1d364219; }
 .scene-footer { min-height: 41px; display: flex; align-items: center; gap: 8px; padding: 0 15px;
   border-top: 1px solid var(--line); color: #6c7e88; font-size: 11px; }
+.cursor-coords { color: #205e6b; font: 700 11px var(--mono); white-space: nowrap; }
 .controls-disclosure { border-top: 1px solid var(--line); }
 .controls-disclosure > summary { padding: 10px 15px; color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; }
 .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px 20px;
@@ -181,6 +182,8 @@ select { min-width: 160px; max-width: 240px; min-height: 36px; padding: 6px 10px
 .action-result.refused { border-color: #eee1c9; background: var(--warn-soft); color: var(--warn); }
 .action-result strong { font-size: 12px; }
 .action-result span { font-size: 11px; }
+.robot-result { margin-top: 8px; padding: 8px 10px; border: 1px solid #d3e6e9; border-radius: 7px;
+  background: #edf6f7; color: #205e6b; font-size: 11px; font-weight: 650; }
 .query-meta { margin-top: 9px; color: #7e8e96; font: 10px var(--mono); }
 #qa details { margin-top: 13px; }
 #qa details summary { color: var(--accent); font-size: 11px; font-weight: 650; cursor: pointer; }

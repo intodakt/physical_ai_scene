@@ -9,7 +9,7 @@
     constructor(scene){
       this.root=new THREE.Group();this.root.name="simulated_g1_mount";scene.add(this.root);
       this.model=null;this.joints={};this.mount={x:0.35,y:0.5,yaw:-Math.PI/2,gap:0};
-      this.motion=null;this.visible=true;this.ready=false;
+      this.motion=null;this.held=null;this.visible=true;this.ready=false;
       const plate=new THREE.Mesh(new THREE.CylinderGeometry(.102,.115,.018,48),darkMat);
       plate.position.y=.009;plate.castShadow=true;plate.receiveShadow=true;this.root.add(plate);
       const collar=new THREE.Mesh(new THREE.CylinderGeometry(.076,.088,.074,40),bodyMat);
@@ -86,7 +86,7 @@
     values(){return Object.fromEntries(Object.entries(this.joints).map(([n,j])=>[n,j.value]));}
     apply(values){for(const [n,v] of Object.entries(values))this.setJoint(n,v);this.root.updateMatrixWorld(true);}
     home(){
-      this.motion=null;
+      this.motion=null;this.held=null;
       for(const name of Object.keys(this.joints))this.setJoint(name,0);
       this.setJoint("left_shoulder_pitch_joint",.05);this.setJoint("right_shoulder_pitch_joint",.05);
       this.setJoint("left_shoulder_roll_joint",.22);this.setJoint("right_shoulder_roll_joint",-.22);
@@ -100,18 +100,12 @@
       this.rest=this.values();
     }
     show(on){this.visible=on;this.root.visible=on;}
-    reachTo(x,y,z){
-      if(!this.ready)return {ok:false,reason:"G1 model is loading"};
-      this.home();
-      const target=M(x,y,Math.max(z,.055));
-      const distance=Math.hypot(x-this.mount.x,y-this.mount.y);
-      if(distance>.66)return {ok:false,reason:"Target is outside the mounted arm's reach"};
-      const hand=(side)=>this.model.getObjectByName(`${side}_hand_palm_link`);
-      const shoulder=(side)=>this.model.getObjectByName(`${side}_shoulder_pitch_joint`);
-      const side=["left","right"].sort((a,b)=>shoulder(a).getWorldPosition(new THREE.Vector3()).distanceTo(target)-shoulder(b).getWorldPosition(new THREE.Vector3()).distanceTo(target))[0];
-      const endpoint=hand(side);
-      if(!endpoint)return {ok:false,reason:"G1 hand joint is unavailable"};
-      const names=["wrist_yaw","wrist_pitch","wrist_roll","elbow","shoulder_yaw","shoulder_roll","shoulder_pitch"].map(n=>`${side}_${n}_joint`);
+    release(){this.home();}
+    handPosition(side){
+      const hand=this.model?.getObjectByName(`${side}_hand_palm_link`);
+      return hand?hand.getWorldPosition(new THREE.Vector3()):null;
+    }
+    solveTo(target,endpoint,names){
       for(let iter=0;iter<34;iter++){
         const error=endpoint.getWorldPosition(new THREE.Vector3()).distanceTo(target);
         if(error<.045)break;
@@ -129,25 +123,60 @@
           this.root.updateMatrixWorld(true);
         }
       }
-      const error=endpoint.getWorldPosition(new THREE.Vector3()).distanceTo(target);
+      return endpoint.getWorldPosition(new THREE.Vector3()).distanceTo(target);
+    }
+    reachTo(x,y,z,mode="point"){
+      if(!this.ready)return {ok:false,reason:"G1 model is loading"};
+      this.home();
+      const target=M(x,y,Math.max(z,.055));
+      const distance=Math.hypot(x-this.mount.x,y-this.mount.y);
+      if(distance>.66)return {ok:false,reason:"Target is outside the mounted arm's reach"};
+      const hand=(side)=>this.model.getObjectByName(`${side}_hand_palm_link`);
+      const shoulder=(side)=>this.model.getObjectByName(`${side}_shoulder_pitch_joint`);
+      const side=["left","right"].sort((a,b)=>shoulder(a).getWorldPosition(new THREE.Vector3()).distanceTo(target)-shoulder(b).getWorldPosition(new THREE.Vector3()).distanceTo(target))[0];
+      const endpoint=hand(side);
+      if(!endpoint)return {ok:false,reason:"G1 hand joint is unavailable"};
+      const names=["wrist_yaw","wrist_pitch","wrist_roll","elbow","shoulder_yaw","shoulder_roll","shoulder_pitch"].map(n=>`${side}_${n}_joint`);
+      const error=this.solveTo(target,endpoint,names);
       if(error>.075){this.home();return {ok:false,reason:"Target is outside the mounted arm's reach"};}
-      const goal=this.values();
+      const goal=this.values(),from={...this.rest};
+      const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const bend=side==="right"?1:-1;
-      for(const part of ["index","middle"]){goal[`${side}_hand_${part}_0_joint`]=bend*.58;goal[`${side}_hand_${part}_1_joint`]=bend*.55;}
-      goal[`${side}_hand_thumb_0_joint`]=.35;goal[`${side}_hand_thumb_1_joint`]=.32;goal[`${side}_hand_thumb_2_joint`]=-bend*.5;
-      this.apply(this.rest);
-      this.motion={start:performance.now(),duration:2900,from:{...this.rest},to:goal};
-      return {ok:true,side,error};
+      if(mode==="take"){
+        const closed={...goal};
+        for(const part of ["index","middle"]){closed[`${side}_hand_${part}_0_joint`]=bend*.62;closed[`${side}_hand_${part}_1_joint`]=bend*.58;}
+        closed[`${side}_hand_thumb_0_joint`]=.35;closed[`${side}_hand_thumb_1_joint`]=.32;closed[`${side}_hand_thumb_2_joint`]=-bend*.5;
+        this.apply(goal);
+        const liftError=this.solveTo(M(x,y,z+.14),endpoint,names);
+        if(liftError>.09){this.home();return {ok:false,reason:"The arm cannot lift this target from the mount"};}
+        const lift={...this.values(),...Object.fromEntries(Object.keys(closed).filter(n=>n.includes(`${side}_hand_`)).map(n=>[n,closed[n]]))};
+        this.apply(from);
+        this.motion={kind:"take",start:performance.now(),duration:reduced?1:4200,from,goal,closed,lift,side,gripped:false};
+      }else{
+        goal[`${side}_hand_index_0_joint`]=0;goal[`${side}_hand_index_1_joint`]=0;
+        goal[`${side}_hand_middle_0_joint`]=bend*.5;goal[`${side}_hand_middle_1_joint`]=bend*.5;
+        this.apply(from);
+        this.motion={kind:"point",start:performance.now(),duration:reduced?1:4200,from,goal,side,gripped:false};
+      }
+      return {ok:true,side,error,mode};
     }
     update(now){
       if(!this.motion)return;
-      const t=clamp((now-this.motion.start)/this.motion.duration,0,1);
-      const phase=t<.43?t/.43:t<.58?1:(1-t)/.42;
-      const eased=phase*phase*(3-2*phase);
-      for(const [name,to] of Object.entries(this.motion.to)){
-        const from=this.motion.from[name]||0;this.setJoint(name,from+(to-from)*eased);
+      const m=this.motion,t=clamp((now-m.start)/m.duration,0,1);
+      const ease=v=>v*v*(3-2*v);
+      const blend=(a,b,u)=>{const v=ease(clamp(u,0,1));for(const [name,to] of Object.entries(b))this.setJoint(name,(a[name]||0)+(to-(a[name]||0))*v);};
+      if(m.kind==="take"){
+        if(t<.4)blend(m.from,m.goal,t/.4);
+        else if(t<.55)blend(m.goal,m.closed,(t-.4)/.15);
+        else{m.gripped=true;blend(m.closed,m.lift,(t-.55)/.45);}
+        if(t>=1){this.apply(m.lift);this.held={side:m.side};this.motion=null;}
+      }else{
+        if(t<.42)blend(m.from,m.goal,t/.42);
+        else if(t<.67)this.apply(m.goal);
+        else blend(m.goal,m.from,(t-.67)/.33);
+        if(t>=1){this.apply(m.from);this.motion=null;}
       }
-      if(t>=1){this.apply(this.rest);this.motion=null;}
+      this.root.updateMatrixWorld(true);
     }
   }
   window.G1Robot=G1Robot;

@@ -12,7 +12,7 @@ pipeline code**. The table-mounted G1 upper body stays fixed while S6's allowed 
 | S3 detection + masks | real YOLO-World + SAM 2 output | exact masks from the renderer |
 | S2 3D fusion, S6 tracking, S4 scene graph | team code | **same team code** (`src/integration/pipeline.Pipeline`) |
 | S5 reasoning, S6 ActionGoal, twin simulation | team code | **same team code** |
-| Robot | official Unitree G1 upper-body mesh on a simulated fixed pedestal; no recorded robot pose | same visual model; reach preview is separate from S6 execution |
+| Robot | official Unitree G1 upper-body mesh on a simulated fixed pedestal; no recorded robot pose | simulated point and grasp gestures after verified requests; separate from S6 execution |
 
 The twin is built from the frame of the run with the most objects: each S2 object is placed at its
 measured position, size and rotation, coloured from its S3 mask. The renderer that makes the twin's camera
@@ -103,10 +103,10 @@ Control** (or a school/company policy) blocks unsigned files downloaded from the
   the robot may cross every other object. S6's code is the same; only its config differs. The robot
   starts at the front edge, at the spot with clear straight lines to the most objects.
 * **Planner**: *Straight* refuses a path through an exclusion zone (`PATH_BLOCKED`); *Detour* plans around it.
-* **Robot**: a fixed G1 upper body with articulated hands. *Preview reach* moves an arm toward a selected object if it is within the visual arm workspace, then returns to rest. The base never walks or follows S6's path; S6's 2D path is a separate overlay.
-* **Views**: table, recorded camera, robot overview, front, left, right, rear, top, and saved user views. The side label means the camera is on that side of the robot, relative to the robot's heading. The front arrow shows the robot's facing direction.
+* **Robot**: a fixed G1 upper body with articulated hands. After S5 verifies an object, *find/where* requests make a hand point to it; *take/pick/move* requests animate a simulated grasp and lift. The held object stays in the visual hand until *Release object* or the next request. The source object position and S4 state remain unchanged. *Preview reach* is also available for the selected object. If the mounted arm cannot reach the target, the page says so. The base never walks or follows S6's path; S6's 2D path is a separate overlay.
+* **Views**: table, recorded camera, robot overview, front, left, right, rear, top, and saved user views. *Human from right/left/back/front* places the viewing camera at that table edge; the selected-object panel then shows left/right and near/far from that person's view. The robot stays mounted. Robot-side labels are relative to the robot's heading, shown by its front arrow.
 * **Recorded camera** uses S1's optical transform and intrinsics. Desk-plane calibration estimates height and pitch only, so this view says *horizontal pose unknown* until measured camera X, Y, and yaw are entered under *View controls*. Those values are saved in this browser for the selected recording. The camera frustum is shown in other views.
-* **Coordinates**: the optional 10 cm XY grid and selected-object panel show the current twin X/Y/Z in metres and yaw. The panel also shows S4's latest measured centre. Mount X/Y and nearest-object clearance are in *View controls*. The mount is chosen at a clear table edge and can be adjusted there.
+* **Coordinates**: the optional 10 cm XY grid has number labels laid flat along two table edges, so they do not draw over the robot. The footer shows X/Y under the mouse. The selected-object panel shows twin X/Y/Z in metres and yaw, plus S4's latest measured centre. Mount X/Y and nearest-object clearance are in *View controls*. The mount is chosen at a clear table edge and can be adjusted there.
 * **Pipeline's 3D boxes** shows S4's nodes (dashed yellow = occluded, remembered position).
 * **Backup scenarios**: slide the mug, hide the book, move the glass past the laptop, and **block the
   path** (an object is slid onto the robot's line to a target that was reachable), each followed by its question.

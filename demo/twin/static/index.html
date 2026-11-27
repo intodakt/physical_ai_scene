@@ -40,7 +40,7 @@
     <section class="panel view">
       <div class="scene-toolbar">
         <h2>Scene</h2>
-        <select id="viewSel" aria-label="Camera view"><option value="table">Table overview</option><option value="recorded">Recorded camera</option><option value="robot">Robot overview</option><option value="front">Robot front</option><option value="left">Robot left</option><option value="right">Robot right</option><option value="rear">Robot rear</option><option value="top">Top view</option></select>
+        <select id="viewSel" aria-label="Camera view"><option value="table">Table overview</option><option value="recorded">Recorded camera</option><option value="robot">Robot overview</option><option value="front">Robot front</option><option value="left">Robot left</option><option value="right">Robot right</option><option value="rear">Robot rear</option><option value="top">Top view</option><option value="human-right">Human from right</option><option value="human-left">Human from left</option><option value="human-back">Human from back</option><option value="human-front">Human from front</option></select>
         <button class="btn" id="saveViewBtn" title="Save this camera angle for this recording">Save view</button>
         <span class="seg" id="lookSeg" aria-label="Scene look"><button data-v="photo" aria-pressed="true" title="Real camera image of each object">Photo</button><button data-v="stylised" aria-pressed="false">Stylised</button></span>
       </div>
@@ -51,11 +51,11 @@
         <div class="busy" id="busy" hidden><span class="spin"></span><span id="busyText">Working…</span></div>
         <div class="toast" id="toast" role="alert" hidden></div>
       </div>
-      <div class="scene-footer"><span id="hint">Drag to move · scroll to zoom</span><span class="spacer"></span><span>Orbit: drag empty space</span></div>
+      <div class="scene-footer"><span id="hint">Drag to move · scroll to zoom</span><span class="spacer"></span><span class="cursor-coords" id="cursorCoords">X — · Y —</span></div>
       <details class="controls-disclosure">
         <summary>View controls</summary>
         <div class="opts">
-          <div class="control-group"><span>Robot</span><span class="seg" id="robotSeg"><button data-v="g1" aria-pressed="true">Mounted G1</button><button data-v="none" aria-pressed="false">Off</button></span><button class="btn" id="reachBtn" title="Preview a simulated arm reach to the selected object">Preview reach</button></div>
+          <div class="control-group"><span>Robot</span><span class="seg" id="robotSeg"><button data-v="g1" aria-pressed="true">Mounted G1</button><button data-v="none" aria-pressed="false">Off</button></span><button class="btn" id="reachBtn" title="Preview a simulated arm reach to the selected object">Preview reach</button><button class="btn" id="releaseBtn" hidden>Release object</button></div>
           <div class="control-group"><span>Mount position (map m)</span><div class="mount-fields"><label>X <input id="mountX" type="number" step="0.01" min="0.05" max="1.35"></label><label>Y <input id="mountY" type="number" step="0.01" min="-0.55" max="0.55"></label></div><button class="btn" id="mountAuto">Find clear mount</button><span class="mount-note" id="mountGap"></span></div>
           <div class="control-group"><span>Measured camera pose (map)</span><div class="mount-fields"><label>X <input id="camX" type="number" step="0.01"></label><label>Y <input id="camY" type="number" step="0.01"></label><label>Yaw° <input id="camYaw" type="number" step="1"></label></div><button class="btn" id="applyCamPose">Use measured pose</button><span class="mount-note" id="camPoseNote"></span></div>
           <div class="control-group"><span>Obstacles</span><span class="seg" id="obsSeg"><button data-v="all" aria-pressed="true" title="Every object except the target is an exclusion zone">All</button><button data-v="config" aria-pressed="false" title="Team config: only configured object classes">Configured</button></span></div>
@@ -125,7 +125,14 @@ function toast(msg){$("toast").textContent=msg;$("toast").hidden=false;clearTime
 async function act(label, path, body){
   if(busy) return;
   busy=true; setBusy(label);
-  try{ ST=await api(path, body); render(); return ST; }
+  try{
+    ST=await api(path, body);
+    clearCarry();
+    if((path==="ask"||path==="preset")&&ST.query?.verified&&ST.query?.target)selected=ST.query.target;
+    render();
+    if(path==="ask"||path==="preset")playRobotRequest(ST.query);
+    return ST;
+  }
   catch(e){ toast(e.message); render(); }
   finally{ busy=false; setBusy(null); }
 }
@@ -169,20 +176,31 @@ const legMat=new THREE.MeshStandardMaterial({color:0x22262e,roughness:0.4,metaln
 for(const [x,y] of [[0.05,0.56],[0.05,-0.56],[1.35,0.56],[1.35,-0.56]]){const l=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.72,0.04),legMat);l.position.copy(M(x,y,-0.395));scene.add(l);}
 const grid=new THREE.GridHelper(6,60,0xc9d5d9,0xdfe7e9); grid.position.y=-0.755; scene.add(grid);
 const coordG=new THREE.Group();scene.add(coordG);
-for(let i=1;i<=13;i++){
-  const x=i/10,ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(x,-.55,.001),M(x,.55,.001)]),new THREE.LineBasicMaterial({color:0x8a9aa0,transparent:true,opacity:i%5===0?.47:.2}));coordG.add(ln);
-  if(i%2===0){const l=labelSprite(`${x.toFixed(1)} X`,"#647680");l.scale.set(.18,.024,1);l.position.copy(M(x,-.52,.003));coordG.add(l);}
+let coordEdgeKey="";
+function tableEdgeLabel(text,width=.22){
+  const c=document.createElement("canvas");c.width=256;c.height=92;const context=c.getContext("2d");
+  context.font="750 55px Inter, sans-serif";context.textAlign="center";context.textBaseline="middle";
+  context.strokeStyle="rgba(255,255,255,.96)";context.lineWidth=11;context.lineJoin="round";context.strokeText(text,128,47);
+  context.fillStyle="#173f4b";context.fillText(text,128,47);
+  const texture=new THREE.CanvasTexture(c);texture.encoding=THREE.sRGBEncoding;
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,width*92/256),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthTest:true,depthWrite:false}));
+  mesh.rotation.set(-Math.PI/2,0,Math.PI/2);return mesh;
 }
-for(let i=-5;i<=5;i++){
-  const y=i/10,ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(.05,y,.001),M(1.35,y,.001)]),new THREE.LineBasicMaterial({color:0x8a9aa0,transparent:true,opacity:i===0?.52:.2}));coordG.add(ln);
-  if(i%2===0){const l=labelSprite(`${y.toFixed(1)} Y`,"#647680");l.scale.set(.18,.024,1);l.position.copy(M(.08,y,.003));coordG.add(l);}
+function rebuildCoordinates(force=false){
+  const mount=g1.mount,edgeY=mount.y<0?.505:-.505,edgeX=mount.x>.7?.10:1.30;
+  const key=`${edgeY}:${edgeX}`;if(!force&&key===coordEdgeKey)return;coordEdgeKey=key;
+  coordG.clear();
+  const line=(a,b,strong=false)=>coordG.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(...a),M(...b)]),new THREE.LineBasicMaterial({color:strong?0x537681:0x8a9aa0,transparent:true,opacity:strong?.5:.16})));
+  for(let i=1;i<=13;i++){
+    const x=i/10;line([x,-.54,.001],[x,.54,.001],i%2===0);
+    if([2,5,8,11].includes(i)){const lab=tableEdgeLabel(`X ${x.toFixed(1)}`);lab.position.copy(M(x,edgeY,.003));coordG.add(lab);line([x,edgeY,.003],[x,edgeY+(edgeY>0?-.025:.025),.003],true);}
+  }
+  for(let i=-5;i<=5;i++){
+    const y=i/10;line([.06,y,.001],[1.34,y,.001],i%2===0);
+    if([-4,0,4].includes(i)){const lab=tableEdgeLabel(`Y ${y.toFixed(1)}`);lab.position.copy(M(edgeX,y,.003));coordG.add(lab);line([edgeX,y,.003],[edgeX+(edgeX<.7?.025:-.025),y,.003],true);}
+  }
+  coordG.visible=$("tCoords").checked;
 }
-const origin=new THREE.Mesh(new THREE.SphereGeometry(.007,10,8),new THREE.MeshBasicMaterial({color:0x256d7b}));origin.position.copy(M(0,0,.005));coordG.add(origin);
-const originLabel=labelSprite("0,0","#256d7b");originLabel.scale.set(.14,.022,1);originLabel.position.copy(M(0,0,.03));coordG.add(originLabel);
-coordG.add(new THREE.ArrowHelper(M(.1,0,0).normalize(),M(0,0,.006),.1,0x256d7b,.022,.012));
-coordG.add(new THREE.ArrowHelper(M(0,.1,0).normalize(),M(0,0,.006),.1,0x8a641f,.022,.012));
-const scaleLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([M(1.1,-.48,.003),M(1.2,-.48,.003)]),new THREE.LineBasicMaterial({color:0x294751}));coordG.add(scaleLine);
-const scaleLabel=labelSprite("10 cm","#294751");scaleLabel.scale.set(.16,.022,1);scaleLabel.position.copy(M(1.15,-.45,.004));coordG.add(scaleLabel);
 const dragPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 
 // virtual camera that renders the twin frames
@@ -366,15 +384,19 @@ function wireBox(n,color,dashed){
   if(dashed)l.computeLineDistances();
   const p=M(n.pose[0],n.pose[1],0);l.position.set(p.x,n.pose[2],p.z);l.rotation.y=n.yaw||0;return l;
 }
-const twinG=new THREE.Group(), beliefG=new THREE.Group(), actionG=new THREE.Group(); scene.add(twinG,beliefG,actionG);
+const twinG=new THREE.Group(), beliefG=new THREE.Group(), actionG=new THREE.Group(), carryG=new THREE.Group();scene.add(twinG,beliefG,actionG,carryG);
 let cloud=null;
+let carriedName=null,carriedMesh=null,carriedHeight=0,robotStatus="",targetMarker=null,pendingRobotQuery=null;
 
 // ---------------------------------------------------------------- fixed G1 asset; S6 path stays a table overlay
 const g1=new G1Robot(scene);
 const frontArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,.13,-.09),.17,0x256d7b,.035,.018);
 g1.root.add(frontArrow);
 const frontLabel=labelSprite("FRONT","#256d7b");frontLabel.scale.set(.19,.026,1);frontLabel.position.set(0,.12,-.29);g1.root.add(frontLabel);
-g1.load().then(()=>{ if(ST){g1.autoPlace(ST);g1.placedFor=SRC?.run||"current";syncMountControls();renderOrientation();} }).catch(e=>toast("G1 model could not load: "+e.message));
+g1.load().then(()=>{
+  if(ST){g1.autoPlace(ST);g1.placedFor=SRC?.run||"current";syncMountControls();rebuildCoordinates(true);renderOrientation();}
+  if(pendingRobotQuery){const q=pendingRobotQuery;pendingRobotQuery=null;playRobotRequest(q);}
+}).catch(e=>toast("G1 model could not load: "+e.message));
 let anim=null, pathMarker=null;
 function animatePath(path){
   if(pathMarker){actionG.remove(pathMarker);pathMarker=null;}
@@ -388,6 +410,41 @@ function animatePath(path){
     marker.position.copy(M(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,.012));
     if(d>=total)anim=null;
   };
+}
+function setRobotStatus(message){
+  robotStatus=message;
+  const el=$("robotFeedback");if(el){el.textContent=message;el.hidden=!message;}
+}
+function clearCarry(){
+  carryG.clear();carryG.visible=false;carriedName=null;carriedMesh=null;carriedHeight=0;
+  pendingRobotQuery=null;g1.release();$("releaseBtn").hidden=true;setRobotStatus("");
+}
+function playRobotRequest(q){
+  if(!q?.verified||!q.target||q.robot_request==="none"||q.robot_request==="release"||robotMode!=="g1")return;
+  if(!g1.ready){pendingRobotQuery=q;setRobotStatus("G1 model loading · gesture queued");return;}
+  const o=ST.twin.find(v=>v.name===q.target);
+  if(!o||o.hidden){setRobotStatus("G1 cannot reach an unseen object.");return;}
+  const h=o.kind==="cylinder"?o.size[1]:o.size[2],mode=q.robot_request==="take"?"take":"point";
+  const result=g1.reachTo(o.xy[0],o.xy[1],h+(mode==="take"?.03:.11),mode);
+  if(!result.ok){setRobotStatus(`G1 arm: ${result.reason}.`);return;}
+  if(mode==="take"){
+    carriedName=o.name;carriedHeight=h;carriedMesh=dressed(o);carryG.add(carriedMesh);carryG.visible=false;
+    setRobotStatus(`G1 taking ${friendly(o.name)} · simulated grasp`);
+  }else setRobotStatus(`G1 pointing to ${friendly(o.name)} · simulated motion`);
+}
+function updateCarry(){
+  if(!carriedMesh)return;
+  const side=g1.held?.side||g1.motion?.side;
+  if(!(g1.held||g1.motion?.gripped)||!side)return;
+  if(!carryG.visible){
+    carryG.visible=true;$("releaseBtn").hidden=false;
+    const original=twinG.children.find(g=>g.userData.name===carriedName);if(original)original.visible=false;
+    beliefG.children.filter(g=>g.userData.objectId===carriedName).forEach(g=>g.visible=false);
+    if(targetMarker)targetMarker.visible=false;
+    renderPanels();
+  }
+  const p=g1.handPosition(side);if(p)carriedMesh.position.set(p.x,p.y-carriedHeight-.012,p.z);
+  if(g1.held&&robotStatus.startsWith("G1 taking"))setRobotStatus(`G1 holding ${friendly(carriedName)} · visual simulation`);
 }
 function polyLine(pts,color,dashed,h=0.004){
   const g=new THREE.BufferGeometry().setFromPoints(pts.map(p=>M(p[0],p[1],h)));
@@ -414,17 +471,20 @@ function refreshSavedViews(){
   if(!$("viewSel").querySelector('option[value="custom"]'))$("viewSel").add(new Option("Custom angle","custom"));
 }
 function setView(mode){
-  if(mode==="custom"){viewMode=mode;$("viewSel").value=mode;renderOrientation();return;}
+  if(mode==="custom"){viewMode=mode;$("viewSel").value=mode;renderOrientation();if(ST)renderPanels();return;}
   viewMode=mode;cam.up.set(0,1,0);cam.fov=45;
   const mount=g1.mount,f=[Math.cos(mount.yaw),Math.sin(mount.yaw)],r=[Math.sin(mount.yaw),-Math.cos(mount.yaw)];
   const at=[mount.x+f[0]*.17,mount.y+f[1]*.17,.28];
   const point=(forward,right,z)=>M(at[0]+f[0]*forward+r[0]*right,at[1]+f[1]*forward+r[1]*right,z);
   if(mode==="table"){cam.position.copy(M(-.62,.85,1.14));controls.target.copy(M(.58,0,.18));}
   else if(mode==="top"){cam.position.copy(M(.7,0,1.65));controls.target.copy(M(.7,0,.03));}
-  else if(mode==="robot"){cam.position.copy(point(-.82,.72,.82));controls.target.copy(M(.72,0,.13));}
+  else if(mode==="robot"){cam.position.copy(point(-1.18,1.08,1.10));controls.target.copy(M(.72,0,.16));cam.fov=50;}
   else if(["front","left","right","rear"].includes(mode)){
     const offsets={front:[.9,0],left:[0,-.9],right:[0,.9],rear:[-.9,0]};
     cam.position.copy(point(...offsets[mode],.48));controls.target.copy(M(...at));
+  } else if(mode.startsWith("human-")){
+    const positions={"human-right":[.7,-1.22,1.35],"human-left":[.7,1.22,1.35],"human-back":[-.72,0,1.35],"human-front":[2.02,0,1.35]};
+    cam.position.copy(M(...positions[mode]));controls.target.copy(M(.7,0,.13));cam.fov=50;
   } else if(mode==="recorded"){
     const c=SRC?.recorded_camera,T=sourceCameraT();
     if(!T){toast("This recording has no saved camera transform.");return setView("table");}
@@ -441,10 +501,22 @@ function setView(mode){
   cam.updateProjectionMatrix();controls.update();$("viewSel").value=viewMode;
   sourceCameraG.visible=mode!=="recorded"&&!!SRC?.recorded_camera?.T_map_camera;
   beliefG.children.filter(o=>o.isSprite).forEach(o=>o.scale.set(mode==="recorded"?.15:["front","left","right","rear"].includes(mode)?.26:.42,mode==="recorded"?.019:["front","left","right","rear"].includes(mode)?.034:.054,1));
-  renderOrientation();
+  renderOrientation();if(ST)renderPanels();
+}
+function humanRelative(o){
+  if(!viewMode.startsWith("human-")||!o)return null;
+  const side=viewMode.slice(6),approach={right:[.7,-1.22],left:[.7,1.22],back:[-.72,0],front:[2.02,0]}[side];
+  const fx=.7-approach[0],fy=-approach[1],length=Math.hypot(fx,fy),forward=[fx/length,fy/length],right=[forward[1],-forward[0]];
+  const dx=o.xy[0]-.7,dy=o.xy[1],lateral=dx*right[0]+dy*right[1],depth=dx*forward[0]+dy*forward[1];
+  return `${lateral>.08?"right":lateral<-.08?"left":"centre"} · ${depth>.11?"far":depth<-.11?"near":"middle"}`;
 }
 function renderOrientation(){
   if(!ST)return;
+  if(viewMode.startsWith("human-")){
+    const side=viewMode.slice(6);
+    $("orientation").innerHTML=`<strong>Human from ${esc(side)}</strong><span>Objects positioned relative to you</span><small>G1 stays mounted</small>`;
+    return;
+  }
   const m=g1.mount,[x,y]=toMap(cam.position),dx=x-m.x,dy=y-m.y;
   const front=dx*Math.cos(m.yaw)+dy*Math.sin(m.yaw),right=dx*Math.sin(m.yaw)-dy*Math.cos(m.yaw);
   let side=cam.position.y>.95&&Math.hypot(dx,dy)<.55?"Top":Math.abs(front)>Math.abs(right)?front>=0?"Front":"Rear":right>=0?"Right":"Left";
@@ -460,14 +532,16 @@ function render(){
   if(!ST) return;
   // scene: twin objects
   twinG.clear(); beliefG.clear();
-  for(const o of ST.twin){ if(!o.hidden){ const g=dressed(o); if(o.name===selected){g.traverse(m=>{if(m.isMesh&&m.material.emissive){m.material=m.material.clone();m.material.emissive.setHex(0x173c43);}});} twinG.add(g);} }
+  for(const o of ST.twin){ if(!o.hidden&&!(o.name===carriedName&&carryG.visible)){ const g=dressed(o); if(o.name===selected){g.traverse(m=>{if(m.isMesh&&m.material.emissive){m.material=m.material.clone();m.material.emissive.setHex(0x173c43);}});} twinG.add(g);} }
   twinG.visible=$("tTwin").checked;
   // pipeline belief: S4 nodes
   for(const n of ST.nodes){
+    if(n.id===carriedName&&carryG.visible)continue;
     const occ=n.state==="occluded";
-    if($("tBoxes").checked||occ) beliefG.add(wireBox(n, occ?0xb7822e:0x287786, occ));
+    if($("tBoxes").checked||occ){const box=wireBox(n, occ?0xb7822e:0x287786, occ);box.userData.objectId=n.id;beliefG.add(box);}
     const warn=n.depth_status&&n.depth_status!=="ok";
     const lab=labelSprite(friendly(n.id)+(occ?" · Occluded":""), occ?"#8a641f":warn?"#256d7b":"#344c56");
+    lab.userData.objectId=n.id;
     if(viewMode==="recorded")lab.scale.set(.15,.019,1);
     else if(["front","left","right","rear"].includes(viewMode))lab.scale.set(.26,.034,1);
     const p=M(n.pose[0],n.pose[1],0); lab.position.set(p.x,n.pose[2]+n.size[2]/2+0.03,p.z); beliefG.add(lab);
@@ -480,10 +554,11 @@ function render(){
     g1.mount.gap=G1Robot.gapAt(g1.mount.x,g1.mount.y,ST.twin);
     syncMountControls();
   }
+  rebuildCoordinates();
   // action overlay (only when the question changes)
   const q=ST.query, key=q?JSON.stringify([q.question,q.code,q.path,ST.n_frames]):null;
   if(key!==lastQueryKey){
-    lastQueryKey=key; actionG.clear(); anim=null; pathMarker=null; g1.home();
+    lastQueryKey=key; actionG.clear(); anim=null; pathMarker=null;targetMarker=null;g1.home();
     if(q){
       for(const z of q.zones){
         const shape=new THREE.Shape(z.map(p=>{const v=M(p[0],p[1]);return new THREE.Vector2(v.x,-v.z);}));
@@ -491,6 +566,10 @@ function render(){
         mesh.rotation.x=-Math.PI/2;mesh.position.y=0.003;actionG.add(mesh);actionG.add(polyLine([...z,z[0]],0xa94440,false,0.004));
       }
       const tn=ST.nodes.find(n=>n.id===q.target);
+      if(q.verified&&tn){
+        targetMarker=new THREE.Mesh(new THREE.RingGeometry(.057,.062,48),new THREE.MeshBasicMaterial({color:0x287786,side:THREE.DoubleSide,depthTest:true}));
+        targetMarker.rotation.x=-Math.PI/2;targetMarker.position.copy(M(tn.pose[0],tn.pose[1],.008));actionG.add(targetMarker);
+      }
       if(q.validated&&q.path&&q.path.length>1){ actionG.add(tube(q.path,0x256d7b)); animatePath(q.path); }
       else{
         if(q.path&&q.path.length>1) actionG.add(polyLine(q.path,0xa94440,true,0.006));
@@ -513,7 +592,7 @@ function renderPanels(){
   $("parserChip").className="chip "+(ST.parser==="ollama"?"c-ok":"c-warn");
   $("contractChip").textContent=ST.contract_errors?`${ST.contract_errors} errors`:`${ST.n_frames} frames · Ready`;
   $("contractChip").className="chip "+(ST.contract_errors?"c-bad":"c-muted");
-  $("hud").innerHTML='<span class="chip c-sim">Twin view</span>'+(ST.query?`<span class="chip ${ST.query.validated?"c-ok":"c-warn"}">${esc(ST.query.code)}</span>`:"");
+  $("hud").innerHTML='<span class="chip c-sim">Twin view</span>'+(ST.query?`<span class="chip ${ST.query.validated?"c-ok":"c-warn"}">${esc(ST.query.code)}</span>`:"")+(carriedName&&carryG.visible?'<span class="chip c-sim">Simulated hold</span>':"");
   $("objCount").textContent=ST.twin.length;
   $("objs").innerHTML=ST.twin.map(o=>{
     const n=nodes[o.name];
@@ -542,7 +621,9 @@ function renderPanels(){
   const objectHeight=o=>o.kind==="cylinder"?o.size[1]:o.size[2];
   $("selectedInfo").innerHTML=selectedObject?`<div class="selection-name">${esc(friendly(selectedObject.name))}</div>
     <div class="selection-row"><span>State</span><b>${esc(selectedObject.hidden?"Hidden":selectedNode?.state||"Last seen")}</b></div>
-    <div class="coord-readout"><span>Map position · metres</span><b>X ${(+selectedObject.xy[0]).toFixed(3)} &nbsp; Y ${(+selectedObject.xy[1]).toFixed(3)} &nbsp; Z ${(objectHeight(selectedObject)/2).toFixed(3)}</b></div>
+    <div class="coord-readout"><span>${selected===carriedName&&carryG.visible?"Source position":"Map position"} · metres</span><b>X ${(+selectedObject.xy[0]).toFixed(3)} &nbsp; Y ${(+selectedObject.xy[1]).toFixed(3)} &nbsp; Z ${(objectHeight(selectedObject)/2).toFixed(3)}</b></div>
+    ${humanRelative(selectedObject)?`<div class="selection-row"><span>From your view</span><b>${esc(humanRelative(selectedObject))}</b></div>`:""}
+    ${selected===carriedName&&carryG.visible?'<div class="selection-row"><span>Robot</span><b>Holding · simulated</b></div>':""}
     <div class="selection-row"><span>Yaw from +X</span><b>${(+selectedObject.yaw).toFixed(0)}°</b></div>
     ${selectedNode?`<div class="selection-row"><span>S4 measured centre</span><b>${selectedNode.pose.map(v=>(+v).toFixed(3)).join(", ")}</b></div>`:""}
     <div class="selection-row"><span>Confidence</span><b>${selectedNode?.confidence!=null?selectedNode.confidence.toFixed(2):"—"}</b></div>
@@ -569,8 +650,9 @@ function renderPanels(){
       <div class="answer-target">${esc(target)}</div>
       <p class="answer-text">${esc(q.answer)}</p>
       ${q.warnings?.length?`<p class="answer-warnings">${q.warnings.map(esc).join(" · ")}</p>`:""}
-      <div class="action-result ${q.validated?"":"refused"}"><strong>${q.validated?"Action allowed":"Action refused"} · ${esc(q.code)}</strong>
+      <div class="action-result ${q.validated?"":"refused"}"><strong>S6 table path ${q.validated?"allowed":"refused"} · ${esc(q.code)}</strong>
         <span>${esc(q.reason)}</span>${q.goal_warnings?.length?`<span>${q.goal_warnings.map(esc).join(" · ")}</span>`:""}</div>
+      <div class="robot-result" id="robotFeedback" ${robotStatus?"":"hidden"}>${esc(robotStatus)}</div>
       <div class="query-meta">${esc(q.parser)} · ${q.seconds}s${sim.executed?` · ${sim.success?"reached":"failed"} · ${sim.collisions} collisions`:""}</div>
       <details><summary>Parsed question</summary><pre>${esc(JSON.stringify(q.parsed,null,1))}</pre></details>`;
   } else $("qa").innerHTML='<p class="note">Ask a question to see the answer and action.</p>';
@@ -607,14 +689,17 @@ canvas.addEventListener("pointerdown",ev=>{
   controls.enabled=false; canvas.setPointerCapture(ev.pointerId); selected=drag.name;
 });
 canvas.addEventListener("pointermove",ev=>{
-  if(!drag) return;
   pick(ev); const p=new THREE.Vector3(); if(!ray.ray.intersectPlane(dragPlane,p)) return;
+  const [mx,my]=toMap(p),d=ST?.desk;
+  $("cursorCoords").textContent=d&&mx>=d.x[0]&&mx<=d.x[1]&&my>=d.y[0]&&my<=d.y[1]?`X ${mx.toFixed(2)} · Y ${my.toFixed(2)} m`:"X — · Y —";
+  if(!drag) return;
   const np=p.add(drag.off); drag.g.position.set(np.x,0,np.z);
   if(drag.line) actionG.remove(drag.line);
   const a=toMap(drag.start), b=toMap(drag.g.position);
   drag.line=polyLine([a,b],0x256d7b,true,0.005); actionG.add(drag.line);
   $("hint").textContent=`${drag.name}: ${(Math.hypot(b[0]-a[0],b[1]-a[1])*100).toFixed(0)} cm · release to place`;
 });
+canvas.addEventListener("pointerleave",()=>{$("cursorCoords").textContent="X — · Y —";});
 function endDrag(ev,cancel){
   if(!drag) return;
   const d=drag; drag=null; controls.enabled=true; if(d.line) actionG.remove(d.line);
@@ -653,7 +738,7 @@ $("saveViewBtn").onclick=()=>{
   const views=savedViews();views.push({name:name.slice(0,30),position:cam.position.toArray(),target:controls.target.toArray(),up:cam.up.toArray(),fov:cam.fov});
   localStorage.setItem(savedKey(),JSON.stringify(views.slice(-5)));refreshSavedViews();setView(`saved:${savedViews().length-1}`);toast("View saved for this recording.");
 };
-$("mountAuto").onclick=()=>{if(!ST)return;g1.autoPlace(ST);syncMountControls();renderOrientation();toast("Mount moved to the clearest reachable table edge.");};
+$("mountAuto").onclick=()=>{if(!ST)return;g1.autoPlace(ST);syncMountControls();rebuildCoordinates();renderOrientation();toast("Mount moved to the clearest reachable table edge.");};
 $("applyCamPose").onclick=()=>{
   if(!SRC?.recorded_camera?.T_map_camera){toast("This recording has no camera transform to calibrate.");return;}
   const x=Number($("camX").value),y=Number($("camY").value),yaw=Number($("camYaw").value);
@@ -667,13 +752,14 @@ for(const id of ["mountX","mountY"])$(id).onchange=()=>{
   if(!Number.isFinite(x)||!Number.isFinite(y)||x<d.x[0]+.055||x>d.x[1]-.055||y<d.y[0]+.055||y>d.y[1]-.055){toast("Mount centre must stay inside the table edge.");syncMountControls();return;}
   const gap=G1Robot.gapAt(x,y,ST.twin);if(gap<.035){toast("Mount would overlap an object.");syncMountControls();return;}
   const visible=ST.twin.filter(o=>!o.hidden),cx=visible.reduce((s,o)=>s+o.xy[0],0)/(visible.length||1),cy=visible.reduce((s,o)=>s+o.xy[1],0)/(visible.length||1);
-  g1.setMount(x,y,Math.atan2(cy-y,cx-x));g1.mount.gap=gap;g1.home();syncMountControls();renderOrientation();
+  g1.setMount(x,y,Math.atan2(cy-y,cx-x));g1.mount.gap=gap;g1.home();syncMountControls();rebuildCoordinates();renderOrientation();
 };
 $("reachBtn").onclick=()=>{
   const o=ST?.twin.find(v=>v.name===selected);if(!o||o.hidden){toast("Select a visible object to preview a reach.");return;}
   const h=o.kind==="cylinder"?o.size[1]:o.size[2],result=g1.reachTo(o.xy[0],o.xy[1],h+.03);
   toast(result.ok?`Simulated ${result.side} arm reach · hand returns to rest.`:result.reason);
 };
+$("releaseBtn").onclick=()=>{const name=carriedName;clearCarry();render();toast(`${friendly(name)} returned to its recorded table position.`);};
 for(const id of ["tBoxes","tTwin"]) $(id).onchange=()=>render();
 $("tCoords").onchange=()=>{coordG.visible=$("tCoords").checked;};
 $("tCloud").onchange=()=>{ if(cloud) cloud.visible=$("tCloud").checked; };
@@ -702,13 +788,14 @@ new ResizeObserver(resize).observe(canvas); resize();
 const _wp=new THREE.Vector3();
 function loop(now){requestAnimationFrame(loop); if(anim)anim(now); controls.update();
   g1.update(now);
-  twinG.children.forEach(g=>{const b=g.userData.billboard; if(b){g.getWorldPosition(_wp); b.rotation.y=Math.atan2(cam.position.x-_wp.x,cam.position.z-_wp.z)-g.rotation.y;}});
+  updateCarry();
+  [...twinG.children,...carryG.children].forEach(g=>{const b=g.userData.billboard; if(b){g.getWorldPosition(_wp); b.rotation.y=Math.atan2(cam.position.x-_wp.x,cam.position.z-_wp.z)-g.rotation.y;}});
   renderer.render(scene,cam);}
 requestAnimationFrame(loop);
 controls.addEventListener("end",()=>{if(!drag&&viewMode!=="custom")setView("custom");renderOrientation();});
 controls.addEventListener("change",renderOrientation);
 // test hook: screen position of a map point (used by the automated UI test)
-window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST, robot:()=>g1, view:()=>viewMode, camera:()=>({position:cam.position.toArray(),target:controls.target.toArray()})};
+window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST, robot:()=>g1, view:()=>viewMode, camera:()=>({position:cam.position.toArray(),target:controls.target.toArray()}), carry:()=>({name:carriedName,visible:carryG.visible,position:carriedMesh?.position.toArray()})};
 try{ await loadSource(); ST=await api("state"); render(); }
 catch(e){ toast("Could not reach the twin server: "+e.message); }
 })();
