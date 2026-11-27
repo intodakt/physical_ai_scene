@@ -232,3 +232,6 @@ reports/
 # W12 evaluation: per-run pipeline outputs are large; keep only tables/figures in git
 eval/results/*/runs/
 eval/results/s2/synthetic_selfcheck/
+
+# scratch outputs (virtual-table experiments, pipeline variants)
+outputs/pipeline_*/
