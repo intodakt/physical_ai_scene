@@ -23,6 +23,26 @@ the same measured box.
 A move is rendered as a short slide (frames ≤ 8 cm apart) so S6 sees the object travel, then still
 frames until S6 reports `MOVED`. Moves onto another object are refused.
 
+### Object size and look from the real image
+
+S2's boxes come from depth; on a dark, glossy desk most objects are `transparent_suspected` and their
+boxes are partial. The twin therefore also uses the camera image (`demo/twin/photo.py`), with S1's
+measured camera pose:
+
+* **flat objects** (phones, calculators, remotes, books, pads, or measured height < 4.5 cm): S3's mask
+  (eroded 2 px) is projected onto the object's top plane; pixels in front of each column's desk-contact
+  point (the visible side face) are dropped; the minimum-area rectangle is the footprint, and the image
+  re-sampled onto it is the object's top texture. On the synthetic desk: book 0.227 × 0.151 m (true
+  0.22 × 0.15), multimeter 0.151 × 0.086 m (true 0.15 × 0.08);
+* **tall objects with failed depth**: S2's own mask + desk-plane estimate (`mask_plane.estimate_from_mask`);
+* the page's **Look: Photo** draws flat objects with their top photo and tall ones as a cut-out of the
+  camera image standing on the desk; **Stylised** keeps the drawn shapes;
+* **✎ (rename)** corrects a label S3 got wrong (kept in `<run>/twin_labels.json`, shown as
+  "renamed (S3: …)"); the twin is rebuilt so S4 and S5 use the new name.
+
+Recordings imported before this version need `python -m demo.twin --remeasure <name>` once, so the
+measured camera pose is stored with the run.
+
 ## Start it
 
 | Laptop | How |

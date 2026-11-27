@@ -106,8 +106,9 @@ def load_run(run_dir: str | Path) -> dict:
                     idx = np.random.default_rng(0).choice(len(pts), 40000, replace=False)
                     pts, col = pts[idx], col[idx]
                 cloud = {"xyz": np.round(pts, 4).ravel().tolist(), "rgb": col.astype(int).ravel().tolist()}
+    T = (summary.get("camera_tf") or {}).get("T_map_camera")          # measured from the desk on import
     return {"run": run_dir, "name": summary.get("dataset") or run_dir.name, "frame": best["frame"],
-            "objects": objs["objects"], "rgb": rgb, "cloud": cloud, "frame_dir": frame_dir,
+            "objects": objs["objects"], "rgb": rgb, "cloud": cloud, "frame_dir": frame_dir, "T_map_camera": T,
             "session_meta": summary.get("session_meta", {})}
 
 
@@ -146,11 +147,16 @@ def spec_from_object(obj: dict, rgb: Optional[np.ndarray] = None, frame_dir: Opt
     box = obj.get("box_map") or {}
     label = obj.get("semantic_label", "object")
     cx, cy = (box.get("center") or obj["centroid_map"])[:2]
-    d0, d1, dz = box.get("dimensions") or obj["box_dimensions"]
+    # S2's gravity-aligned box: dimensions = [width (along yaw), height (vertical), depth]
+    if box.get("dimensions"):
+        d0, dz, d1 = box["dimensions"]
+    else:
+        d0, d1, dz = obj["box_dimensions"]
     yaw = float(box.get("yaw", 0.0))
-    d0, d1, dz = max(d0, 0.02), max(d1, 0.02), max(dz, 0.01)
+    d0, d1, dz = max(d0, 0.02), max(d1, 0.02), max(dz, 0.005)
     status = obj.get("depth_status") or ""
     spec = {"name": obj.get("persistent_id") or obj["object_id"], "label": label, "xy": (float(cx), float(cy)),
+            "s3_label": label, "measured_height": float(dz),
             "labels": list(obj.get("label_candidates") or [label]), "score": float(obj.get("detector_score") or 0.8),
             "color": _colour(obj, rgb, frame_dir), "dropout": 0.85 if (label == "glass" or status in TRANSPARENT) else 0.0}
     if any(w in label for w in ROUND_LABELS):
@@ -159,7 +165,7 @@ def spec_from_object(obj: dict, rgb: Optional[np.ndarray] = None, frame_dir: Opt
         # mock_data's laptop: base (depth x width x 2 cm) + screen hinged on the local +x edge.
         # The shorter footprint side is the depth; turn it so the screen is on the side away from the camera.
         depth, width = (d0, d1) if d0 <= d1 else (d1, d0)
-        ax = yaw if d0 <= d1 else yaw - math.pi / 2
+        ax = yaw if d0 <= d1 else yaw + math.pi / 2
         if math.cos(ax) < 0:
             ax += math.pi
         spec.update(kind="laptop", size=(max(0.12, depth * 0.8), width, 0.02), yaw=math.degrees(ax))
@@ -207,7 +213,7 @@ class Twin:
         self.workdir = Path(workdir) if workdir else store.STORE / "twin"
         self.parser_mode = parser
         self.source = load_run(run_dir or default_run())
-        self.base = [spec_from_object(o, self.source["rgb"], self.source["frame_dir"]) for o in self.source["objects"]]
+        self._build_base()
         self.cam_xyz, self.cam_rpy = virtual_camera(self.base)
         self.planner = planner
         if obstacles not in ("all", "config"):
@@ -216,6 +222,73 @@ class Twin:
         # the virtual robot starts on the camera side of the objects, on the desk (not inside an object)
         self.agent_start = self._pick_agent_start() if self.base else None
         self.reset()
+
+    # ------------------------------------------------------------ the table as recorded
+    def _labels_file(self) -> Path:
+        return self.source["run"] / "twin_labels.json"
+
+    def _build_base(self):
+        """Specs at S2's measured poses, improved from the real image where S2's depth failed, with the
+        team's label corrections applied. Photos (textures, cut-outs) are kept apart from the specs."""
+        from demo.twin import photo
+
+        src = self.source
+        try:
+            overrides = json.loads(self._labels_file().read_text(encoding="utf-8"))
+        except Exception:
+            overrides = {}
+        view = photo.View.try_open(src["frame_dir"], src.get("T_map_camera"))
+        self.photos, self.base, counts = {}, [], {}
+        for o in src["objects"]:
+            spec = spec_from_object(o, src["rgb"], src["frame_dir"])
+            orig = spec["name"]
+            new = overrides.get(orig)
+            if new:
+                spec.update(label=new, labels=[new], renamed_from=spec["s3_label"])
+            slug = spec["label"].strip().replace(" ", "_")
+            counts[slug] = counts.get(slug, 0) + 1
+            spec["name"], spec["source_name"] = f"{slug}_{counts[slug]:02d}", orig
+            look = {"look": "shape"}
+            mask = view.mask(o.get("source_observation_id")) if view else None
+            if mask is not None:
+                look.update(photo.cutout(view, mask), look="cutout")
+                bad_depth = (o.get("depth_status") or "ok") != "ok"
+                if photo.is_flat(spec["label"], spec["measured_height"]):
+                    g = photo.flat_geometry(view, mask, spec["measured_height"])
+                    if g and g["fill"] > 0.3:
+                        spec.update(kind="box", size=g["size"], yaw=g["yaw_deg"], xy=g["xy"], geometry="mask_plane_flat")
+                        look.update(look="top", texture=g["texture"])
+                elif bad_depth:
+                    g = photo.tall_geometry(view, mask)
+                    if g:
+                        spec.update(xy=g["xy"], geometry="mask_plane_round",
+                                    **({"kind": "cylinder", "size": (g["width"] / 2, g["height"])}
+                                       if spec["kind"] == "cylinder" else
+                                       {"size": (g["width"], g["width"], g["height"])}))
+            self.photos[spec["name"]] = look
+            self.base.append(spec)
+
+    def rename(self, name: str, label: str) -> dict:
+        """Correct S3's label for an object (kept in <run>/twin_labels.json); rebuilds the twin."""
+        label = " ".join(str(label).lower().split())
+        if not label or len(label) > 40 or not all(ch.isalnum() or ch in " -" for ch in label):
+            raise ValueError("use letters, digits, spaces or '-' (at most 40 characters)")
+        with self.lock:
+            spec = next((s for s in self.base if s["name"] == name), None)
+            if spec is None:
+                raise KeyError(f"no object {name!r}")
+            try:
+                overrides = json.loads(self._labels_file().read_text(encoding="utf-8"))
+            except Exception:
+                overrides = {}
+            if label == spec["s3_label"]:
+                overrides.pop(spec["source_name"], None)
+            else:
+                overrides[spec["source_name"]] = label
+            self._labels_file().write_text(json.dumps(overrides, indent=2), encoding="utf-8")
+            self._build_base()
+            self.reset()
+            return self.state()
 
     def _pick_agent_start(self) -> list:
         """Front edge of the objects; the y with clear straight lines to the most objects (S6 margin 3 cm)."""
@@ -622,7 +695,9 @@ class Twin:
                      for e in graph["edges"] if e.get("end_time") is None]
             twin = [{"name": n, "label": s["label"], "kind": s["kind"], "xy": s["xy"], "size": s["size"],
                      "yaw": s.get("yaw", 0.0), "color": s["color"], "hidden": n in self.hidden,
-                     "transparent": s["dropout"] > 0} for n, s in self.specs.items()]
+                     "transparent": s["dropout"] > 0, "renamed_from": s.get("renamed_from"),
+                     "geometry": s.get("geometry", "s2_box"),
+                     "look": self.photos.get(n, {}).get("look", "shape")} for n, s in self.specs.items()]
             frame = None
             if self.last_frame:
                 d = self.last_frame["dir"]
@@ -654,7 +729,7 @@ class Twin:
 
     def source_info(self) -> dict:
         src = self.source
-        return {"name": src["name"], "frame": src["frame"], "run": src["run"].name,
+        return {"name": src["name"], "frame": src["frame"], "run": src["run"].name, "photos": self.photos,
                 "n_objects": len(src["objects"]),
                 "rgb": _b64_jpeg(src["rgb"]) if src["rgb"] is not None else None,
                 "cloud": src["cloud"],
