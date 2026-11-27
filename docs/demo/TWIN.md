@@ -51,6 +51,19 @@ The browser opens at http://127.0.0.1:8600. Options: `--run <run folder>`, `--pa
 Recordings imported in the Streamlit demo (*➕ Add recording*) or with `python -m demo.runs --import`
 land in the same store and show up in the *Recording* menu too.
 
+## Windows blocks a file
+
+`Access denied ... An Application Control policy has blocked this file` (on `G1_Twin.bat`) or
+`DLL load failed ... Application Control policy` (Open3D's `pybind`) means Windows 11 **Smart App
+Control** (or a school/company policy) blocks unsigned files downloaded from the internet.
+
+* `.bat` only: run the steps by hand in PowerShell from the project folder:
+  `py -3.11 -m venv .venv`, `.venv\Scripts\python.exe -m pip install -r requirements-demo.txt`,
+  `.venv\Scripts\python.exe -m demo.twin "<recording folder>"`.
+* Open3D DLL: Windows Security → App & browser control → Smart App Control → Off (Windows only lets
+  you turn it back on by resetting the PC), or use a laptop without the policy (macOS: `G1_Twin.command`).
+  A policy managed by an organisation cannot be changed by the user.
+
 ## On the page
 
 * **Drag** an object on the table to move it; **Hide / Put back / ⟳** in the object list.

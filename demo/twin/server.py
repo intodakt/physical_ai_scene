@@ -161,8 +161,16 @@ def main(argv=None):
         try:
             names = store.import_and_run(src_path, parser=a.parser, max_frames=a.max_frames, progress=progress)
         except Exception as e:
-            sys.exit(f"[twin] import failed: {e}\n       The recording needs S3's output (observation.json + masks) "
-                     "next to the bag; see docs/demo/TWIN.md.")
+            msg = str(e)
+            if "Application Control" in msg or "DLL load failed" in msg:
+                hint = ("Windows blocked a program library (usually Smart App Control: Windows Security -> "
+                        "App & browser control). See docs/demo/TWIN.md, 'Windows blocks a file'.")
+            elif "S3" in msg or "observation" in msg:
+                hint = ("The recording needs S3's output (observation.json + masks, unzipped) next to the bag; "
+                        "see docs/demo/TWIN.md.")
+            else:
+                hint = "See docs/demo/TWIN.md."
+            sys.exit(f"[twin] import failed: {msg}\n       {hint}")
         for warn in store.LAST_ERRORS:
             print(f"[twin] note: {warn}", flush=True)
         run = store.RUNS / names[0]
