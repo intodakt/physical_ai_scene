@@ -39,7 +39,8 @@ REPO = Path(__file__).resolve().parents[2]
 MAX_STEP_M = 0.08                  # largest slide per rendered frame (S6 tracking gate is 0.15 m)
 DESK_X, DESK_Y = (0.05, 1.35), (-0.55, 0.55)   # renderer desk top (mock_data: 1.4 x 1.2 m at x 0..1.4)
 FRAME_DT = 0.5                     # seconds between twin frames (timestamps for S6 / S4)
-ROUND_LABELS = ("mug", "cup", "glass", "bottle", "can", "jar", "vase")
+ROUND_LABELS = ("mug", "cup", "glass", "bottle", "can", "jar", "vase", "apple", "egg", "orange", "ball", "fruit",
+                "peach", "lemon", "tomato", "onion", "potato")
 TRANSPARENT = ("glass", "transparent_suspected", "no_depth")
 PALETTE = {"laptop": (70, 70, 78), "mug": (200, 60, 50), "cup": (200, 60, 50), "book": (40, 90, 170),
            "glass": (190, 215, 225), "bottle": (60, 140, 90), "multimeter": (235, 190, 30),
@@ -127,7 +128,14 @@ def _colour(obj: dict, rgb: Optional[np.ndarray], frame_dir: Optional[Path] = No
         patch = rgb[int(max(0, cy - h)):int(cy + h) + 1, int(max(0, cx - w)):int(cx + w) + 1]
         if patch.size:
             return tuple(int(v) for v in patch.reshape(-1, 3).mean(0))
-    for k, c in PALETTE.items():
+    words = {"white": (225, 225, 220), "black": (35, 35, 40), "red": (190, 50, 45), "green": (60, 140, 70),
+             "blue": (45, 90, 170), "yellow": (230, 190, 40), "silver": (180, 182, 188), "grey": (120, 120, 125),
+             "gray": (120, 120, 125), "orange": (230, 130, 40), "brown": (120, 80, 45), "pink": (230, 150, 170)}
+    for w in label.split():
+        if w in words:
+            return words[w]
+    for k, c in {**PALETTE, "apple": (200, 50, 40), "egg": (240, 228, 205), "phone": (35, 35, 40),
+                 "calculator": (40, 42, 48), "controller": (230, 230, 230)}.items():
         if k in label:
             return c
     return (150, 150, 155)
@@ -180,12 +188,19 @@ def virtual_camera(specs: list) -> tuple[list, list]:
     return ([float(c[0] - dist * math.cos(pitch)), float(c[1]), float(dist * math.sin(pitch))], [0.0, pitch, 0.0])
 
 
+def _seg_dist(p, a, b) -> float:
+    ax, ay, bx, by = *a, *b
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, ((p[0] - ax) * dx + (p[1] - ay) * dy) / ((dx * dx + dy * dy) or 1.0)))
+    return math.dist(p, (ax + t * dx, ay + t * dy))
+
+
 # ---------------------------------------------------------------- twin
 class Twin:
     """The editable virtual table plus the pipeline that processes it. Thread-safe (one edit at a time)."""
 
     def __init__(self, run_dir: str | Path | None = None, workdir: str | Path | None = None,
-                 parser: str = "auto", planner: Optional[str] = None):
+                 parser: str = "auto", planner: Optional[str] = None, obstacles: str = "all"):
         from demo import runs as store
 
         self.lock = threading.RLock()
@@ -195,7 +210,59 @@ class Twin:
         self.base = [spec_from_object(o, self.source["rgb"], self.source["frame_dir"]) for o in self.source["objects"]]
         self.cam_xyz, self.cam_rpy = virtual_camera(self.base)
         self.planner = planner
+        if obstacles not in ("all", "config"):
+            raise ValueError("obstacles must be 'all' or 'config'")
+        self.obstacles = obstacles
+        # the virtual robot starts on the camera side of the objects, on the desk (not inside an object)
+        self.agent_start = self._pick_agent_start() if self.base else None
         self.reset()
+
+    def _pick_agent_start(self) -> list:
+        """Front edge of the objects; the y with clear straight lines to the most objects (S6 margin 3 cm)."""
+        xs = [sp["xy"][0] - footprint_radius(sp) for sp in self.base]
+        ys = [sp["xy"][1] for sp in self.base]
+        x0 = max(DESK_X[0], min(xs) - 0.08)
+        med = float(np.median(ys))
+
+        def n_clear(start):
+            k = 0
+            for sp in self.base:
+                if all(_seg_dist(o["xy"], start, sp["xy"]) > footprint_radius(o) + 0.05
+                       for o in self.base if o is not sp):
+                    k += 1
+            return k
+
+        cands = [(x0, y) for y in np.linspace(min(ys) - 0.1, max(ys) + 0.1, 13)]
+        best = max(cands, key=lambda c: (n_clear(c), -abs(c[1] - med)))
+        return [round(float(best[0]), 3), round(float(best[1]), 3)]
+
+    def _action_cfg(self):
+        """S6 settings for this twin. S6's code is unchanged; only its config differs:
+        obstacles='all' makes every object except the target an exclusion zone (the team config lists only
+        the laptop), and the agent starts in front of this table's objects."""
+        a = self.pipe.cfg["action"]
+        if not hasattr(self, "_config_exclusion"):
+            self._config_exclusion = list(a.get("exclusion_labels", []))
+        if self.planner:
+            a["planner"] = self.planner
+        if self.agent_start:
+            a["agent_start"] = list(self.agent_start)
+        if self.obstacles == "all":
+            words = set()
+            for sp in self.specs.values():
+                for lab in [sp["label"], *sp["labels"]]:
+                    words |= set(str(lab).replace("_", " ").split())
+            a["exclusion_labels"] = sorted(words)
+        else:
+            a["exclusion_labels"] = list(self._config_exclusion)
+
+    def set_obstacles(self, mode: str) -> dict:
+        if mode not in ("all", "config"):
+            raise ValueError("obstacles must be 'all' or 'config'")
+        with self.lock:
+            self.obstacles = mode
+            self._action_cfg()
+            return self.state()
 
     # ------------------------------------------------------------ state
     def reset(self):
@@ -207,8 +274,8 @@ class Twin:
             self.hidden: set[str] = set()
             shutil.rmtree(self.workdir, ignore_errors=True)
             self.pipe = Pipeline(self.workdir / "run", parser=self.parser_mode)
-            if self.planner:
-                self.pipe.cfg["action"]["planner"] = self.planner
+            self.specs = {s["name"]: copy.deepcopy(s) for s in self.base}
+            self._action_cfg()
             self.k = 0
             self.t0 = 1.0e9
             self.log: list[dict] = []          # one entry per user action
@@ -403,6 +470,59 @@ class Twin:
             obj = glass or mug
             out.append({"id": "behind", "title": f"{self.specs[obj]['label'].capitalize()} past the laptop",
                         "question": f"Go to the {self.specs[obj]['label']}"})
+        pick = self._block_pick()
+        if pick:
+            target, blocker = pick
+            out.append({"id": "block", "title": f"Block the path with the {self.specs[blocker]['label']}",
+                        "question": f"Go to the {self.specs[target]['label']}"})
+        return out
+
+    def _block_candidates(self) -> list:
+        """(target, blocker) pairs for 'block the path', best first (target with a clear path, far away)."""
+        if self.obstacles != "all":
+            return []
+        vis = [n for n in self.specs if n not in self.hidden]
+        if len(vis) < 2:
+            return []
+        from src.planning.action import footprint_polygon, path_hits
+
+        cfg = self.pipe.cfg["action"]
+        agent = cfg["agent_start"]
+        nodes = {n["id"]: n for n in self.pipe.graph["nodes"] if not n.get("virtual") and n.get("state") != "occluded"}
+
+        def clear(n):       # S6's own zones and path check, as build_action_goal will do it
+            if n not in nodes:
+                return False
+            zones = [{"object_id": o, "polygon": footprint_polygon(nd, cfg.get("exclusion_margin_m", 0.03) + 0.01)}
+                     for o, nd in nodes.items() if o != n]
+            return not path_hits([agent, nodes[n]["pose_map"][:2]], zones, cfg.get("step_m", 0.01))
+
+        labels = [self.specs[n]["label"] for n in vis]
+        unique = [n for n in vis if labels.count(self.specs[n]["label"]) == 1] or vis
+        far = sorted(unique, key=lambda n: (not clear(n), -math.dist(agent, self.specs[n]["xy"])))
+        pairs = []
+        for t in far:
+            for b in sorted((n for n in vis if n != t), key=lambda n: footprint_radius(self.specs[n])):
+                pairs.append((t, b))
+        return pairs
+
+    def _block_pick(self):
+        c = self._block_candidates()
+        return c[0] if c else None
+
+    def _block_spots(self, target: str, blocker: str) -> list:
+        agent = self.pipe.cfg["action"]["agent_start"]
+        tx, ty = self.specs[target]["xy"]
+        r = footprint_radius(self.specs[blocker])
+        L = math.dist(agent, (tx, ty)) or 1.0
+        nx, ny = -(ty - agent[1]) / L, (tx - agent[0]) / L
+        out = []
+        for t in (0.5, 0.42, 0.58, 0.35, 0.65, 0.3, 0.72, 0.25, 0.8):
+            for off in (0.0, 0.015, -0.015):
+                x, y = agent[0] + (tx - agent[0]) * t + nx * off, agent[1] + (ty - agent[1]) * t + ny * off
+                if math.dist((x, y), agent) > r + 0.06 and \
+                        math.dist((x, y), (tx, ty)) > r + footprint_radius(self.specs[target]) + 0.03:
+                    out.append((x, y))
         return out
 
     def _free_spot(self, name: str, candidates) -> tuple[float, float]:
@@ -465,6 +585,16 @@ class Twin:
                     self.hide(n)
             elif pid == "behind":
                 self.move(*self._spot_past_laptop())
+            elif pid == "block":
+                for target, blocker in self._block_candidates():
+                    spots = [(x, y) for x, y in self._block_spots(target, blocker)
+                             if not self.collisions(blocker, *self._clamp(blocker, x, y))]
+                    if spots:
+                        self.move(blocker, *spots[0])
+                        p = {"question": f"Go to the {self.specs[target]['label']}"}
+                        break
+                else:
+                    raise ValueError("no free spot on the robot's path for any object on this table")
             return self.ask(p["question"])
 
     # ------------------------------------------------------------ view model for the web page
@@ -515,7 +645,7 @@ class Twin:
             return {"twin": twin, "nodes": nodes, "edges": edges, "frame": frame, "query": q,
                     "log": self.log[-30:], "presets": self.presets(),
                     "planner": self.pipe.cfg["action"]["planner"], "parser": self.pipe.parser,
-                    "agent_start": self.pipe.cfg["action"]["agent_start"],
+                    "agent_start": self.pipe.cfg["action"]["agent_start"], "obstacles": self.obstacles,
                     "exclusion_labels": self.pipe.cfg["action"].get("exclusion_labels", []),
                     "n_frames": s["n_frames"], "mean_latency_ms": s["mean_latency_ms"],
                     "contract_errors": len(s["contract_errors"]),

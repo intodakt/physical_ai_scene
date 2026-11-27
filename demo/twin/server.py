@@ -69,6 +69,8 @@ class App:
             return t.run_preset(str(body["id"]))
         if route == "planner":
             return t.set_planner(str(body["planner"]))
+        if route == "obstacles":
+            return t.set_obstacles(str(body["mode"]))
         if route == "reset":
             t.reset()
             return t.state()
@@ -137,6 +139,12 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8600)
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--max-frames", type=int, default=40, help="frames replayed per imported bag")
+    ap.add_argument("--camera-tf", choices=["auto", "bag"], default="auto",
+                    help="imported recordings: auto = measure the camera height/tilt from the desk plane (default); "
+                         "bag = use the bag's TF or the configured placeholder")
+    ap.add_argument("--remeasure", metavar="NAME", default=None,
+                    help="re-run an already imported recording (data/demo_store/datasets/NAME) with --camera-tf, "
+                         "then open it")
     ap.add_argument("recording", nargs="?", default=None,
                     help="optional: a recording to import first (folder with the bag + S3 output, a .zip or a .db3); "
                          "on Windows, drag the folder onto G1_Twin.bat")
@@ -154,19 +162,34 @@ def main(argv=None):
 
         def progress(msg, frac):
             pct = int(frac * 100)
-            if pct >= last[0] + 5 or frac >= 1:
+            if pct >= last[0] + 5 or frac >= 1 or "camera" in msg or "FAILED" in msg:
                 last[0] = pct
                 print(f"  [{pct:3d}%] {msg}", flush=True)
 
         try:
-            names = store.import_and_run(src_path, parser=a.parser, max_frames=a.max_frames, progress=progress)
+            names = store.import_and_run(src_path, parser=a.parser, max_frames=a.max_frames, progress=progress,
+                                         camera_tf=None if a.camera_tf == "bag" else a.camera_tf)
         except Exception as e:
-            sys.exit(f"[twin] import failed: {e}\n       The recording needs S3's output (observation.json + masks) "
-                     "next to the bag; see docs/demo/TWIN.md.")
+            msg = str(e)
+            if "Application Control" in msg or "DLL load failed" in msg:
+                hint = ("Windows blocked a program library (usually Smart App Control: Windows Security -> "
+                        "App & browser control). See docs/demo/TWIN.md, 'Windows blocks a file'.")
+            elif "S3" in msg or "observation" in msg:
+                hint = ("The recording needs S3's output (observation.json + masks, unzipped) next to the bag; "
+                        "see docs/demo/TWIN.md.")
+            else:
+                hint = "See docs/demo/TWIN.md."
+            sys.exit(f"[twin] import failed: {msg}\n       {hint}")
         for warn in store.LAST_ERRORS:
             print(f"[twin] note: {warn}", flush=True)
         run = store.RUNS / names[0]
         print(f"[twin] imported: {', '.join(names)}", flush=True)
+    if a.remeasure:
+        from demo import runs as store
+
+        print(f"[twin] re-running {a.remeasure} with camera TF = {a.camera_tf} ...", flush=True)
+        run = store.run_dataset(a.remeasure, a.parser, progress=lambda m, f: print(f"  [{int(f * 100):3d}%] {m}", flush=True),
+                                camera_tf=None if a.camera_tf == "bag" else a.camera_tf)
     print("[twin] building the virtual table from the recording ...", flush=True)
     app = App(run, a.parser, a.planner)
     src = app.twin.source
