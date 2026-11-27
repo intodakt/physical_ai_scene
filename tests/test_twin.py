@@ -102,9 +102,9 @@ def test_http_api(run_dir, tmp_path):
         page = urllib.request.urlopen(base).read().decode("utf-8")
         assert "Scene Studio" in page and "vendor/three.min.js" in page
         assert urllib.request.urlopen(base + "vendor/three.min.js").status == 200
-        assert urllib.request.urlopen(base + "assets/g1/g1-upper-body.glb").status == 200
-        joints = json.loads(urllib.request.urlopen(base + "assets/g1/g1-upper-body.json").read())["joints"]
-        assert "right_hand_palm_joint" in joints and "left_elbow_joint" in joints
+        assert "table-robots.js" in page
+        robots = urllib.request.urlopen(base + "table-robots.js").read().decode("utf-8")
+        assert "class TableRobots" in robots and "desk_arm" in robots and "mobile_robot" in robots
         src = json.loads(urllib.request.urlopen(base + "api/source").read())
         assert src["n_objects"] >= 4 and src["cloud"]
         assert src["recorded_camera"]["intrinsics"]["fy"] > 0
