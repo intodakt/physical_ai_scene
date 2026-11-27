@@ -17,6 +17,7 @@ import argparse
 import json
 import mimetypes
 import sys
+import tempfile
 import threading
 import traceback
 import webbrowser
@@ -192,20 +193,25 @@ def main(argv=None):
         print(f"[twin] re-running {a.remeasure} with camera TF = {a.camera_tf} ...", flush=True)
         run = store.run_dataset(a.remeasure, a.parser, progress=lambda m, f: print(f"  [{int(f * 100):3d}%] {m}", flush=True),
                                 camera_tf=None if a.camera_tf == "bag" else a.camera_tf)
-    print("[twin] building the virtual table from the recording ...", flush=True)
-    app = App(run, a.parser, a.planner)
-    src = app.twin.source
-    print(f"[twin] recording: {src['name']} ({len(src['objects'])} objects, frame {src['frame']}) - "
-          f"S5 parser: {app.twin.pipe.parser}", flush=True)
-    server = ThreadingHTTPServer((a.host, a.port), make_handler(app))
-    url = f"http://{a.host}:{a.port}/"
-    print(f"[twin] open {url}   (Ctrl+C to stop)", flush=True)
-    if not a.no_browser:
-        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n[twin] stopped")
+    # Each server owns its generated frames. A second port must not reset the
+    # first server's workdir while its current frame is still in memory.
+    with tempfile.TemporaryDirectory(prefix=f"s5-twin-{a.port}-") as workdir:
+        print("[twin] building the virtual table from the recording ...", flush=True)
+        app = App(run, a.parser, a.planner, workdir=workdir)
+        src = app.twin.source
+        print(f"[twin] recording: {src['name']} ({len(src['objects'])} objects, frame {src['frame']}) - "
+              f"S5 parser: {app.twin.pipe.parser}", flush=True)
+        server = ThreadingHTTPServer((a.host, a.port), make_handler(app))
+        url = f"http://{a.host}:{a.port}/"
+        print(f"[twin] open {url}   (Ctrl+C to stop)", flush=True)
+        if not a.no_browser:
+            threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("\n[twin] stopped")
+        finally:
+            server.server_close()
 
 
 if __name__ == "__main__":
