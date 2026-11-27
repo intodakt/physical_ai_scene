@@ -79,10 +79,17 @@ Control** (or a school/company policy) blocks unsigned files downloaded from the
 * **Let time pass** renders a still frame (hidden objects age in S6's 10-frame memory).
 * **Ask** any question S5 understands: *Where is the mug? · Go to the book · What is closest to the
   laptop? · Find the mug that is not near the laptop · What is on the book? · Where was the mug before?*
-* **Planner**: *Straight* refuses a path through the laptop zone (`PATH_BLOCKED`); *Detour* plans around it.
+* **Obstacles**: *All objects* (default) makes every object except the target an S6 exclusion zone;
+  *Laptop only* is the team config (`exclusion_labels: [laptop]` in `configs/s7_integration.yaml`), where
+  the robot may cross every other object. S6's code is the same; only its config differs. The robot
+  starts at the front edge, at the spot with clear straight lines to the most objects.
+* **Planner**: *Straight* refuses a path through an exclusion zone (`PATH_BLOCKED`); *Detour* plans around it.
 * **Robot**: mobile robot (default), arm, or off.
 * **Pipeline's 3D boxes** shows S4's nodes (dashed yellow = occluded, remembered position).
-* **Backup scenarios**: slide the mug, hide the book, move the glass past the laptop, each followed by its question.
+* **Backup scenarios**: slide the mug, hide the book, move the glass past the laptop, and **block the
+  path** (an object is slid onto the robot's line to a target that was reachable), each followed by its question.
+* **Questions without Ollama**: the rule parser reads the question instead of the LLM (top bar:
+  *S5 parser: rules*); same question types, same verifier and S6.
 * Right side: S5 answer + S6 decision, the rendered frame the pipeline processed with per-stage latency,
   S6 events and an action log, S4 relations.
 

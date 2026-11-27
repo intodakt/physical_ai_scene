@@ -69,6 +69,8 @@ class App:
             return t.run_preset(str(body["id"]))
         if route == "planner":
             return t.set_planner(str(body["planner"]))
+        if route == "obstacles":
+            return t.set_obstacles(str(body["mode"]))
         if route == "reset":
             t.reset()
             return t.state()

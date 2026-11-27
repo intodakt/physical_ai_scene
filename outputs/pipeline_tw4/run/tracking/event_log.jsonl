@@ -1,0 +1,6 @@
+{"frame": 0, "timestamp": 1000000000.0, "event": "APPEARED", "persistent_id": "laptop_01", "label": "laptop", "center_map": [0.7423, 0.1647, 0.0984]}
+{"frame": 0, "timestamp": 1000000000.0, "event": "APPEARED", "persistent_id": "mug_01", "label": "mug", "center_map": [0.5208, -0.0163, 0.0468]}
+{"frame": 0, "timestamp": 1000000000.0, "event": "APPEARED", "persistent_id": "book_01", "label": "book", "center_map": [0.6946, -0.2587, 0.0837]}
+{"frame": 0, "timestamp": 1000000000.0, "event": "APPEARED", "persistent_id": "multimeter_01", "label": "multimeter", "center_map": [0.4678, 0.0997, 0.0482]}
+{"frame": 0, "timestamp": 1000000000.0, "event": "APPEARED", "persistent_id": "glass_01", "label": "glass", "center_map": [0.6088, 0.3551, 0.0373]}
+{"frame": 7, "timestamp": 1000000003.5, "event": "MOVED", "persistent_id": "mug_01", "label": "mug", "center_map": [0.471, 0.2094, 0.0471], "from_map": [0.5208, -0.0163, 0.0468], "distance_m": 0.2311}

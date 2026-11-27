@@ -1,0 +1,558 @@
+{
+  "schema_version": "0.1",
+  "sample": false,
+  "session_id": "run",
+  "frame": "map",
+  "desk_alignment": {
+    "method": "support_plane",
+    "desk_tilt_in_map_deg": 0.01
+  },
+  "units": "meters",
+  "size_order": "[width_x, depth_y, height_z]",
+  "timestamp": 1000000003.5,
+  "nodes": [
+    {
+      "id": "desk_01",
+      "persistent_object_id": "desk_01",
+      "names": [
+        {
+          "text": "desk",
+          "score": 1.0
+        },
+        {
+          "text": "table",
+          "score": 0.9
+        }
+      ],
+      "pose_map": [
+        0.6,
+        0.0,
+        -0.02
+      ],
+      "size": [
+        1.2,
+        0.8,
+        0.04
+      ],
+      "yaw": 0.0,
+      "state": "static",
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000003.5,
+      "confidence": 1.0,
+      "depth_confidence": 1.0,
+      "pose_history": [],
+      "virtual": true,
+      "source": "support_plane"
+    },
+    {
+      "id": "laptop_01",
+      "persistent_object_id": "laptop_01",
+      "names": [
+        {
+          "text": "laptop",
+          "score": 0.93
+        },
+        {
+          "text": "notebook computer",
+          "score": 0.744
+        }
+      ],
+      "pose_map": [
+        0.7417,
+        0.1646,
+        0.098
+      ],
+      "size": [
+        0.3228,
+        0.1966,
+        0.1799
+      ],
+      "yaw": 1.4312,
+      "state": "observed",
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000003.5,
+      "confidence": 0.8437,
+      "depth_confidence": 0.9834,
+      "pose_history": [
+        {
+          "t": 1000000000.0,
+          "pose_map": [
+            0.7423,
+            0.1647,
+            0.0981
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mug_01",
+      "persistent_object_id": "mug_01",
+      "names": [
+        {
+          "text": "mug",
+          "score": 0.88
+        },
+        {
+          "text": "cup",
+          "score": 0.704
+        },
+        {
+          "text": "coffee mug",
+          "score": 0.704
+        }
+      ],
+      "pose_map": [
+        0.471,
+        0.2094,
+        0.0467
+      ],
+      "size": [
+        0.0978,
+        0.0954,
+        0.0766
+      ],
+      "yaw": 0.384,
+      "state": "observed",
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000003.5,
+      "confidence": 0.8561,
+      "depth_confidence": 0.985,
+      "pose_history": [
+        {
+          "t": 1000000000.0,
+          "pose_map": [
+            0.5208,
+            -0.0163,
+            0.0464
+          ]
+        },
+        {
+          "t": 1000000001.0,
+          "pose_map": [
+            0.5064,
+            0.0546,
+            0.0474
+          ]
+        },
+        {
+          "t": 1000000001.5,
+          "pose_map": [
+            0.4797,
+            0.1526,
+            0.0473
+          ]
+        },
+        {
+          "t": 1000000002.0,
+          "pose_map": [
+            0.4709,
+            0.2095,
+            0.046
+          ]
+        }
+      ]
+    },
+    {
+      "id": "book_01",
+      "persistent_object_id": "book_01",
+      "names": [
+        {
+          "text": "book",
+          "score": 0.81
+        },
+        {
+          "text": "notebook",
+          "score": 0.648
+        }
+      ],
+      "pose_map": [
+        0.695,
+        -0.2588,
+        0.0831
+      ],
+      "size": [
+        0.2276,
+        0.0387,
+        0.1501
+      ],
+      "yaw": 1.9199,
+      "state": "observed",
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000003.5,
+      "confidence": 0.8319,
+      "depth_confidence": 0.9861,
+      "pose_history": [
+        {
+          "t": 1000000000.0,
+          "pose_map": [
+            0.6946,
+            -0.2587,
+            0.0833
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multimeter_01",
+      "persistent_object_id": "multimeter_01",
+      "names": [
+        {
+          "text": "multimeter",
+          "score": 0.62
+        },
+        {
+          "text": "remote control",
+          "score": 0.496
+        }
+      ],
+      "pose_map": [
+        0.4679,
+        0.0996,
+        0.0477
+      ],
+      "size": [
+        0.157,
+        0.045,
+        0.0793
+      ],
+      "yaw": 2.7053,
+      "state": "observed",
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000003.5,
+      "confidence": 0.8713,
+      "depth_confidence": 0.9839,
+      "pose_history": [
+        {
+          "t": 1000000000.0,
+          "pose_map": [
+            0.4678,
+            0.0997,
+            0.0478
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glass_01",
+      "persistent_object_id": "glass_01",
+      "names": [
+        {
+          "text": "glass",
+          "score": 0.71
+        },
+        {
+          "text": "cup",
+          "score": 0.568
+        }
+      ],
+      "pose_map": [
+        0.6079,
+        0.3576,
+        0.0368
+      ],
+      "size": [
+        0.114,
+        0.1062,
+        0.0562
+      ],
+      "yaw": 0.4363,
+      "state": "observed",
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000003.5,
+      "confidence": 0.7692,
+      "depth_confidence": 0.2142,
+      "pose_history": [
+        {
+          "t": 1000000000.0,
+          "pose_map": [
+            0.6088,
+            0.3551,
+            0.0369
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "book_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "start_time": 1000000000.0,
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.008,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.832,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "left_of",
+      "target": "book_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.6034,
+        "frame": "camera"
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "left_of",
+      "target": "laptop_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.1934,
+        "frame": "camera"
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "left_of",
+      "target": "mug_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.1463,
+        "frame": "camera"
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "left_of",
+      "target": "multimeter_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.2534,
+        "frame": "camera"
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "near",
+      "target": "laptop_01",
+      "start_time": 1000000000.0,
+      "relation_type": "proximity",
+      "evidence": {
+        "distance_m": 0.2426
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "near",
+      "target": "mug_01",
+      "start_time": 1000000001.5,
+      "relation_type": "proximity",
+      "evidence": {
+        "distance_m": 0.202
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "near",
+      "target": "multimeter_01",
+      "start_time": 1000000000.0,
+      "relation_type": "proximity",
+      "evidence": {
+        "distance_m": 0.2937
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "glass_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "start_time": 1000000000.0,
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.0087,
+        "xy_overlap": 0.794
+      },
+      "confidence": 0.769,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "left_of",
+      "target": "book_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.41,
+        "frame": "camera"
+      },
+      "confidence": 0.832,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "left_of",
+      "target": "mug_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.1103,
+        "frame": "camera"
+      },
+      "confidence": 0.844,
+      "end_time": 1000000001.5
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "left_of",
+      "target": "multimeter_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.06,
+        "frame": "camera"
+      },
+      "confidence": 0.844,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "near",
+      "target": "mug_01",
+      "start_time": 1000000000.0,
+      "relation_type": "proximity",
+      "evidence": {
+        "distance_m": 0.2791
+      },
+      "confidence": 0.844,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "near",
+      "target": "multimeter_01",
+      "start_time": 1000000000.0,
+      "relation_type": "proximity",
+      "evidence": {
+        "distance_m": 0.2859
+      },
+      "confidence": 0.844,
+      "end_time": null
+    },
+    {
+      "source": "laptop_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "start_time": 1000000000.0,
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.008,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.844,
+      "end_time": null
+    },
+    {
+      "source": "mug_01",
+      "predicate": "left_of",
+      "target": "book_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.4571,
+        "frame": "camera"
+      },
+      "confidence": 0.832,
+      "end_time": null
+    },
+    {
+      "source": "mug_01",
+      "predicate": "left_of",
+      "target": "multimeter_01",
+      "start_time": 1000000002.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.1071,
+        "frame": "camera"
+      },
+      "confidence": 0.856,
+      "end_time": null
+    },
+    {
+      "source": "mug_01",
+      "predicate": "near",
+      "target": "multimeter_01",
+      "start_time": 1000000000.0,
+      "relation_type": "proximity",
+      "evidence": {
+        "distance_m": 0.1098
+      },
+      "confidence": 0.856,
+      "end_time": null
+    },
+    {
+      "source": "mug_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "start_time": 1000000000.0,
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.0084,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.856,
+      "end_time": null
+    },
+    {
+      "source": "multimeter_01",
+      "predicate": "left_of",
+      "target": "book_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.35,
+        "frame": "camera"
+      },
+      "confidence": 0.832,
+      "end_time": null
+    },
+    {
+      "source": "multimeter_01",
+      "predicate": "left_of",
+      "target": "mug_01",
+      "start_time": 1000000000.0,
+      "relation_type": "camera_side",
+      "evidence": {
+        "dx_m": 0.0564,
+        "frame": "camera"
+      },
+      "confidence": 0.854,
+      "end_time": 1000000001.5
+    },
+    {
+      "source": "multimeter_01",
+      "predicate": "on",
+      "target": "desk_01",
+      "start_time": 1000000000.0,
+      "relation_type": "vertical_support",
+      "evidence": {
+        "vertical_gap_m": 0.008,
+        "xy_overlap": 1.0
+      },
+      "confidence": 0.871,
+      "end_time": null
+    }
+  ]
+}

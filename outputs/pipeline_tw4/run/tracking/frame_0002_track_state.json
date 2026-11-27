@@ -1,0 +1,139 @@
+{
+  "schema_version": "s6-track-state-1.0",
+  "frame": 2,
+  "timestamp": 1000000001.0,
+  "tracks": [
+    {
+      "persistent_id": "laptop_01",
+      "label": "laptop",
+      "label_candidates": [
+        "laptop",
+        "notebook computer"
+      ],
+      "state": "observed",
+      "center_map": [
+        0.7426,
+        0.1647,
+        0.0984
+      ],
+      "size": [
+        0.3231,
+        0.18,
+        0.1983
+      ],
+      "confidence": 0.8443,
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000001.0,
+      "missed_frames": 0,
+      "hits": 3,
+      "lifted": false,
+      "n_history": 3
+    },
+    {
+      "persistent_id": "mug_01",
+      "label": "mug",
+      "label_candidates": [
+        "coffee mug",
+        "cup",
+        "mug"
+      ],
+      "state": "observed",
+      "center_map": [
+        0.5064,
+        0.0546,
+        0.0478
+      ],
+      "size": [
+        0.0991,
+        0.077,
+        0.0941
+      ],
+      "confidence": 0.8538,
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000001.0,
+      "missed_frames": 0,
+      "hits": 3,
+      "lifted": false,
+      "n_history": 3
+    },
+    {
+      "persistent_id": "book_01",
+      "label": "book",
+      "label_candidates": [
+        "book",
+        "notebook"
+      ],
+      "state": "observed",
+      "center_map": [
+        0.6952,
+        -0.2588,
+        0.0838
+      ],
+      "size": [
+        0.2278,
+        0.1506,
+        0.039
+      ],
+      "confidence": 0.8318,
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000001.0,
+      "missed_frames": 0,
+      "hits": 3,
+      "lifted": false,
+      "n_history": 3
+    },
+    {
+      "persistent_id": "multimeter_01",
+      "label": "multimeter",
+      "label_candidates": [
+        "multimeter",
+        "remote control"
+      ],
+      "state": "observed",
+      "center_map": [
+        0.4695,
+        0.0991,
+        0.0485
+      ],
+      "size": [
+        0.1578,
+        0.0794,
+        0.0463
+      ],
+      "confidence": 0.8719,
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000001.0,
+      "missed_frames": 0,
+      "hits": 3,
+      "lifted": false,
+      "n_history": 3
+    },
+    {
+      "persistent_id": "glass_01",
+      "label": "glass",
+      "label_candidates": [
+        "cup",
+        "glass"
+      ],
+      "state": "observed",
+      "center_map": [
+        0.6069,
+        0.3571,
+        0.0375
+      ],
+      "size": [
+        0.1103,
+        0.057,
+        0.1063
+      ],
+      "confidence": 0.7705,
+      "first_seen": 1000000000.0,
+      "last_seen": 1000000001.0,
+      "missed_frames": 0,
+      "hits": 3,
+      "lifted": false,
+      "n_history": 3
+    }
+  ],
+  "events": []
+}

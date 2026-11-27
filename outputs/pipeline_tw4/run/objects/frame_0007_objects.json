@@ -1,0 +1,689 @@
+{
+  "frame": "frame_0007",
+  "timestamp": 1000000003.5,
+  "frame_id": "camera_color_optical_frame",
+  "objects": [
+    {
+      "centroid": [
+        -0.10782745477768395,
+        -0.17974359641818077,
+        0.9656807292876167
+      ],
+      "box_dimensions": [
+        0.3228111944448564,
+        0.17991881304107,
+        0.19657366343028704
+      ],
+      "semantic_label": "laptop",
+      "depth_confidence": 0.9834,
+      "object_id": "laptop_0",
+      "persistent_id": "laptop_01",
+      "timestamp": 1000000003.5,
+      "frame_id": "camera_color_optical_frame",
+      "source_observation_id": "det_0000",
+      "label_candidates": [
+        "laptop",
+        "notebook computer"
+      ],
+      "detector_score": 0.93,
+      "embedding": null,
+      "bbox_2d": [
+        137.0,
+        31.0,
+        360.0,
+        224.0
+      ],
+      "centroid_map": [
+        0.7712933109826005,
+        0.15770103998809634,
+        0.07256783194937128
+      ],
+      "box_map": {
+        "center": [
+          0.7417348532777832,
+          0.16464065345632722,
+          0.09836329573466615
+        ],
+        "yaw": 1.4311699866353502,
+        "dimensions": [
+          0.3228111944448564,
+          0.17991881304107,
+          0.19657366343028704
+        ]
+      },
+      "obb": {
+        "center": [
+          -0.11087656766176224,
+          -0.17351563274860382,
+          0.9692552089691162
+        ],
+        "rotation": [
+          [
+            -0.09355480789150486,
+            0.9902940043377728,
+            0.10278756195689688
+          ],
+          [
+            -0.008948557418454982,
+            0.10239981521943266,
+            -0.9947030718577051
+          ],
+          [
+            -0.9955739155082919,
+            -0.09397905519681198,
+            -0.0007182922820113674
+          ]
+        ],
+        "extent": [
+          0.10470673441886902,
+          0.32275527715682983,
+          0.2613183856010437
+        ]
+      },
+      "aabb": {
+        "min": [
+          -0.28253659659284885,
+          -0.31893333962293174,
+          0.9040000438690186
+        ],
+        "max": [
+          0.056845529486493365,
+          -0.029756098258786084,
+          1.0329999923706055
+        ]
+      },
+      "num_points": 22282,
+      "point_density": 2523.11,
+      "points_ref": null,
+      "modality_quality": {
+        "rgb": 0.4438,
+        "depth": 0.9559,
+        "lidar": null,
+        "semantic": 0.93
+      },
+      "fusion_mode": "adaptive",
+      "fusion_weights": {
+        "rgb": 0.1991,
+        "depth": 0.4056,
+        "lidar": 0.0,
+        "semantic": 0.3952
+      },
+      "fused_confidence": 0.8437,
+      "confidence_terms": {
+        "c_det": 0.93,
+        "c_mask": 0.9385,
+        "c_depth": 0.7128,
+        "r_valid": 0.9588,
+        "sigma_z_m": 0.00297,
+        "tau_m": 0.01,
+        "c_track": null
+      },
+      "depth_status": "ok",
+      "depth_reliability": {
+        "valid_ratio": 0.9834,
+        "interior_valid_ratio": 0.9842,
+        "plane_leak_ratio": 0.0259,
+        "genuine_ratio": 0.9588,
+        "status": "ok",
+        "reasons": []
+      },
+      "geometry_source": "depth",
+      "state": "observed",
+      "schema_version": "1.1"
+    },
+    {
+      "centroid": [
+        -0.15492115525202835,
+        0.05988651519575529,
+        0.7614300960295729
+      ],
+      "box_dimensions": [
+        0.09777622804786046,
+        0.07660566682965075,
+        0.09544868315113131
+      ],
+      "semantic_label": "mug",
+      "depth_confidence": 0.985,
+      "object_id": "mug_0",
+      "persistent_id": "mug_01",
+      "timestamp": 1000000003.5,
+      "frame_id": "camera_color_optical_frame",
+      "source_observation_id": "det_0001",
+      "label_candidates": [
+        "mug",
+        "cup",
+        "coffee mug"
+      ],
+      "detector_score": 0.88,
+      "embedding": null,
+      "bbox_2d": [
+        152.0,
+        242.0,
+        237.0,
+        339.0
+      ],
+      "centroid_map": [
+        0.45654308342699296,
+        0.20479474046244192,
+        0.06401179126949195
+      ],
+      "box_map": {
+        "center": [
+          0.4710138605547136,
+          0.20936478091525193,
+          0.04711779712544467
+        ],
+        "yaw": 0.3839724354387525,
+        "dimensions": [
+          0.09777622804786046,
+          0.07660566682965075,
+          0.09544868315113131
+        ]
+      },
+      "obb": {
+        "center": [
+          -0.15951497852802277,
+          0.060082267969846725,
+          0.7837356925010681
+        ],
+        "rotation": [
+          [
+            0.37688807294157006,
+            0.0015886745969370653,
+            -0.9262574461711038
+          ],
+          [
+            0.6977941648423213,
+            -0.6581093905553129,
+            0.282799104621854
+          ],
+          [
+            -0.6091294476434366,
+            -0.7529206506504781,
+            -0.24914214785471886
+          ]
+        ],
+        "extent": [
+          0.09799639135599136,
+          0.07586179673671722,
+          0.0954914391040802
+        ]
+      },
+      "aabb": {
+        "min": [
+          -0.20773171961792117,
+          0.0025658537701862614,
+          0.7260000109672546
+        ],
+        "max": [
+          -0.11172032734242882,
+          0.1216000068478468,
+          0.8145000338554382
+        ]
+      },
+      "num_points": 2873,
+      "point_density": 4047.04,
+      "points_ref": null,
+      "modality_quality": {
+        "rgb": 0.7262,
+        "depth": 0.9358,
+        "lidar": null,
+        "semantic": 0.88
+      },
+      "fusion_mode": "adaptive",
+      "fusion_weights": {
+        "rgb": 0.2883,
+        "depth": 0.3662,
+        "lidar": 0.0,
+        "semantic": 0.3455
+      },
+      "fused_confidence": 0.8561,
+      "confidence_terms": {
+        "c_det": 0.88,
+        "c_mask": 0.8844,
+        "c_depth": 0.8108,
+        "r_valid": 0.9404,
+        "sigma_z_m": 0.00148,
+        "tau_m": 0.01,
+        "c_track": null
+      },
+      "depth_status": "ok",
+      "depth_reliability": {
+        "valid_ratio": 0.985,
+        "interior_valid_ratio": 0.9853,
+        "plane_leak_ratio": 0.0456,
+        "genuine_ratio": 0.9404,
+        "status": "ok",
+        "reasons": []
+      },
+      "geometry_source": "depth",
+      "state": "observed",
+      "schema_version": "1.1"
+    },
+    {
+      "centroid": [
+        0.3021303074012405,
+        -0.12795487904525646,
+        0.8887427696101473
+      ],
+      "box_dimensions": [
+        0.22755951692685805,
+        0.15011754960384094,
+        0.038749720591480075
+      ],
+      "semantic_label": "book",
+      "depth_confidence": 0.9861,
+      "object_id": "book_0",
+      "persistent_id": "book_01",
+      "timestamp": 1000000003.5,
+      "frame_id": "camera_color_optical_frame",
+      "source_observation_id": "det_0002",
+      "label_candidates": [
+        "book",
+        "notebook"
+      ],
+      "detector_score": 0.81,
+      "embedding": null,
+      "bbox_2d": [
+        449.0,
+        90.0,
+        617.0,
+        216.0
+      ],
+      "centroid_map": [
+        0.6813252500377982,
+        -0.25225672219082734,
+        0.095090462708178
+      ],
+      "box_map": {
+        "center": [
+          0.6950565246926355,
+          -0.25881231705657237,
+          0.08348157935897005
+        ],
+        "yaw": 1.9198621771937625,
+        "dimensions": [
+          0.22755951692685805,
+          0.15011754960384094,
+          0.038749720591480075
+        ]
+      },
+      "obb": {
+        "center": [
+          0.3087277412414551,
+          -0.13033267855644226,
+          0.9065626263618469
+        ],
+        "rotation": [
+          [
+            -0.33822245007027657,
+            0.9410645811454874,
+            0.00174022467760464
+          ],
+          [
+            -0.6972263528320037,
+            -0.25182711457257106,
+            0.6711620648417456
+          ],
+          [
+            0.6320450831903067,
+            0.22578874745992672,
+            0.7413086093763084
+          ]
+        ],
+        "extent": [
+          0.03789753094315529,
+          0.2276001274585724,
+          0.15007878839969635
+        ]
+      },
+      "aabb": {
+        "min": [
+          0.1980585451048564,
+          -0.2161040823311017,
+          0.8170000314712524
+        ],
+        "max": [
+          0.4199382204350417,
+          -0.04211382439466027,
+          0.9770000576972961
+        ]
+      },
+      "num_points": 7503,
+      "point_density": 5796.05,
+      "points_ref": null,
+      "modality_quality": {
+        "rgb": 0.7145,
+        "depth": 0.9414,
+        "lidar": null,
+        "semantic": 0.81
+      },
+      "fusion_mode": "adaptive",
+      "fusion_weights": {
+        "rgb": 0.2923,
+        "depth": 0.379,
+        "lidar": 0.0,
+        "semantic": 0.3288
+      },
+      "fused_confidence": 0.8319,
+      "confidence_terms": {
+        "c_det": 0.81,
+        "c_mask": 0.9029,
+        "c_depth": 0.8123,
+        "r_valid": 0.9421,
+        "sigma_z_m": 0.00148,
+        "tau_m": 0.01,
+        "c_track": null
+      },
+      "depth_status": "ok",
+      "depth_reliability": {
+        "valid_ratio": 0.9861,
+        "interior_valid_ratio": 0.9861,
+        "plane_leak_ratio": 0.0446,
+        "genuine_ratio": 0.9421,
+        "status": "ok",
+        "reasons": []
+      },
+      "geometry_source": "depth",
+      "state": "observed",
+      "schema_version": "1.1"
+    },
+    {
+      "centroid": [
+        -0.04784139664919044,
+        0.06384300681639346,
+        0.7600841587552336
+      ],
+      "box_dimensions": [
+        0.15698048342987803,
+        0.07929574185563959,
+        0.044967225972731395
+      ],
+      "semantic_label": "multimeter",
+      "depth_confidence": 0.9839,
+      "object_id": "multimeter_0",
+      "persistent_id": "multimeter_01",
+      "timestamp": 1000000003.5,
+      "frame_id": "camera_color_optical_frame",
+      "source_observation_id": "det_0003",
+      "label_candidates": [
+        "multimeter",
+        "remote control"
+      ],
+      "detector_score": 0.62,
+      "embedding": null,
+      "bbox_2d": [
+        233.0,
+        226.0,
+        322.0,
+        362.0
+      ],
+      "centroid_map": [
+        0.4527022293275713,
+        0.09771498185960445,
+        0.0623646079531623
+      ],
+      "box_map": {
+        "center": [
+          0.4678796964181073,
+          0.09963115632086228,
+          0.0480912067324209
+        ],
+        "yaw": 2.705260340591211,
+        "dimensions": [
+          0.15698048342987803,
+          0.07929574185563959,
+          0.044967225972731395
+        ]
+      },
+      "obb": {
+        "center": [
+          -0.04976767301559448,
+          0.06213030964136124,
+          0.7808717489242554
+        ],
+        "rotation": [
+          [
+            0.906490258020388,
+            -0.42222491614057256,
+            0.001237862762393624
+          ],
+          [
+            0.3128556360063641,
+            0.6736443344033195,
+            0.669570505432671
+          ],
+          [
+            -0.28354322974316554,
+            -0.6065718678906856,
+            0.7427474711841298
+          ]
+        ],
+        "extent": [
+          0.04489161819219589,
+          0.15699604153633118,
+          0.07929403334856033
+        ]
+      },
+      "aabb": {
+        "min": [
+          -0.10154634510598531,
+          -0.01843902580137175,
+          0.7000000476837158
+        ],
+        "max": [
+          0.0013821138599054601,
+          0.14562928036945622,
+          0.8500000238418579
+        ]
+      },
+      "num_points": 3164,
+      "point_density": 5661.64,
+      "points_ref": null,
+      "modality_quality": {
+        "rgb": 0.9763,
+        "depth": 0.9328,
+        "lidar": null,
+        "semantic": 0.62
+      },
+      "fusion_mode": "adaptive",
+      "fusion_weights": {
+        "rgb": 0.3831,
+        "depth": 0.3668,
+        "lidar": 0.0,
+        "semantic": 0.2501
+      },
+      "fused_confidence": 0.8713,
+      "confidence_terms": {
+        "c_det": 0.62,
+        "c_mask": 0.8741,
+        "c_depth": 0.8056,
+        "r_valid": 0.9343,
+        "sigma_z_m": 0.00148,
+        "tau_m": 0.01,
+        "c_track": null
+      },
+      "depth_status": "ok",
+      "depth_reliability": {
+        "valid_ratio": 0.9839,
+        "interior_valid_ratio": 0.9834,
+        "plane_leak_ratio": 0.0499,
+        "genuine_ratio": 0.9343,
+        "status": "ok",
+        "reasons": []
+      },
+      "geometry_source": "depth",
+      "state": "observed",
+      "schema_version": "1.1"
+    },
+    {
+      "centroid": [
+        -0.30126970427293914,
+        -0.03362074059156956,
+        0.8605052335319708
+      ],
+      "box_dimensions": [
+        0.11401126116317017,
+        0.056240946998812325,
+        0.10624232397420227
+      ],
+      "semantic_label": "glass",
+      "depth_confidence": 0.2142,
+      "object_id": "glass_0",
+      "persistent_id": "glass_01",
+      "timestamp": 1000000003.5,
+      "frame_id": "camera_color_optical_frame",
+      "source_observation_id": "det_0004",
+      "label_candidates": [
+        "glass",
+        "cup"
+      ],
+      "detector_score": 0.71,
+      "embedding": null,
+      "bbox_2d": [
+        59.0,
+        175.0,
+        151.0,
+        261.0
+      ],
+      "centroid_map": [
+        0.5923267235420011,
+        0.35114328948335327,
+        0.052953182265049345
+      ],
+      "box_map": {
+        "center": [
+          0.6079467969655443,
+          0.3575787623820669,
+          0.03718171104404433
+        ],
+        "yaw": 0.4363323129985824,
+        "dimensions": [
+          0.11401126116317017,
+          0.056240946998812325,
+          0.10624232397420227
+        ]
+      },
+      "obb": {
+        "center": [
+          -0.307588666677475,
+          -0.03465671092271805,
+          0.8827701807022095
+        ],
+        "rotation": [
+          [
+            -0.005697355267051757,
+            -0.4271928320474221,
+            -0.9041425907401247
+          ],
+          [
+            -0.6656108046142503,
+            -0.6731429248217587,
+            0.32224347866664166
+          ],
+          [
+            -0.7462772922471452,
+            0.6036430128890017,
+            -0.2805090302763128
+          ]
+        ],
+        "extent": [
+          0.05615687742829323,
+          0.11409727483987808,
+          0.10619509965181351
+        ]
+      },
+      "aabb": {
+        "min": [
+          -0.3632975845802121,
+          -0.09229756332025295,
+          0.8250000476837158
+        ],
+        "max": [
+          -0.25097561803290513,
+          0.022582114615091464,
+          0.9030000567436218
+        ]
+      },
+      "num_points": 706,
+      "point_density": 1037.58,
+      "points_ref": null,
+      "modality_quality": {
+        "rgb": 0.955,
+        "depth": 0.1984,
+        "lidar": null,
+        "semantic": 0.71
+      },
+      "fusion_mode": "adaptive",
+      "fusion_weights": {
+        "rgb": 0.4992,
+        "depth": 0.1234,
+        "lidar": 0.0,
+        "semantic": 0.3775
+      },
+      "fused_confidence": 0.7692,
+      "confidence_terms": {
+        "c_det": 0.71,
+        "c_mask": 0.8836,
+        "c_depth": 0.1199,
+        "r_valid": 0.1391,
+        "sigma_z_m": 0.00148,
+        "tau_m": 0.01,
+        "c_track": null
+      },
+      "depth_status": "transparent_suspected",
+      "depth_reliability": {
+        "valid_ratio": 0.2142,
+        "interior_valid_ratio": 0.1475,
+        "plane_leak_ratio": 0.0566,
+        "genuine_ratio": 0.1391,
+        "status": "transparent_suspected",
+        "reasons": [
+          "holes: 15% interior depth < 50%"
+        ]
+      },
+      "geometry_source": "depth",
+      "state": "observed",
+      "schema_version": "1.1"
+    }
+  ],
+  "rejected": [],
+  "support_plane": [
+    -5.265185711241853e-05,
+    -0.6692690681499208,
+    -0.7430201286947201,
+    0.6694227407363048
+  ],
+  "T_map_camera": [
+    [
+      0.0,
+      -0.7431448254773942,
+      0.6691306063588582,
+      -0.00844874454556055
+    ],
+    [
+      -1.0,
+      0.0,
+      0.0,
+      0.04987358521041391
+    ],
+    [
+      0.0,
+      -0.6691306063588582,
+      -0.7431448254773942,
+      0.6699365273222794
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "timings_ms": {
+    "depth_cleaning": 39.61,
+    "support_plane": 4.13,
+    "objects": 424.54,
+    "total": 468.28
+  }
+}

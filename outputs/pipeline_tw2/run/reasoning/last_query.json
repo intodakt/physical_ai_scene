@@ -1,0 +1,185 @@
+{
+  "question": "Go to the book",
+  "reasoning_result": {
+    "target_id": "book_01",
+    "computed_facts": "pose_map: [0.70, -0.26, 0.08], on desk_01",
+    "verification_status": true,
+    "final_answer": "The book is book_01 at x=0.70, y=-0.26, z=0.08 m, on desk_01.",
+    "confidence": 0.83,
+    "warnings": [],
+    "llm_parsed_query": {
+      "intent": "find_object",
+      "target": "book",
+      "reference": "",
+      "relations": [],
+      "positive_constraints": [],
+      "negative_constraints": []
+    },
+    "verification_rounds": [
+      {
+        "parsed": {
+          "intent": "find_object",
+          "target": "book",
+          "reference": "",
+          "relations": [],
+          "positive_constraints": [],
+          "negative_constraints": []
+        },
+        "verified": true,
+        "facts": "pose_map: [0.70, -0.26, 0.08], on desk_01"
+      }
+    ],
+    "parser": "rules"
+  },
+  "action_goal": {
+    "schema_version": "action_goal-2.0",
+    "target_object_id": "book_01",
+    "target_pose": [
+      0.6957,
+      -0.2591,
+      -0.7484
+    ],
+    "exclusion_zones": [
+      {
+        "object_id": "laptop_01",
+        "label": "laptop",
+        "polygon": [
+          [
+            0.8433,
+            -0.0431
+          ],
+          [
+            0.8967,
+            0.3369
+          ],
+          [
+            0.6405,
+            0.3729
+          ],
+          [
+            0.5871,
+            -0.0071
+          ]
+        ]
+      },
+      {
+        "object_id": "mug_01",
+        "label": "mug",
+        "polygon": [
+          [
+            0.6035,
+            -0.0364
+          ],
+          [
+            0.4566,
+            0.023
+          ],
+          [
+            0.3983,
+            -0.1214
+          ],
+          [
+            0.5452,
+            -0.1808
+          ]
+        ]
+      },
+      {
+        "object_id": "multimeter_01",
+        "label": "multimeter",
+        "polygon": [
+          [
+            0.5885,
+            0.1018
+          ],
+          [
+            0.3913,
+            0.1937
+          ],
+          [
+            0.3467,
+            0.098
+          ],
+          [
+            0.5439,
+            0.0061
+          ]
+        ]
+      },
+      {
+        "object_id": "glass_01",
+        "label": "glass",
+        "polygon": [
+          [
+            0.6298,
+            0.2422
+          ],
+          [
+            0.7198,
+            0.3863
+          ],
+          [
+            0.579,
+            0.4744
+          ],
+          [
+            0.489,
+            0.3303
+          ]
+        ]
+      }
+    ],
+    "validated": true,
+    "agent_start": [
+      0.309,
+      0.1
+    ],
+    "reason_code": "OK_DETOUR",
+    "reason": "straight line crosses mug_01; detour with 3 waypoint(s)",
+    "path": [
+      [
+        0.309,
+        0.1
+      ],
+      [
+        0.38,
+        -0.13
+      ],
+      [
+        0.39,
+        -0.14
+      ],
+      [
+        0.56,
+        -0.21
+      ],
+      [
+        0.6957,
+        -0.2591
+      ]
+    ],
+    "clearance_m": 0.0202,
+    "warnings": [],
+    "reachability": {
+      "straight_clear": false,
+      "blocked_by": [
+        "mug_01"
+      ],
+      "detour_exists": true,
+      "detour_waypoints": 3,
+      "detour_length_m": 0.583
+    }
+  },
+  "simulation": {
+    "executed": true,
+    "success": true,
+    "collisions": 0,
+    "final_error_m": 0.0,
+    "steps": 58,
+    "path_length_m": 0.583
+  },
+  "timings_ms": {
+    "s5_reasoning": 0.09,
+    "s6_action": 46.18
+  }
+}

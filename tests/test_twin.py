@@ -20,7 +20,8 @@ def run_dir(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def twin(run_dir, tmp_path_factory):
-    return engine.Twin(run_dir, workdir=tmp_path_factory.mktemp("twin"), parser="rules")
+    # the team's S6 config (only the laptop is an exclusion zone); "all objects" is tested below
+    return engine.Twin(run_dir, workdir=tmp_path_factory.mktemp("twin"), parser="rules", obstacles="config")
 
 
 def _events(state):
@@ -65,6 +66,22 @@ def test_glass_past_the_laptop_needs_a_detour(twin):
     st = twin.ask(st["query"]["question"])
     assert st["query"]["code"] == "OK_DETOUR" and st["query"]["simulation"]["success"]
     twin.set_planner("straight")
+
+
+def test_every_object_is_an_obstacle_by_default(run_dir, tmp_path):
+    twin = engine.Twin(run_dir, workdir=tmp_path / "twin", parser="rules")
+    assert twin.obstacles == "all"
+    target, _ = twin._block_pick()
+    question = f"Go to the {twin.specs[target]['label']}"
+    assert twin.ask(question)["query"]["validated"]                       # clear before
+    st = twin.run_preset("block")
+    assert st["query"]["code"] == "PATH_BLOCKED"                           # an object now stands in the way
+    twin.set_planner("detour")
+    q = twin.ask(st["query"]["question"])["query"]
+    assert q["code"] == "OK_DETOUR" and q["simulation"]["success"] and q["simulation"]["collisions"] == 0
+    twin.set_obstacles("config")                                           # team config: laptop only
+    twin.set_planner("straight")
+    assert twin.ask(st["query"]["question"])["query"]["code"] == "OK"
 
 
 def test_http_api(run_dir, tmp_path):

@@ -153,6 +153,7 @@ select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);bor
     </div>
     <div class="opts">
       <span>Robot <span class="seg" id="robotSeg"><button data-v="rover" aria-pressed="true">Mobile robot</button><button data-v="arm" aria-pressed="false">Arm</button><button data-v="none" aria-pressed="false">Off</button></span></span>
+      <span>Obstacles <span class="seg" id="obsSeg"><button data-v="all" aria-pressed="true" title="Every object except the target is an exclusion zone">All objects</button><button data-v="config" aria-pressed="false" title="Team config: only objects listed in exclusion_labels (the laptop)">Laptop only</button></span></span>
       <span>Planner <span class="seg" id="planSeg"><button data-v="straight" aria-pressed="true">Straight</button><button data-v="detour" aria-pressed="false">Detour</button></span></span>
       <label><input type="checkbox" id="tBoxes" checked> Pipeline's 3D boxes</label>
       <label><input type="checkbox" id="tCloud"> Recording point cloud</label>
@@ -519,12 +520,14 @@ function renderPanels(){
   const labels=[...new Set(ST.twin.map(o=>o.label))];
   const lap=labels.find(l=>/laptop/.test(l)), first=labels.find(l=>!/laptop/.test(l))||labels[0], second=labels.find(l=>l!==first&&!/laptop/.test(l));
   const sug=[`Go to the ${first}`,`Where is the ${second||first}?`];
-  if(lap) sug.push(`What is closest to the ${lap}?`, `Find the ${first} that is not near the ${lap}`);
+  const ref=lap||second;
+  if(ref) sug.push(`What is closest to the ${ref}?`, `Find the ${first} that is not near the ${ref}`);
   sug.push(`Where was the ${first} before?`);
   $("sugg").innerHTML=sug.map(s=>`<button class="btn" data-q="${esc(s)}">${esc(s)}</button>`).join("");
   $("sugg").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("qIn").value=b.dataset.q;ask();});
   // planner seg
   $("planSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ST.planner)));
+  $("obsSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ST.obstacles)));
   // Q&A
   const q=ST.query;
   if(q){
@@ -602,6 +605,10 @@ $("resetBtn").onclick=()=>{selected=null;act("Rebuilding the twin from the recor
 $("planSeg").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
   await act("Switching planner","planner",{planner:b.dataset.v});
   if(ST&&ST.query) act(`Asking again with the ${b.dataset.v} planner`,"ask",{question:ST.query.question});
+});
+$("obsSeg").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
+  await act("Switching obstacles","obstacles",{mode:b.dataset.v});
+  if(ST&&ST.query) act("Asking again with the new obstacles","ask",{question:ST.query.question});
 });
 $("robotSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
   robotMode=b.dataset.v; $("robotSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
