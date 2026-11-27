@@ -1,4 +1,4 @@
-/* Detailed table arm and mobile robot. Their motion is a visual simulation, not hardware control. */
+/* Detailed table arm and smart cleaner. Their motion is a visual simulation, not hardware control. */
 (function(){
   const M=(x,y,z=0)=>new THREE.Vector3(-y,z,-x);
   const clamp=THREE.MathUtils.clamp;
@@ -11,6 +11,7 @@
   const trim=new THREE.MeshStandardMaterial({color:0x1e6470,metalness:.3,roughness:.37});
   const glass=new THREE.MeshStandardMaterial({color:0x122832,metalness:.35,roughness:.16,emissive:0x09232d,emissiveIntensity:.25});
   const bolt=new THREE.MeshStandardMaterial({color:0xa8b3b5,metalness:.75,roughness:.23});
+  const light=new THREE.MeshBasicMaterial({color:0x64bcc6});
   const add=(parent,geometry,material,x=0,y=0,z=0)=>{
     const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);
     mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
@@ -95,28 +96,36 @@
     }
     buildRover(){
       const root=this.roverRoot;
-      box(root,.145,.033,.17,graphite,0,.039,0);
-      box(root,.127,.017,.152,shell,0,.064,0);
-      box(root,.09,.005,.10,alloy,0,.075,.012);
-      for(const s of [-1,1])for(const end of [-1,1]){
-        const wheel=cyl(root,.022,.022,.018,rubber,s*.078,.023,end*.061,32);wheel.rotation.z=Math.PI/2;
-        const hub=cyl(root,.010,.010,.019,alloy,s*.08,.023,end*.061,24);hub.rotation.z=Math.PI/2;
-        const axle=cyl(root,.004,.004,.02,bolt,s*.082,.023,end*.061,16);axle.rotation.z=Math.PI/2;
-      }
-      box(root,.111,.015,.012,alloy,0,.042,-.087);
-      box(root,.064,.022,.008,glass,0,.066,-.084);
-      for(const s of [-1,1])ball(root,.004,trim,s*.031,.069,-.089);
-      cyl(root,.023,.024,.007,graphite,0,.083,.016,32);
-      cyl(root,.017,.017,.018,alloy,0,.096,.016,32);
-      cyl(root,.015,.015,.008,glass,0,.11,.016,32);
-      ring(root,.016,.0015,bolt,.105);
+      cyl(root,.085,.088,.023,graphite,0,.024,0,64);
+      cyl(root,.077,.084,.023,shell,0,.045,0,64);
+      cyl(root,.068,.073,.004,alloy,0,.058,0,64);
+      ring(root,.082,.003,rubber,.032);
+      ring(root,.071,.0014,light,.059);
       for(const s of [-1,1]){
-        box(root,.015,.004,.048,alloy,s*.049,.078,.006);
-        box(root,.013,.003,.025,graphite,s*.049,.081,.006);
-        box(root,.007,.062,.012,alloy,s*.026,.078,-.087);
+        const wheel=cyl(root,.020,.020,.015,rubber,s*.057,.014,0,32);wheel.rotation.z=Math.PI/2;
+        const hub=cyl(root,.008,.008,.016,alloy,s*.058,.014,0,24);hub.rotation.z=Math.PI/2;
+        const brush=cyl(root,.018,.018,.003,graphite,s*.061,.009,-.055,24);
+        for(let k=0;k<8;k++){
+          const a=k*Math.PI/4;
+          const bristle=box(root,.003,.004,.019,rubber,s*.061+Math.sin(a)*.017,.007,-.055+Math.cos(a)*.017);
+          bristle.rotation.y=a;
+        }
+        box(root,.006,.058,.010,alloy,s*.025,.077,-.083);
       }
-      const gripper=new THREE.Group();gripper.position.set(0,.053,-.087);root.add(gripper);this.roverGripper=gripper;
-      box(gripper,.038,.014,.041,alloy,0,0,-.021);
+      ball(root,.008,rubber,0,.009,.069);
+      const sensor=new THREE.Group();sensor.position.set(0,.066,.018);root.add(sensor);this.cleanerSensor=sensor;
+      cyl(sensor,.022,.024,.009,graphite,0,.004,0,40);
+      cyl(sensor,.019,.019,.012,glass,0,.015,0,40);
+      cyl(sensor,.022,.021,.004,alloy,0,.023,0,40);
+      ring(sensor,.018,.0015,light,.023);
+      const face=box(root,.067,.013,.008,glass,0,.043,-.083);
+      face.rotation.x=-.09;
+      for(const s of [-1,1]){
+        const lens=cyl(root,.006,.006,.004,glass,s*.021,.044,-.087,24);lens.rotation.x=Math.PI/2;
+        box(root,.012,.004,.006,light,s*.049,.048,-.074);
+      }
+      const gripper=new THREE.Group();gripper.position.set(0,.053,-.04);root.add(gripper);this.roverGripper=gripper;
+      box(gripper,.036,.012,.036,alloy,0,0,-.018);
       this.roverFingers=[];
       for(const s of [-1,1]){
         const finger=new THREE.Group();finger.position.set(s*.019,0,-.045);gripper.add(finger);
@@ -162,6 +171,15 @@
       this.setMount(best.x,best.y,Math.atan2(cy-best.y,cx-best.x));this.mount.gap=best.gap;
       this.home();return this.mount;
     }
+    placeAtStart(state){
+      const [x,y]=state.agent_start||this.start,objects=state.twin||[];
+      const visible=objects.filter(o=>!o.hidden);
+      const cx=visible.reduce((s,o)=>s+o.xy[0],0)/(visible.length||1);
+      const cy=visible.reduce((s,o)=>s+o.xy[1],0)/(visible.length||1);
+      this.setMount(x,y,Math.atan2(cy-y,cx-x));
+      this.mount.gap=TableRobots.gapAt(x,y,objects);
+      this.home();return this.mount;
+    }
     show(mode){this.mode=mode;this.armRoot.visible=mode==="arm";this.roverRoot.visible=mode==="rover";}
     pose(){return {yaw:this.yaw.rotation.y,shoulder:this.shoulder.rotation.x,elbow:this.elbow.rotation.x,wrist:this.wrist.rotation.x,grip:this.grip||0};}
     applyPose(p){
@@ -173,7 +191,7 @@
     applyRoverGrip(t){this.roverGrip=t;for(const {group,side} of this.roverFingers)group.position.x=side*(.019-.008*t);}
     home(){
       this.motion=null;this.held=null;this.applyPose({yaw:0,shoulder:1.1,elbow:-1,wrist:-.1,grip:0});
-      this.setStart(this.start);this.roverGripper.position.set(0,.053,-.087);this.applyRoverGrip(0);
+      this.setStart(this.start);this.roverGripper.position.set(0,.053,-.04);this.applyRoverGrip(0);
     }
     release(){this.home();}
     handPosition(side){
@@ -233,11 +251,12 @@
         const face=drive<1?next:m.target;
         const v=M(face[0]-p[0],face[1]-p[1]);if(v.lengthSq()>1e-8)this.roverRoot.rotation.y=Math.atan2(-v.x,-v.z);
         if(m.kind==="take"&&t>.75){
-          this.roverGripper.position.z=-.087-.036*smooth((t-.75)/.14);
+          this.roverGripper.position.z=-.04-.083*smooth((t-.75)/.14);
           this.roverGripper.position.y=.053+.035*smooth((t-.9)/.1);
           this.applyRoverGrip(smooth((t-.85)/.15));
           if(t>.87)m.gripped=true;
         }
+        this.cleanerSensor.rotation.y+=.045;
         for(const wheel of this.wheels)wheel.rotation.x+=.05;
         if(t>=1){if(m.kind==="take")this.held={side:"rover"};this.motion=null;}
       }else{

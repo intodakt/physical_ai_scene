@@ -2,7 +2,7 @@
 
 `demo/twin/` builds a virtual copy of the recorded desk from what the pipeline measured, lets you
 **move, hide and turn objects** on it in the browser, and sends every change through the **real
-pipeline code**. The scene offers a mounted desk arm and a small mobile robot; S6's allowed path is shown on the desk.
+pipeline code**. The scene offers the original desk arm position and a smart cleaner; S6's allowed path is shown on the desk.
 
 ## What is real and what is simulated
 
@@ -12,7 +12,7 @@ pipeline code**. The scene offers a mounted desk arm and a small mobile robot; S
 | S3 detection + masks | real YOLO-World + SAM 2 output | exact masks from the renderer |
 | S2 3D fusion, S6 tracking, S4 scene graph | team code | **same team code** (`src/integration/pipeline.Pipeline`) |
 | S5 reasoning, S6 ActionGoal, twin simulation | team code | **same team code** |
-| Robot | no recorded robot pose | detailed simulated desk arm or small mobile robot; no physical robot execution |
+| Robot | no recorded robot pose | detailed simulated desk arm or smart cleaner; no physical robot execution |
 
 The twin is built from the frame of the run with the most objects: each S2 object is placed at its
 measured position, size and rotation, coloured from its S3 mask. The renderer that makes the twin's camera
@@ -103,7 +103,7 @@ Control** (or a school/company policy) blocks unsigned files downloaded from the
   the robot may cross every other object. S6's code is the same; only its config differs. The robot
   starts at the front edge, at the spot with clear straight lines to the most objects.
 * **Planner**: *Straight* refuses a path through an exclusion zone (`PATH_BLOCKED`); *Detour* plans around it.
-* **Robot**: select *Desk arm*, *Small robot*, or *Off*. The arm stays mounted at a clear table edge, points after a verified *find/where* request, and grasps and lifts after *take/pick/move*. The small robot drives along S6's validated path toward the target and uses its front gripper for *take*. These are visual simulations. *Release object* restores the source object; S4's measured position never changes. *Preview move* animates the selected object target without a new S5 request. The arm reports unreachable targets; the mobile robot refuses a blocked S6 path.
+* **Robot**: select *Desk arm*, *Smart cleaner*, or *Off*. The arm starts at S6's original `agent_start` position, as it did before the redesign. *Original spot* restores that mount after an adjustment; *Find clear mount* remains available for crowded recordings. The arm points after a verified *find/where* request, and grasps and lifts after *take/pick/move*. The low-profile cleaner has a sensor turret and concealed front pickup gripper. It follows S6's validated path toward the target, then extends its gripper for *take*. These are visual simulations. *Release object* restores the source object; S4's measured position never changes. *Preview move* animates the selected object target without a new S5 request. The arm reports unreachable targets; the cleaner refuses a blocked S6 path.
 * **Views**: table, recorded camera, robot overview, front, left, right, rear, top, and saved user views. *Human from right/left/back/front* places the viewing camera at that table edge; the selected-object panel then shows left/right and near/far from that person's view. Camera changes do not move either model.
 * **Recorded camera** uses S1's optical transform and intrinsics. Desk-plane calibration estimates height and pitch only, so this view says *horizontal pose unknown* until measured camera X, Y, and yaw are entered under *View controls*. Those values are saved in this browser for the selected recording. The camera frustum is shown in other views.
 * **Coordinates**: the optional 10 cm XY grid has number labels laid flat along two table edges, so they do not draw over the models. The footer shows X/Y under the mouse. The selected-object panel shows twin X/Y/Z in metres and yaw, plus S4's latest measured centre. Arm mount X/Y and nearest-object clearance are in *View controls*.
@@ -122,6 +122,6 @@ Control** (or a school/company policy) blocks unsigned files downloaded from the
 | `demo/twin/engine.py` | `Twin`: run → twin, edits, rendering, pipeline, questions, presets |
 | `demo/twin/server.py` | local web server (standard library) and JSON API |
 | `demo/twin/static/index.html` | 3D page, camera views, orientation and coordinate controls |
-| `demo/twin/static/table-robots.js` | detailed desk arm and small mobile robot, grasp and drive simulation, mount placement |
+| `demo/twin/static/table-robots.js` | detailed desk arm and smart cleaner, grasp and drive simulation, mount placement |
 | `G1_Twin.bat`, `G1_Twin.command` | one-click start on Windows / macOS |
 | `tests/test_twin.py` | twin from a pipeline run: move, hide, presets, API |

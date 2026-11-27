@@ -55,8 +55,8 @@
       <details class="controls-disclosure">
         <summary>View controls</summary>
         <div class="opts">
-          <div class="control-group"><span>Robot</span><span class="seg" id="robotSeg"><button data-v="arm" aria-pressed="true">Desk arm</button><button data-v="rover" aria-pressed="false">Small robot</button><button data-v="none" aria-pressed="false">Off</button></span><button class="btn" id="reachBtn" title="Preview simulated motion to the selected object">Preview move</button><button class="btn" id="releaseBtn" hidden>Release object</button></div>
-          <div class="control-group" id="mountGroup"><span>Arm mount (map m)</span><div class="mount-fields"><label>X <input id="mountX" type="number" step="0.01" min="0.05" max="1.35"></label><label>Y <input id="mountY" type="number" step="0.01" min="-0.55" max="0.55"></label></div><button class="btn" id="mountAuto">Find clear mount</button><span class="mount-note" id="mountGap"></span></div>
+          <div class="control-group"><span>Robot</span><span class="seg" id="robotSeg"><button data-v="arm" aria-pressed="true">Desk arm</button><button data-v="rover" aria-pressed="false">Smart cleaner</button><button data-v="none" aria-pressed="false">Off</button></span><button class="btn" id="reachBtn" title="Preview simulated motion to the selected object">Preview move</button><button class="btn" id="releaseBtn" hidden>Release object</button></div>
+          <div class="control-group" id="mountGroup"><span>Arm mount (map m)</span><div class="mount-fields"><label>X <input id="mountX" type="number" step="0.01" min="0.05" max="1.35"></label><label>Y <input id="mountY" type="number" step="0.01" min="-0.55" max="0.55"></label></div><button class="btn" id="mountOriginal">Original spot</button><button class="btn" id="mountAuto">Find clear mount</button><span class="mount-note" id="mountGap"></span></div>
           <div class="control-group"><span>Measured camera pose (map)</span><div class="mount-fields"><label>X <input id="camX" type="number" step="0.01"></label><label>Y <input id="camY" type="number" step="0.01"></label><label>Yaw° <input id="camYaw" type="number" step="1"></label></div><button class="btn" id="applyCamPose">Use measured pose</button><span class="mount-note" id="camPoseNote"></span></div>
           <div class="control-group"><span>Obstacles</span><span class="seg" id="obsSeg"><button data-v="all" aria-pressed="true" title="Every object except the target is an exclusion zone">All</button><button data-v="config" aria-pressed="false" title="Team config: only configured object classes">Configured</button></span></div>
           <div class="control-group"><span>Planner</span><span class="seg" id="planSeg"><button data-v="straight" aria-pressed="true">Straight</button><button data-v="detour" aria-pressed="false">Detour</button></span></div>
@@ -391,7 +391,7 @@ let carriedName=null,carriedMesh=null,carriedHeight=0,robotStatus="",targetMarke
 // ---------------------------------------------------------------- detailed desk arm and mobile robot; S6 path stays a separate table overlay
 const robot=new TableRobots(scene);
 robot.load().then(()=>{
-  if(ST){robot.setStart(ST.agent_start);robot.autoPlace(ST);robot.placedFor=SRC?.run||"current";syncMountControls();rebuildCoordinates(true);renderOrientation();}
+  if(ST){robot.setStart(ST.agent_start);robot.placeAtStart(ST);robot.placedFor=SRC?.run||"current";syncMountControls();rebuildCoordinates(true);renderOrientation();}
   if(pendingRobotQuery){const q=pendingRobotQuery;pendingRobotQuery=null;playRobotRequest(q);}
 }).catch(e=>toast("Robot model could not load: "+e.message));
 let anim=null, pathMarker=null;
@@ -423,7 +423,7 @@ function playRobotRequest(q){
   if(!o||o.hidden){setRobotStatus("Robot cannot reach an unseen object.");return;}
   const h=o.kind==="cylinder"?o.size[1]:o.size[2],mode=q.robot_request==="take"?"take":"point";
   const result=robot.reachTo(o.xy[0],o.xy[1],h+(mode==="take"?.03:.11),mode,{path:q.path,validated:q.validated});
-  const name=robotMode==="rover"?"Small robot":"Desk arm";
+  const name=robotMode==="rover"?"Smart cleaner":"Desk arm";
   if(!result.ok){setRobotStatus(`${name}: ${result.reason}.`);return;}
   if(mode==="take"){
     carriedName=o.name;carriedHeight=h;carriedMesh=dressed(o);carryG.add(carriedMesh);carryG.visible=false;
@@ -442,7 +442,7 @@ function updateCarry(){
     renderPanels();
   }
   const p=robot.handPosition(side);if(p)carriedMesh.position.set(p.x,p.y-(side==="rover"?carriedHeight/2:carriedHeight)-.012,p.z);
-  if(robot.held&&robotStatus.includes(" taking "))setRobotStatus(`${side==="rover"?"Small robot":"Desk arm"} holding ${friendly(carriedName)} · visual simulation`);
+  if(robot.held&&robotStatus.includes(" taking "))setRobotStatus(`${side==="rover"?"Smart cleaner":"Desk arm"} holding ${friendly(carriedName)} · visual simulation`);
 }
 function polyLine(pts,color,dashed,h=0.004){
   const g=new THREE.BufferGeometry().setFromPoints(pts.map(p=>M(p[0],p[1],h)));
@@ -458,7 +458,9 @@ function tube(pts,color){
 // The selected view changes the camera, never the arm mount or the mobile robot's world position.
 function syncMountControls(){
   $("mountX").value=robot.mount.x.toFixed(2);$("mountY").value=robot.mount.y.toFixed(2);
-  $("mountGap").textContent=`Nearest object: ${Math.max(0,robot.mount.gap*100).toFixed(0)} cm clear`;
+  const original=ST?.agent_start&&Math.hypot(robot.mount.x-ST.agent_start[0],robot.mount.y-ST.agent_start[1])<.015;
+  const gap=robot.mount.gap;
+  $("mountGap").textContent=`${original?"Original spot · ":""}Nearest object: ${Math.abs(gap*100).toFixed(0)} cm ${gap<0?"overlap":"clear"}`;
   $("mountGap").classList.toggle("too-close",robot.mount.gap<.08);
 }
 function savedKey(){return `robot-scene-views:${SRC?.run||"default"}`;}
@@ -513,7 +515,7 @@ function renderOrientation(){
   if(!ST)return;
   if(viewMode.startsWith("human-")){
     const side=viewMode.slice(6);
-    $("orientation").innerHTML=`<strong>Human from ${esc(side)}</strong><span>Objects positioned relative to you</span><small>${robotMode==="rover"?"Small robot on table":"Arm stays mounted"}</small>`;
+    $("orientation").innerHTML=`<strong>Human from ${esc(side)}</strong><span>Objects positioned relative to you</span><small>${robotMode==="rover"?"Smart cleaner on table":"Arm stays mounted"}</small>`;
     return;
   }
   const [rx,ry]=toMap(robot.roverRoot.position);
@@ -524,7 +526,7 @@ function renderOrientation(){
   const estimated=viewMode==="recorded"&&!cameraPoseKnown();
   if(estimated)side="Side unverified";
   const heading=((THREE.MathUtils.radToDeg(m.yaw)%360)+360)%360;
-  $("orientation").innerHTML=`<strong>${esc(side)} view</strong><span>${robotMode==="rover"?"Small robot":"Desk arm"} front ${heading.toFixed(0)}° · ${robotMode==="rover"?"at":"mount"} (${m.x.toFixed(2)}, ${m.y.toFixed(2)}) m</span>${viewMode==="recorded"?`<small>Recorded camera${estimated?" · horizontal pose unknown":manualCameraPose()?" · user entered pose":""}</small>`:""}`;
+  $("orientation").innerHTML=`<strong>${esc(side)} view</strong><span>${robotMode==="rover"?"Smart cleaner":"Desk arm"} front ${heading.toFixed(0)}° · ${robotMode==="rover"?"at":"mount"} (${m.x.toFixed(2)}, ${m.y.toFixed(2)}) m</span>${viewMode==="recorded"?`<small>Recorded camera${estimated?" · horizontal pose unknown":manualCameraPose()?" · user entered pose":""}</small>`:""}`;
 }
 
 // ---------------------------------------------------------------- drawing state
@@ -551,7 +553,7 @@ function render(){
   const [cx,cy,cz]=ST.camera.xyz, pitch=ST.camera.rpy[1];
   vcam.position.copy(M(cx,cy,cz)); vcam.rotation.set(-pitch,0,0);
   if(robot.ready){
-    if(!robot.placedFor) {robot.setStart(ST.agent_start);robot.autoPlace(ST);robot.placedFor=SRC?.run||"current";syncMountControls();}
+    if(!robot.placedFor) {robot.setStart(ST.agent_start);robot.placeAtStart(ST);robot.placedFor=SRC?.run||"current";syncMountControls();}
     robot.mount.gap=TableRobots.gapAt(robot.mount.x,robot.mount.y,ST.twin);
     syncMountControls();
   }
@@ -741,6 +743,7 @@ $("saveViewBtn").onclick=()=>{
   const views=savedViews();views.push({name:name.slice(0,30),position:cam.position.toArray(),target:controls.target.toArray(),up:cam.up.toArray(),fov:cam.fov});
   localStorage.setItem(savedKey(),JSON.stringify(views.slice(-5)));refreshSavedViews();setView(`saved:${savedViews().length-1}`);toast("View saved for this recording.");
 };
+$("mountOriginal").onclick=()=>{if(!ST)return;clearCarry();robot.placeAtStart(ST);render();rebuildCoordinates(true);toast("Arm returned to its original S6 start position.");};
 $("mountAuto").onclick=()=>{if(!ST)return;clearCarry();robot.autoPlace(ST);render();syncMountControls();rebuildCoordinates();renderOrientation();toast("Mount moved to the clearest reachable table edge.");};
 $("applyCamPose").onclick=()=>{
   if(!SRC?.recorded_camera?.T_map_camera){toast("This recording has no camera transform to calibrate.");return;}
@@ -761,7 +764,7 @@ $("reachBtn").onclick=()=>{
   const o=ST?.twin.find(v=>v.name===selected);if(!o||o.hidden){toast("Select a visible object to preview a move.");return;}
   clearCarry();render();
   const h=o.kind==="cylinder"?o.size[1]:o.size[2],result=robot.reachTo(o.xy[0],o.xy[1],h+.03);
-  toast(result.ok?`Simulated ${robotMode==="rover"?"small robot drive":"arm reach"} to ${friendly(o.name)}.`:result.reason);
+  toast(result.ok?`Simulated ${robotMode==="rover"?"smart cleaner drive":"arm reach"} to ${friendly(o.name)}.`:result.reason);
 };
 $("releaseBtn").onclick=()=>{const name=carriedName;clearCarry();render();toast(`${friendly(name)} returned to its recorded table position.`);};
 for(const id of ["tBoxes","tTwin"]) $(id).onchange=()=>render();
@@ -782,7 +785,7 @@ async function loadSource(){
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(colr,3));
     cloud=new THREE.Points(g,new THREE.PointsMaterial({size:0.006,vertexColors:true}));cloud.visible=$("tCloud").checked;scene.add(cloud);
   } else { $("tCloud").disabled=true; $("tCloud").parentElement.title="This recording has no saved point cloud"; }
-  if(ST){if(robot.ready&&robot.placedFor!==SRC.run){robot.setStart(ST.agent_start);robot.autoPlace(ST);robot.placedFor=SRC.run;syncMountControls();}render();setView(viewMode);}
+  if(ST){if(robot.ready&&robot.placedFor!==SRC.run){robot.setStart(ST.agent_start);robot.placeAtStart(ST);robot.placedFor=SRC.run;syncMountControls();}render();setView(viewMode);}
   const srcs=await api("sources");
   $("srcSel").innerHTML=srcs.map(s=>`<option value="${esc(s.run)}" ${s.current?"selected":""}>${esc(s.name)}</option>`).join("");
 }
