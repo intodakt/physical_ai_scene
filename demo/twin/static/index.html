@@ -126,7 +126,8 @@ async function act(label, path, body){
   busy=true; setBusy(label);
   try{
     ST=await api(path, body);
-    clearCarry();
+    if(path==="ask"&&robotMode==="arm"&&!carriedName){robot.motion=null;setRobotStatus("");}
+    else clearCarry();
     if((path==="ask"||path==="preset")&&ST.query?.verified&&ST.query?.target)selected=ST.query.target;
     render();
     if(path==="ask"||path==="preset")playRobotRequest(ST.query);
@@ -264,7 +265,8 @@ function realShape(o,g,col){
   const t=Math.max(0.008,Math.min(H,0.03));
   if(/apple|orange|peach|fruit|lemon|tomato|ball/.test(lab)){
     const r=Math.max(0.02,Math.min(long,0.12)/2);
-    const ball=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),std(col,{roughness:0.35}));ball.scale.y=0.92;ball.position.y=r*0.92;g.add(ball);
+    const fruitColor=/apple/.test(lab)?0xc45b32:col;
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),std(fruitColor,{roughness:0.35}));ball.scale.y=0.92;ball.position.y=r*0.92;g.add(ball);
     if(/apple|peach/.test(lab)){const st=new THREE.Mesh(new THREE.CylinderGeometry(0.002,0.003,0.018,8),std(0x5a3b1e));st.position.y=2*r*0.92+0.004;g.add(st);
       const lf=new THREE.Mesh(new THREE.SphereGeometry(0.008,12,8),std(0x4f8a3a));lf.scale.set(1.6,0.3,0.8);lf.position.set(0.008,2*r*0.92+0.008,0);g.add(lf);}
     return true;
@@ -339,9 +341,9 @@ function photoShape(o,g,col){
   }
   return false;
 }
-function dressed(o){
+function dressed(o,solid=false){
   const g=new THREE.Group(); const lab=o.label; const col=rgbHex(o.color);
-  if(photoShape(o,g,col)){ /* real camera image */ }
+  if(!solid&&photoShape(o,g,col)){ /* real camera image */ }
   else if(realShape(o,g,col)){ /* stylised real object */ }
   else if(o.kind==="laptop"){
     const [depth,width]=o.size;
@@ -426,7 +428,8 @@ function playRobotRequest(q){
   const name=robotMode==="rover"?"Smart cleaner":"Desk arm";
   if(!result.ok){setRobotStatus(`${name}: ${result.reason}.`);return;}
   if(mode==="take"){
-    carriedName=o.name;carriedHeight=h;carriedMesh=dressed(o);carryG.add(carriedMesh);carryG.visible=false;
+    // A photo cutout is a flat billboard; use the fitted 3D shape while grasped.
+    carriedName=o.name;carriedHeight=h;carriedMesh=dressed(o,true);carryG.add(carriedMesh);carryG.visible=false;
     setRobotStatus(`${name} taking ${friendly(o.name)} · simulated grasp`);
   }else setRobotStatus(robotMode==="rover"?`${name} driving to ${friendly(o.name)} · simulated motion`:`${name} pointing to ${friendly(o.name)} · simulated motion`);
 }
@@ -561,7 +564,7 @@ function render(){
   // action overlay (only when the question changes)
   const q=ST.query, key=q?JSON.stringify([q.question,q.code,q.path,ST.n_frames]):null;
   if(key!==lastQueryKey){
-    lastQueryKey=key; actionG.clear(); anim=null; pathMarker=null;targetMarker=null;robot.home();
+    lastQueryKey=key; actionG.clear(); anim=null; pathMarker=null;targetMarker=null;
     if(q){
       for(const z of q.zones){
         const shape=new THREE.Shape(z.map(p=>{const v=M(p[0],p[1]);return new THREE.Vector2(v.x,-v.z);}));
@@ -638,6 +641,8 @@ function renderPanels(){
   const labels=[...new Set(ST.twin.map(o=>o.label))];
   const lap=labels.find(l=>/laptop/.test(l)), first=labels.find(l=>!/laptop/.test(l))||labels[0], second=labels.find(l=>l!==first&&!/laptop/.test(l));
   const sug=[`Go to the ${first}`,`Where is the ${second||first}?`];
+  const pick=ST.twin.find(o=>!o.hidden&&/apple|orange|peach|fruit|ball|cup|mug|bottle/.test(o.label));
+  if(pick)sug.splice(1,0,`Pick up the ${pick.label}`);
   const ref=lap||second;
   if(ref) sug.push(`What is closest to the ${ref}?`, `Find the ${first} that is not near the ${ref}`);
   sug.push(`Where was the ${first} before?`);
@@ -806,7 +811,7 @@ controls.addEventListener("end",()=>{if(!drag&&viewMode!=="custom")setView("cust
 controls.addEventListener("change",renderOrientation);
 // test hook: screen position of a map point (used by the automated UI test)
 window.G1Twin={project:(x,y,z=0)=>{const v=M(x,y,z).project(cam);const r=canvas.getBoundingClientRect();return [r.left+(v.x+1)/2*r.width, r.top+(1-v.y)/2*r.height];}, state:()=>ST, robot:()=>robot, view:()=>viewMode, camera:()=>({position:cam.position.toArray(),target:controls.target.toArray()}), carry:()=>({name:carriedName,visible:carryG.visible,position:carriedMesh?.position.toArray()})};
-try{ await loadSource(); ST=await api("state"); render(); }
+try{ await loadSource(); ST=await api("state"); render(); if(ST.query)playRobotRequest(ST.query); }
 catch(e){ toast("Could not reach the twin server: "+e.message); }
 })();
 </script>

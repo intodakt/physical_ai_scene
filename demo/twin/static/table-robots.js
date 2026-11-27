@@ -4,6 +4,7 @@
   const clamp=THREE.MathUtils.clamp;
   const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
   const finish=(a,b,t)=>a+(b-a)*smooth(clamp(t,0,1));
+  const ARM_UPPER=.43,ARM_FOREARM=.43;
   const shell=new THREE.MeshStandardMaterial({color:0xd1d7d5,metalness:.34,roughness:.34});
   const alloy=new THREE.MeshStandardMaterial({color:0x78878a,metalness:.57,roughness:.3});
   const graphite=new THREE.MeshStandardMaterial({color:0x29363b,metalness:.38,roughness:.43});
@@ -75,11 +76,11 @@
       box(yaw,.037,.014,.025,graphite,0,.071,-.031);
       const shoulder=new THREE.Group();shoulder.position.y=.13;yaw.add(shoulder);this.shoulder=shoulder;
       joint(shoulder,.039);
-      link(shoulder,.27,.028);
-      const elbow=new THREE.Group();elbow.position.z=-.27;shoulder.add(elbow);this.elbow=elbow;
+      link(shoulder,ARM_UPPER,.032);
+      const elbow=new THREE.Group();elbow.position.z=-ARM_UPPER;shoulder.add(elbow);this.elbow=elbow;
       joint(elbow,.033);
-      link(elbow,.265,.023);
-      const wrist=new THREE.Group();wrist.position.z=-.265;elbow.add(wrist);this.wrist=wrist;
+      link(elbow,ARM_FOREARM,.027);
+      const wrist=new THREE.Group();wrist.position.z=-ARM_FOREARM;elbow.add(wrist);this.wrist=wrist;
       joint(wrist,.025);
       const collar=cyl(wrist,.022,.021,.038,alloy,0,0,-.025);collar.rotation.x=Math.PI/2;
       box(wrist,.071,.023,.037,graphite,0,0,-.055);
@@ -190,7 +191,7 @@
     }
     applyRoverGrip(t){this.roverGrip=t;for(const {group,side} of this.roverFingers)group.position.x=side*(.019-.008*t);}
     home(){
-      this.motion=null;this.held=null;this.applyPose({yaw:0,shoulder:1.1,elbow:-1,wrist:-.1,grip:0});
+      this.motion=null;this.held=null;this.applyPose({yaw:0,shoulder:1.75,elbow:-2.4,wrist:.65,grip:0});
       this.setStart(this.start);this.roverGripper.position.set(0,.053,-.04);this.applyRoverGrip(0);
     }
     release(){this.home();}
@@ -201,14 +202,16 @@
     solveArm(x,y,z){
       const target=this.armRoot.worldToLocal(M(x,y,z).clone());
       const yaw=Math.atan2(-target.x,-target.z),r=Math.hypot(target.x,target.z)-.105;
-      const h=target.y-.155,L1=.27,L2=.265,d=Math.hypot(r,h);
+      const h=target.y-.155,L1=ARM_UPPER,L2=ARM_FOREARM,d=Math.hypot(r,h);
       if(r<.035||d>L1+L2-.008||d<Math.abs(L1-L2)+.008)return null;
       const shoulder=Math.atan2(h,r)+Math.acos(clamp((d*d+L1*L1-L2*L2)/(2*d*L1),-1,1));
       const elbow=-Math.acos(clamp((d*d-L1*L1-L2*L2)/(2*L1*L2),-1,1));
       return {yaw,shoulder,elbow,wrist:-(shoulder+elbow),grip:0};
     }
     reachTo(x,y,z,gesture="point",options={}){
-      this.home();
+      if(this.mode==="arm"){
+        this.motion=null;this.held=null;this.applyPose({...this.pose(),grip:0});
+      }else this.home();
       const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if(this.mode==="rover"){
         if(options.validated===false)return {ok:false,reason:"S6 path is blocked"};
@@ -267,10 +270,8 @@
           else{m.gripped=true;this.applyPose(blend(m.closed,m.lift,(t-.58)/.42));}
           if(t>=1){this.applyPose(m.lift);this.held={side:"arm"};this.motion=null;}
         }else{
-          if(t<.45)this.applyPose(blend(m.from,m.goal,t/.45));
-          else if(t<.68)this.applyPose(m.goal);
-          else this.applyPose(blend(m.goal,m.from,(t-.68)/.32));
-          if(t>=1){this.applyPose(m.from);this.motion=null;}
+          this.applyPose(blend(m.from,m.goal,t));
+          if(t>=1){this.applyPose(m.goal);this.motion=null;}
         }
       }
     }
