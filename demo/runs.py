@@ -70,8 +70,20 @@ def s3_live_available() -> bool:
         return False
 
 
-def run_dataset(name: str, parser: str = "auto", query: Optional[str] = None, progress: Progress = None) -> Path:
-    """S1 frames -> S3 -> S2 -> S6 -> S4 (every frame), then one S5 -> S6 question. Writes runs/<name>."""
+def measure_camera_tf(dirs: list) -> dict:
+    """S1's desk-plane TF (src/sensors/static_tf.py) from the first frames: camera height and pitch above the desk."""
+    from src.preprocessing.frame_loader import load_frame
+    from src.sensors.static_tf import estimate
+
+    return estimate([load_frame(d) for d in dirs[:5]])
+
+
+def run_dataset(name: str, parser: str = "auto", query: Optional[str] = None, progress: Progress = None,
+                camera_tf: Optional[str] = None) -> Path:
+    """S1 frames -> S3 -> S2 -> S6 -> S4 (every frame), then one S5 -> S6 question. Writes runs/<name>.
+
+    ``camera_tf="auto"`` measures the camera pose from the desk plane (like ``main_pipeline.py --camera-tf
+    auto``) and uses it for every frame instead of the bag TF / configured placeholder."""
     from src.integration.pipeline import Pipeline, frame_dirs
 
     ds = DATASETS / name
@@ -85,11 +97,22 @@ def run_dataset(name: str, parser: str = "auto", query: Optional[str] = None, pr
     out = RUNS / name
     shutil.rmtree(out, ignore_errors=True)
     pipe = Pipeline(out, s3_mode=s3_mode, parser=parser)
-    errors = []
+    errors, T, tf_info = [], None, None
+    if camera_tf == "auto":
+        _say(progress, f"{name}: S1 measuring the camera height and tilt from the desk plane", 0.03)
+        try:
+            est = measure_camera_tf(todo)
+            T = est["T_map_camera"]
+            tf_info = {k: est[k] for k in ("method", "camera_height_m", "pitch_below_horizontal_deg",
+                                           "height_spread_m", "n_frames")}
+            _say(progress, f"{name}: camera {est['camera_height_m']:.3f} m above the desk, "
+                           f"{est['pitch_below_horizontal_deg']:.1f} deg below horizontal", 0.04)
+        except Exception as e:      # no desk plane found: keep the bag / configured TF
+            errors.append({"frame": "-", "stage": "camera_tf", "error": f"{type(e).__name__}: {e}"})
     for i, d in enumerate(todo):
         _say(progress, f"{name}: frame {i + 1}/{len(todo)} through S3 -> S2 -> S6 -> S4", 0.05 + 0.85 * i / len(todo))
         try:
-            pipe.process(d)
+            pipe.process(d, T_map_camera=T, force_tf=T is not None)
         except Exception as e:  # one bad frame must not kill the demo; S7 logs it
             errors.append({"frame": d.name, "stage": "pipeline", "error": f"{type(e).__name__}: {e}"})
     if not pipe.frames:
@@ -98,7 +121,7 @@ def run_dataset(name: str, parser: str = "auto", query: Optional[str] = None, pr
     result = pipe.ask(query or pipe.cfg["default_query"])
     summary = pipe.summary()
     summary.update({"dataset": name, "last_query": result, "frame_errors": errors,
-                    "skipped_no_s3": [d.name for d in dirs if d not in todo],
+                    "skipped_no_s3": [d.name for d in dirs if d not in todo], "camera_tf": tf_info,
                     "session_meta": json.loads((ds / "session_meta.json").read_text(encoding="utf-8"))
                     if (ds / "session_meta.json").exists() else {},
                     "created": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -108,7 +131,8 @@ def run_dataset(name: str, parser: str = "auto", query: Optional[str] = None, pr
 
 
 # ---------------------------------------------------------------- import
-def import_and_run(src: Path, parser: str = "auto", max_frames: int = 40, progress: Progress = None) -> list[str]:
+def import_and_run(src: Path, parser: str = "auto", max_frames: int = 40, progress: Progress = None,
+                   camera_tf: Optional[str] = None) -> list[str]:
     made = demo_data.import_source(src, DATASETS, max_frames=max_frames, workdir=STORE / "_unpack",
                                    progress=lambda m, f: _say(progress, m, 0.5 * f))
     names = []
@@ -116,7 +140,7 @@ def import_and_run(src: Path, parser: str = "auto", max_frames: int = 40, progre
     for k, d in enumerate(made):
         sub = (lambda m, f, k=k: _say(progress, m, 0.5 + 0.5 * (k + f) / len(made))) if progress else None
         try:
-            run_dataset(d.name, parser, progress=sub)
+            run_dataset(d.name, parser, progress=sub, camera_tf=camera_tf)
             names.append(d.name)
             s3 = json.loads((d / "session_meta.json").read_text(encoding="utf-8")).get("s3", {})
             if s3.get("by_order"):
@@ -273,6 +297,8 @@ def main():
     ap.add_argument("--import", dest="src", help=".zip, bag folder, .db3 or frame folders")
     ap.add_argument("--url", help="direct or Google Drive link to a .zip / .db3")
     ap.add_argument("--rerun", help="re-run the pipeline on an imported dataset")
+    ap.add_argument("--camera-tf", choices=["auto"], default=None,
+                    help="auto: measure the camera pose from the desk plane instead of the bag TF / placeholder")
     ap.add_argument("--max-frames", type=int, default=40)
     ap.add_argument("--parser", choices=["auto", "rules", "ollama"], default="auto")
     a = ap.parse_args()
@@ -280,11 +306,11 @@ def main():
     if a.builtin:
         print("built-in:", build_builtin(log))
     if a.src:
-        print("imported:", import_and_run(Path(a.src), a.parser, a.max_frames, log))
+        print("imported:", import_and_run(Path(a.src), a.parser, a.max_frames, log, camera_tf=a.camera_tf))
     if a.url:
         print("imported:", import_url(a.url, a.parser, a.max_frames, log))
     if a.rerun:
-        print("run:", run_dataset(a.rerun, a.parser, progress=log))
+        print("run:", run_dataset(a.rerun, a.parser, progress=log, camera_tf=a.camera_tf))
     if not (a.builtin or a.src or a.url or a.rerun):
         for d in list_datasets():
             print(f"{d['name']:30s} {d['n_frames']:4d} frames  run={'yes' if d['run'] else 'no'}")

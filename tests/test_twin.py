@@ -90,3 +90,33 @@ def test_http_api(run_dir, tmp_path):
             urllib.request.urlopen(base + "../engine.py")
     finally:
         srv.shutdown()
+
+
+def test_import_measures_the_camera_from_the_desk(tmp_path, monkeypatch):
+    """Real G1 bags carry no TF: with camera_tf='auto' S1's desk-plane TF puts the objects on the desk."""
+    import shutil
+
+    from demo import runs
+    from scripts.make_demo_sequence import generate
+    from src.preprocessing.frame_loader import load_frame
+    from src.sensors import bag_replay
+
+    dirs = generate(tmp_path / "render", n_frames=3)
+    frames = [load_frame(d) for d in dirs]
+    pkg = tmp_path / "rec"
+    bag_replay.write_bag(frames, pkg / "S1_static_bag", camera_info=True)          # no /tf_static
+    for i, (d, fr) in enumerate(zip(dirs, frames)):
+        f = pkg / "s3_run" / f"frame_{i:06d}"
+        shutil.copytree(d / "masks", f / "masks")
+        obs = json.loads((d / "observation.json").read_text(encoding="utf-8"))
+        obs["timestamp"] = fr.timestamp
+        (f / "observation.json").write_text(json.dumps(obs), encoding="utf-8")
+    monkeypatch.setattr(runs, "DATASETS", tmp_path / "store" / "datasets")
+    monkeypatch.setattr(runs, "RUNS", tmp_path / "store" / "runs")
+    name = runs.import_and_run(pkg, parser="rules", camera_tf="auto")[0]
+    summary = json.loads((runs.RUNS / name / "run_summary.json").read_text(encoding="utf-8"))
+    assert abs(summary["camera_tf"]["camera_height_m"] - 0.6) < 0.02                 # mock camera: 0.6 m, 45 deg
+    assert abs(summary["camera_tf"]["pitch_below_horizontal_deg"] - 45) < 2
+    last = summary["frames"][-1]["frame"]
+    objs = json.loads((runs.RUNS / name / "objects" / f"{last}_objects.json").read_text(encoding="utf-8"))["objects"]
+    assert objs and all(o["box_map"]["center"][2] < 0.15 for o in objs)              # on the desk, not floating

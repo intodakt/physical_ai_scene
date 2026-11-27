@@ -39,7 +39,8 @@ REPO = Path(__file__).resolve().parents[2]
 MAX_STEP_M = 0.08                  # largest slide per rendered frame (S6 tracking gate is 0.15 m)
 DESK_X, DESK_Y = (0.05, 1.35), (-0.55, 0.55)   # renderer desk top (mock_data: 1.4 x 1.2 m at x 0..1.4)
 FRAME_DT = 0.5                     # seconds between twin frames (timestamps for S6 / S4)
-ROUND_LABELS = ("mug", "cup", "glass", "bottle", "can", "jar", "vase")
+ROUND_LABELS = ("mug", "cup", "glass", "bottle", "can", "jar", "vase", "apple", "egg", "orange", "ball", "fruit",
+                "peach", "lemon", "tomato", "onion", "potato")
 TRANSPARENT = ("glass", "transparent_suspected", "no_depth")
 PALETTE = {"laptop": (70, 70, 78), "mug": (200, 60, 50), "cup": (200, 60, 50), "book": (40, 90, 170),
            "glass": (190, 215, 225), "bottle": (60, 140, 90), "multimeter": (235, 190, 30),
@@ -127,7 +128,14 @@ def _colour(obj: dict, rgb: Optional[np.ndarray], frame_dir: Optional[Path] = No
         patch = rgb[int(max(0, cy - h)):int(cy + h) + 1, int(max(0, cx - w)):int(cx + w) + 1]
         if patch.size:
             return tuple(int(v) for v in patch.reshape(-1, 3).mean(0))
-    for k, c in PALETTE.items():
+    words = {"white": (225, 225, 220), "black": (35, 35, 40), "red": (190, 50, 45), "green": (60, 140, 70),
+             "blue": (45, 90, 170), "yellow": (230, 190, 40), "silver": (180, 182, 188), "grey": (120, 120, 125),
+             "gray": (120, 120, 125), "orange": (230, 130, 40), "brown": (120, 80, 45), "pink": (230, 150, 170)}
+    for w in label.split():
+        if w in words:
+            return words[w]
+    for k, c in {**PALETTE, "apple": (200, 50, 40), "egg": (240, 228, 205), "phone": (35, 35, 40),
+                 "calculator": (40, 42, 48), "controller": (230, 230, 230)}.items():
         if k in label:
             return c
     return (150, 150, 155)

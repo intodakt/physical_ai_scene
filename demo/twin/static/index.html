@@ -264,9 +264,75 @@ function labelSprite(text,color){
 const std=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.45,metalness:0.1},o));
 // colours come from the recording (median of each object's mask); lift them a little for the stylised look
 const rgbHex=c=>{const k=Math.min(1.45,230/Math.max(1,...c));return (Math.min(255,c[0]*k)<<16)|(Math.min(255,c[1]*k)<<8)|Math.min(255,c[2]*k);};
+// Stylised stand-ins for common tabletop objects, fitted to S2's measured box (size + yaw).
+function slab(g,w,h,d,mat,y){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.y=y??h/2;g.add(m);return m;}
+function realShape(o,g,col){
+  const lab=o.label;
+  const box=o.kind==="box", cyl=o.kind==="cylinder";
+  // footprint in three axes: X = map y extent, Z = map x extent
+  const W=box?o.size[1]:2*o.size[0], D=box?o.size[0]:2*o.size[0], H=box?o.size[2]:o.size[1];
+  const long=Math.max(W,D), short=Math.min(W,D), alongX=W>=D;
+  const t=Math.max(0.008,Math.min(H,0.03));
+  if(/apple|orange|peach|fruit|lemon|tomato|ball/.test(lab)){
+    const r=Math.max(0.02,Math.min(long,0.12)/2);
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),std(col,{roughness:0.35}));ball.scale.y=0.92;ball.position.y=r*0.92;g.add(ball);
+    if(/apple|peach/.test(lab)){const st=new THREE.Mesh(new THREE.CylinderGeometry(0.002,0.003,0.018,8),std(0x5a3b1e));st.position.y=2*r*0.92+0.004;g.add(st);
+      const lf=new THREE.Mesh(new THREE.SphereGeometry(0.008,12,8),std(0x4f8a3a));lf.scale.set(1.6,0.3,0.8);lf.position.set(0.008,2*r*0.92+0.008,0);g.add(lf);}
+    return true;
+  }
+  if(/egg/.test(lab)){
+    const r=Math.max(0.018,Math.min(long,0.07)/2*0.75);
+    const e=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),std(0xf1e6d2,{roughness:0.6}));e.scale.set(1,0.78,1.32);e.position.y=r*0.78;
+    if(alongX)e.rotation.y=Math.PI/2;g.add(e);return true;
+  }
+  const flat=(w,d)=>alongX?[long,short]:[short,long];
+  if(/phone|smartphone|tablet/.test(lab)){
+    const [w,d]=flat();const body=slab(g,w,Math.min(t,0.012),d,std(0x15171c,{metalness:0.5,roughness:0.25}));
+    const scr=new THREE.Mesh(new THREE.PlaneGeometry(w*0.9,d*0.93),new THREE.MeshStandardMaterial({color:0x1e2a44,roughness:0.08,metalness:0.2,emissive:0x0b1220}));
+    scr.rotation.x=-Math.PI/2;scr.position.y=body.geometry.parameters.height+0.0006;g.add(scr);return true;
+  }
+  if(/calculator/.test(lab)){
+    const [w,d]=flat();const h=Math.min(t,0.018);slab(g,w,h,d,std(0x23262c,{roughness:0.6}));
+    const lcd=slab(g,(alongX?w*0.3:w*0.8),0.002,(alongX?d*0.8:d*0.3),std(0x9fb39a,{roughness:0.2}),h+0.001);
+    if(alongX)lcd.position.x=-w*0.3;else lcd.position.z=-d*0.3;
+    for(let i=0;i<4;i++)for(let j=0;j<5;j++){const k=slab(g,0.012,0.004,0.009,std(0x3a3e46),h+0.002);
+      const a=(i-1.5)*0.016,b=(j-1.2)*0.013; if(alongX){k.position.x=b*1.1+w*0.08;k.position.z=a;}else{k.position.x=a;k.position.z=b*1.1+d*0.08;}}
+    return true;
+  }
+  if(/remote|handheld|thermometer|device/.test(lab)){
+    const [w,d]=flat();const h=Math.min(Math.max(t,0.015),0.03);slab(g,w,h,d,std(col,{roughness:0.4}));
+    const disp=slab(g,(alongX?w*0.3:w*0.6),0.002,(alongX?d*0.6:d*0.3),std(0x2b3a2b,{roughness:0.15}),h+0.001);
+    if(alongX)disp.position.x=-w*0.2;else disp.position.z=-d*0.2;
+    for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.CylinderGeometry(0.004,0.004,0.003,12),std(0x7a8088));b.position.y=h+0.002;
+      if(alongX){b.position.x=w*0.1+i*0.015;}else{b.position.z=d*0.1+i*0.015;} g.add(b);}
+    return true;
+  }
+  if(/controller|gamepad|joystick/.test(lab)){
+    const w=Math.max(long,0.12),d=Math.max(short,0.06),h=0.03;const mat=std(col,{roughness:0.4});
+    const body=new THREE.Mesh(new THREE.BoxGeometry(w*0.6,h,d*0.7),mat);body.position.y=h/2;
+    const grip=s=>{const m=new THREE.Mesh(new THREE.SphereGeometry(d*0.42,24,16),mat);m.scale.y=0.55;m.position.set(s*w*0.3,h*0.5,d*0.08);return m;};
+    const inner=new THREE.Group();inner.add(body,grip(-1),grip(1));
+    for(const [x,z,c] of [[-0.03,-0.005,0x222222],[0.025,-0.01,0xd9534f],[0.035,0.0,0x5cb85c],[0.015,0.0,0x337ab7]]){
+      const b=new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.005,0.006,12),std(c));b.position.set(x*w/0.13,h+0.002,z);inner.add(b);}
+    inner.rotation.y=alongX?0:Math.PI/2;g.add(inner);return true;
+  }
+  if(/keyboard/.test(lab)){
+    const [w,d]=flat();const h=Math.min(t,0.02);slab(g,w,h,d,std(0x2a2d33,{roughness:0.6}));
+    const nx=alongX?14:5,nz=alongX?5:14;
+    for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const k=slab(g,w/nx*0.75,0.004,d/nz*0.75,std(0x3d4149),h+0.002);k.position.x=(i-(nx-1)/2)*w/nx;k.position.z=(j-(nz-1)/2)*d/nz;}
+    return true;
+  }
+  if(/mouse pad|mousepad|mat/.test(lab)){const [w,d]=flat();slab(g,w,0.004,d,std(col,{roughness:0.9}));return true;}
+  if(/mouse/.test(lab)){const r=Math.max(0.025,short/2);const m=new THREE.Mesh(new THREE.SphereGeometry(r,24,16),std(col,{roughness:0.35}));
+    m.scale.set(alongX?1.6:1,0.55,alongX?1:1.6);m.position.y=r*0.3;g.add(m);return true;}
+  if(/bottle/.test(lab)&&cyl){const [r,h]=o.size;const b=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h*0.75,32),std(col,{roughness:0.2,transparent:true,opacity:0.85}));b.position.y=h*0.375;g.add(b);
+    const n=new THREE.Mesh(new THREE.CylinderGeometry(r*0.4,r,h*0.25,24),std(col,{roughness:0.2}));n.position.y=h*0.875;g.add(n);return true;}
+  return false;
+}
 function dressed(o){
   const g=new THREE.Group(); const lab=o.label; const col=rgbHex(o.color);
-  if(o.kind==="laptop"){
+  if(realShape(o,g,col)){ /* stylised real object */ }
+  else if(o.kind==="laptop"){
     const [depth,width]=o.size;
     const metal=std(0x9aa0aa,{metalness:0.7,roughness:0.3});
     const base=new THREE.Mesh(new THREE.BoxGeometry(width,0.018,depth),metal);base.position.y=0.009;g.add(base);

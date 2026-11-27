@@ -15,8 +15,11 @@ when S6 refuses.
 | S5 reasoning, S6 ActionGoal, twin simulation | team code | **same team code** |
 | Robot | virtual: follows S6's 2D path (mobile robot), or an arm that reaches along it (visual only) | same |
 
-The twin is built from the frame of the run with the most objects: each S2 object becomes a box,
-cylinder or laptop shape at its measured position, size and rotation, coloured from its S3 mask.
+The twin is built from the frame of the run with the most objects: each S2 object is placed at its
+measured position, size and rotation, coloured from its S3 mask. The renderer that makes the twin's camera
+frames uses boxes, cylinders and a laptop shape; the page draws stylised versions of common objects
+(phone, calculator, remote, game controller, keyboard, mouse, apple, egg, mug, bottle, book) fitted to
+the same measured box.
 A move is rendered as a short slide (frames ≤ 8 cm apart) so S6 sees the object travel, then still
 frames until S6 reports `MOVED`. Moves onto another object are refused.
 
@@ -44,6 +47,12 @@ The browser opens at http://127.0.0.1:8600. Options: `--run <run folder>`, `--pa
    This replays the bag (S1), attaches S3's masks, runs S2 → S6 → S4 → S5 → S6 on every frame, stores
    the result in `data/demo_store/runs/<bag name>` and builds the twin from it. A bag without S3 output
    is refused with a message (the demo install has no YOLO-World).
+   The import also **measures the camera height and tilt from the desk plane** (S1's
+   `src/sensors/static_tf.py`, the same as `main_pipeline.py --camera-tf auto`), because the G1 bags carry
+   no TF: with the configured placeholder (0.80 m, 29°) every object floats ~0.6 m above the desk and gets
+   a huge, tilted box. `--camera-tf bag` turns this off. A recording imported earlier without it is
+   re-run with `python -m demo.twin --remeasure <recording name>` (the folder name in
+   `data/demo_store/datasets/`).
 4. Later starts (`G1_Twin.bat` alone) open the newest imported recording; the *Recording* menu (top
    right) switches between recordings. With none imported, the synthetic desk is used.
 5. Show the real recording first (left card + *Recording point cloud* toggle), then edit the twin.
